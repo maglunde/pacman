@@ -12,10 +12,15 @@ mapOffX,
 mapOffY,
 
 TILE = 16,
-SPEED = 1.4,
+SPEED = .8,
 GRID_COLS,
 GRID_ROWS,
 grid,
+dots,
+dotsEaten = 0,
+
+audioCtx   = null,
+wakaBuffer = null,
 
 frames = 0,
 frame  = 0,
@@ -53,12 +58,7 @@ pacman = {
 				if (!isGridWall(this.col + d[0], this.row + d[1])) {
 					this.dir     = this.nextDir;
 					this.nextDir = dir.none;
-					this.col    += d[0];
-					this.row    += d[1];
-					var p = tilePixel(this.col, this.row);
-					this.targetX = p.x;
-					this.targetY = p.y;
-					this.moving  = true;
+					applyMove(this, d[0], d[1]);
 					turned = true;
 				}
 			}
@@ -66,12 +66,7 @@ pacman = {
 			if (!turned && this.dir !== dir.none) {
 				var d = delta(this.dir);
 				if (!isGridWall(this.col + d[0], this.row + d[1])) {
-					this.col += d[0];
-					this.row += d[1];
-					var p = tilePixel(this.col, this.row);
-					this.targetX = p.x;
-					this.targetY = p.y;
-					this.moving  = true;
+					applyMove(this, d[0], d[1]);
 				}
 			}
 		}
@@ -83,6 +78,11 @@ pacman = {
 				this.x      = this.targetX;
 				this.y      = this.targetY;
 				this.moving = false;
+				if (dots[this.row][this.col] === 1) {
+					dots[this.row][this.col] = 0;
+					dotsEaten++;
+					playWaka();
+				}
 			} else {
 				this.x += Math.sign(dx) * SPEED;
 				this.y += Math.sign(dy) * SPEED;
@@ -101,7 +101,13 @@ pacman = {
 	},
 
 	draw: function() {
+		var mapW = GRID_COLS * TILE;
+		var relX = this.x - mapOffX;
 		this.sprite[frame % 2].draw(ctx, this.x, this.y);
+		if (relX < 28)
+			this.sprite[frame % 2].draw(ctx, this.x + mapW, this.y);
+		if (relX > mapW - 28)
+			this.sprite[frame % 2].draw(ctx, this.x - mapW, this.y);
 	}
 }
 ;
@@ -122,8 +128,22 @@ function tilePixel(col, row) {
 }
 
 function isGridWall(col, row) {
-	if (col < 0 || row < 0 || col >= GRID_COLS || row >= GRID_ROWS) return true;
+	if (row < 0 || row >= GRID_ROWS) return true;
+	col = ((col % GRID_COLS) + GRID_COLS) % GRID_COLS;
 	return grid[row][col] === 1;
+}
+
+function applyMove(pac, dc, dr) {
+	pac.col += dc;
+	pac.row += dr;
+	if (pac.col < 0 || pac.col >= GRID_COLS) {
+		pac.x   = dc < 0 ? tilePixel(GRID_COLS, pac.row).x : tilePixel(-1, pac.row).x;
+		pac.col = ((pac.col % GRID_COLS) + GRID_COLS) % GRID_COLS;
+	}
+	var p = tilePixel(pac.col, pac.row);
+	pac.targetX = p.x;
+	pac.targetY = p.y;
+	pac.moving  = true;
 }
 
 function initWallData() {
@@ -165,21 +185,44 @@ function buildGrid() {
 		}
 	}
 
-	// Debug: logg råtall rundt startposisjonen (row 20-26, col 10-18)
-	console.log('Pikseltelling per celle (row 20-26, col 10-18):');
-	for (var r = 20; r <= 26; r++) {
-		var line = 'row ' + r + ': ';
-		for (var c = 10; c <= 18; c++) {
-			var x0 = c * TILE, y0 = r * TILE;
-			var cnt = 0;
-			for (var dx = 0; dx < TILE; dx++)
-				for (var dy = 0; dy < TILE; dy++)
-					if (isWall(x0 + dx, y0 + dy)) cnt++;
-			line += c + ':' + cnt + ' ';
-		}
-		console.log(line);
+}
+
+function initDots() {
+	dots = [];
+	for (var row = 0; row < GRID_ROWS; row++) {
+		dots[row] = [];
+		for (var col = 0; col < GRID_COLS; col++)
+			dots[row][col] = 0;
 	}
-	console.log('Startcelle [row=23][col=13]:', grid[23] && grid[23][13]);
+
+	// Flood fill fra startposisjon
+	var queue = [{ col: 13, row: 23 }];
+	var visited = [];
+	for (var r = 0; r < GRID_ROWS; r++) {
+		visited[r] = [];
+		for (var c = 0; c < GRID_COLS; c++)
+			visited[r][c] = false;
+	}
+	visited[23][13] = true;
+
+	while (queue.length > 0) {
+		var cur = queue.shift();
+		dots[cur.row][cur.col] = 1;
+		var neighbors = [
+			{ col: cur.col - 1, row: cur.row },
+			{ col: cur.col + 1, row: cur.row },
+			{ col: cur.col, row: cur.row - 1 },
+			{ col: cur.col, row: cur.row + 1 }
+		];
+		for (var i = 0; i < neighbors.length; i++) {
+			var n = neighbors[i];
+			if (n.col >= 0 && n.col < GRID_COLS && n.row >= 0 && n.row < GRID_ROWS
+				&& !visited[n.row][n.col] && grid[n.row][n.col] === 0) {
+				visited[n.row][n.col] = true;
+				queue.push(n);
+			}
+		}
+	}
 }
 
 function main() {
@@ -199,6 +242,7 @@ function main() {
 		initSprites(img);
 		initWallData();
 		buildGrid();
+		initDots();
 		run();
 	};
 }
@@ -218,6 +262,44 @@ function update() {
 	pacman.update();
 }
 
+var WAKA_DURATION = 0.155;
+
+function initAudio() {
+	if (audioCtx) return;
+	audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	fetch('res/waka.mp3')
+		.then(r => r.arrayBuffer())
+		.then(ab => audioCtx.decodeAudioData(ab))
+		.then(buf => { wakaBuffer = buf; });
+}
+
+function playWaka() {
+	if (!audioCtx || !wakaBuffer) return;
+	var offset = (dotsEaten % 2) * WAKA_DURATION;
+	var gain = audioCtx.createGain();
+	gain.gain.value = 0.5;
+	gain.connect(audioCtx.destination);
+	var src = audioCtx.createBufferSource();
+	src.buffer = wakaBuffer;
+	src.connect(gain);
+	src.start(0, offset, WAKA_DURATION);
+}
+
+function drawDots() {
+	ctx.fillStyle = '#ffb8ae';
+	for (var row = 0; row < GRID_ROWS; row++) {
+		for (var col = 0; col < GRID_COLS; col++) {
+			if (dots[row][col] === 1) {
+				var cx = mapOffX + col * TILE + TILE / 2;
+				var cy = mapOffY + row * TILE + TILE / 2;
+				ctx.beginPath();
+				ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		}
+	}
+}
+
 function render() {
 	ctx.clearRect(0, 0, width, height);
 	ctx.save();
@@ -225,11 +307,16 @@ function render() {
 	ctx.fillRect(0, 0, width, height);
 	ctx.scale(2, 2);
 	s_map.draw(ctx, mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
+	ctx.beginPath();
+	ctx.rect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
+	ctx.clip();
+	drawDots();
 	pacman.draw();
 	ctx.restore();
 }
 
 function keydown(e) {
+	initAudio();
 	switch (e.which) {
 		case 37: pacman.nextDir = dir.left;  break;
 		case 38: pacman.nextDir = dir.up;    break;
