@@ -53,12 +53,28 @@ export function initSprites(img){
 					new Sprite(img,527,380,28,28) 	// down big
 				]
 	};
-	s_blinky =
-		[
-			new Sprite(img, 236, 58, 14, 14), // facing left
-			new Sprite(img, 253, 58, 14, 14), // facing up
-			new Sprite(img, 270, 58, 14, 14), // facing down
-			new Sprite(img, 287, 58, 14, 14) // facing right
-		];
-
+	s_blinky = [   // red, y=107
+		new Sprite(img, 465, 107, 30, 30), // left
+		new Sprite(img, 499, 107, 30, 30), // up
+		new Sprite(img, 533, 107, 30, 30), // down
+		new Sprite(img, 567, 107, 30, 30)  // right
+	];
+	s_pinky = [    // pink, y=73
+		new Sprite(img, 465, 73, 30, 30),
+		new Sprite(img, 499, 73, 30, 30),
+		new Sprite(img, 533, 73, 30, 30),
+		new Sprite(img, 567, 73, 30, 30)
+	];
+	s_inky = [     // blue, y=9
+		new Sprite(img, 465, 9, 30, 30),
+		new Sprite(img, 499, 9, 30, 30),
+		new Sprite(img, 533, 9, 30, 30),
+		new Sprite(img, 567, 9, 30, 30)
+	];
+	s_clyde = [    // orange, y=41
+		new Sprite(img, 465, 41, 30, 30),
+		new Sprite(img, 499, 41, 30, 30),
+		new Sprite(img, 533, 41, 30, 30),
+		new Sprite(img, 567, 41, 30, 30)
+	];
 }

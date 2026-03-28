@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde } from './sprite.js';
 
 var
 canvas,
@@ -13,11 +13,13 @@ mapOffY,
 
 TILE = 16,
 SPEED = .8,
+GHOST_SPEED = .68,
 GRID_COLS,
 GRID_ROWS,
 grid,
 dots,
 dotsEaten = 0,
+ghosts,
 
 audioCtx   = null,
 wakaBuffer = null,
@@ -55,7 +57,7 @@ pacman = {
 			var turned = false;
 			if (this.nextDir !== dir.none) {
 				var d = delta(this.nextDir);
-				if (!isGridWall(this.col + d[0], this.row + d[1])) {
+				if (!isPacWall(this.col + d[0], this.row + d[1])) {
 					this.dir     = this.nextDir;
 					this.nextDir = dir.none;
 					applyMove(this, d[0], d[1]);
@@ -65,7 +67,7 @@ pacman = {
 
 			if (!turned && this.dir !== dir.none) {
 				var d = delta(this.dir);
-				if (!isGridWall(this.col + d[0], this.row + d[1])) {
+				if (!isPacWall(this.col + d[0], this.row + d[1])) {
 					applyMove(this, d[0], d[1]);
 				}
 			}
@@ -127,10 +129,167 @@ function tilePixel(col, row) {
 	};
 }
 
+// Ghost house region — ghosts can move up through any wall here to exit
+var GHOST_HOUSE_ROW_MIN = 12, GHOST_HOUSE_ROW_MAX = 15;
+var GHOST_HOUSE_COL_MIN = 11, GHOST_HOUSE_COL_MAX = 16;
+// The door tile(s) that Pac-Man cannot enter
+var DOOR_ROW = 11;
+var DOOR_COL_MIN = 12, DOOR_COL_MAX = 15;
+
+function isDoor(col, row) {
+	col = ((col % GRID_COLS) + GRID_COLS) % GRID_COLS;
+	return row === DOOR_ROW && col >= DOOR_COL_MIN && col <= DOOR_COL_MAX;
+}
+
+function inGhostHouse(col, row) {
+	col = ((col % GRID_COLS) + GRID_COLS) % GRID_COLS;
+	return row >= GHOST_HOUSE_ROW_MIN && row <= GHOST_HOUSE_ROW_MAX
+		&& col >= GHOST_HOUSE_COL_MIN && col <= GHOST_HOUSE_COL_MAX;
+}
+
 function isGridWall(col, row) {
 	if (row < 0 || row >= GRID_ROWS) return true;
 	col = ((col % GRID_COLS) + GRID_COLS) % GRID_COLS;
 	return grid[row][col] === 1;
+}
+
+// Pac-Man treats door as wall
+function isPacWall(col, row) {
+	return isDoor(col, row) || isGridWall(col, row);
+}
+
+// Ghosts can move up through ghost house walls/door to exit; cannot re-enter going down
+function isGhostWall(col, row, moveDir) {
+	if (moveDir === dir.up && (isDoor(col, row) || inGhostHouse(col, row))) return false;
+	return isGridWall(col, row);
+}
+
+function oppositeDir(d) {
+	if (d === dir.left)  return dir.right;
+	if (d === dir.right) return dir.left;
+	if (d === dir.up)    return dir.down;
+	if (d === dir.down)  return dir.up;
+	return dir.none;
+}
+
+function ghostSpriteIdx(d) {
+	if (d === dir.left)  return 0;
+	if (d === dir.up)    return 1;
+	if (d === dir.right) return 3;
+	return 2;
+}
+
+function ghostTilePixel(col, row) {
+	return {
+		x: mapOffX + col * TILE + TILE / 2 - 15,
+		y: mapOffY + row * TILE + TILE / 2 - 15
+	};
+}
+
+function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget) {
+	return {
+		startCol: startCol, startRow: startRow,
+		col: startCol,      row: startRow,
+		dir: dir.up, moving: false,
+		x: 0, y: 0, targetX: 0, targetY: 0,
+		sprites: sprites,
+		releaseDelay: releaseDelay,
+		releaseFrame: releaseDelay,
+		getTarget: getTarget,
+
+		init: function() {
+			this.col = this.startCol;
+			this.row = this.startRow;
+			this.dir = dir.up;
+			this.moving = false;
+			this.exited = false;
+			this.releaseFrame = frames + this.releaseDelay;
+			var p = ghostTilePixel(this.col, this.row);
+			this.x = p.x; this.y = p.y;
+			this.targetX = p.x; this.targetY = p.y;
+		},
+
+		update: function() {
+			if (frames < this.releaseFrame) return;
+
+			if (!this.moving) {
+				// Exit routine: navigate to col 13, then move up until outside house
+				if (!this.exited) {
+					if (this.col !== 13) {
+						var dc = this.col < 13 ? 1 : -1;
+						this.dir = dc > 0 ? dir.right : dir.left;
+						applyMove(this, dc, 0);
+					} else {
+						this.dir = dir.up;
+						applyMove(this, 0, -1);
+					}
+					if (this.row < GHOST_HOUSE_ROW_MIN) this.exited = true;
+				} else {
+
+				var opp = oppositeDir(this.dir);
+				var target = this.getTarget();
+				var best = dir.none, bestDist = Infinity;
+				var dirs = [dir.up, dir.left, dir.down, dir.right];
+				for (var i = 0; i < dirs.length; i++) {
+					var d = dirs[i];
+					if (d === opp) continue;
+					var dl = delta(d);
+					var nc = this.col + dl[0], nr = this.row + dl[1];
+					if (!isGhostWall(nc, nr, d)) {
+						var dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
+						if (dist < bestDist) { bestDist = dist; best = d; }
+					}
+				}
+				if (best === dir.none) best = opp; // dead end — reverse
+				if (best !== dir.none) {
+					this.dir = best;
+					var dl = delta(best);
+					applyMove(this, dl[0], dl[1]);
+				}
+				} // end else (exited)
+			}
+
+			if (this.moving) {
+				var dx = this.targetX - this.x, dy = this.targetY - this.y;
+				if (Math.abs(dx) <= GHOST_SPEED && Math.abs(dy) <= GHOST_SPEED) {
+					this.x = this.targetX; this.y = this.targetY;
+					this.moving = false;
+				} else {
+					this.x += Math.sign(dx) * GHOST_SPEED;
+					this.y += Math.sign(dy) * GHOST_SPEED;
+				}
+			}
+		},
+
+		draw: function() {
+			this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
+		}
+	};
+}
+
+function initGhosts() {
+	ghosts = [
+		makeGhost(12, 14, s_blinky, 0, function() {
+			return { col: pacman.col, row: pacman.row };
+		}),
+		makeGhost(13, 14, s_pinky, 300, function() {
+			var d = delta(pacman.dir !== dir.none ? pacman.dir : dir.up);
+			return { col: pacman.col + d[0]*4, row: pacman.row + d[1]*4 };
+		}),
+		makeGhost(14, 14, s_inky, 600, function() {
+			var d = delta(pacman.dir !== dir.none ? pacman.dir : dir.up);
+			var pivot = { col: pacman.col + d[0]*2, row: pacman.row + d[1]*2 };
+			var blinky = ghosts[0];
+			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
+		}),
+		makeGhost(15, 14, s_clyde, 900, function() {
+			var dist = Math.abs(pacman.col - ghosts[3].col) + Math.abs(pacman.row - ghosts[3].row);
+			return dist > 8
+				? { col: pacman.col, row: pacman.row }
+				: { col: 0, row: GRID_ROWS - 1 };
+		})
+	];
+	ghosts.forEach(function(g) { g.init(); });
 }
 
 function applyMove(pac, dc, dr) {
@@ -247,8 +406,14 @@ function main() {
 	};
 }
 
+function resetGame() {
+	pacman.init();
+	initGhosts();
+}
+
 function run() {
 	pacman.init();
+	initGhosts();
 	var loop = function() {
 		update();
 		render();
@@ -260,6 +425,10 @@ function run() {
 function update() {
 	frames++;
 	pacman.update();
+	ghosts.forEach(function(g) { g.update(); });
+	ghosts.forEach(function(g) {
+		if (g.col === pacman.col && g.row === pacman.row) resetGame();
+	});
 }
 
 var WAKA_DURATION = 0.155;
@@ -311,6 +480,7 @@ function render() {
 	ctx.rect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
 	ctx.clip();
 	drawDots();
+	ghosts.forEach(function(g) { g.draw(); });
 	pacman.draw();
 	ctx.restore();
 }
