@@ -20,10 +20,9 @@ export function Sprite(img,x,y,w,h){
 	this.w=w;
 	this.h=h;
 }
-Sprite.prototype.draw = function(ctx, x, y) {
-
+Sprite.prototype.draw = function(ctx, x, y, w, h) {
   ctx.drawImage(this.img, this.x, this.y, this.w, this.h,
-    x, y, this.w, this.h);
+    x, y, w !== undefined ? w : this.w, h !== undefined ? h : this.h);
 };
 
 
