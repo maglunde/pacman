@@ -19,3 +19,34 @@ canvas {
 	height: min(100vw, 100vh);
 	image-rendering: pixelated;
 }
+
+#path-panel {
+	display: none;
+	position: fixed;
+	top: 12px;
+	left: 12px;
+	background: rgba(0,0,0,0.75);
+	border: 1px solid #333;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font: 12px monospace;
+	color: #ccc;
+	user-select: none;
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		cursor: pointer;
+		padding: 2px 0;
+
+		&:hover { color: #fff; }
+
+		input[type=checkbox] {
+			width: 13px;
+			height: 13px;
+			cursor: pointer;
+			accent-color: currentColor;
+		}
+	}
+}
