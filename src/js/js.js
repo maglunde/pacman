@@ -25,6 +25,10 @@ ghosts,
 SCARED_DURATION = 1000,
 scaredTimer = 0,
 
+gameState = 'menu',  // 'menu' | 'playing'
+aiMode = false,
+menuSelected = 0,    // 0 = spiller selv, 1 = AI
+
 audioCtx   = null,
 wakaBuffer = null,
 
@@ -464,19 +468,95 @@ function main() {
 function resetGame() {
 	pacman.init();
 	initGhosts();
-	initBigDots();
 	scaredTimer = 0;
 }
 
 function run() {
 	pacman.init();
 	initGhosts();
+	gameState = 'menu';
 	var loop = function() {
-		update();
+		if (gameState === 'playing') update();
 		render();
 		window.requestAnimationFrame(loop);
 	};
 	loop();
+}
+
+function aiBFS(goalFn, blockFn) {
+	var start = { col: pacman.col, row: pacman.row };
+	var queue = [{ col: start.col, row: start.row, firstDir: dir.none }];
+	var visited = {};
+	visited[start.row + ',' + start.col] = true;
+	while (queue.length > 0) {
+		var cur = queue.shift();
+		if (goalFn(cur.col, cur.row) && cur.firstDir !== dir.none) return cur.firstDir;
+		var ds = [dir.up, dir.left, dir.down, dir.right];
+		for (var i = 0; i < ds.length; i++) {
+			var d = ds[i];
+			var dl = delta(d);
+			var nc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+			var nr = cur.row + dl[1];
+			var key = nr + ',' + nc;
+			if (!visited[key] && !isPacWall(nc, nr) && !(blockFn && blockFn(nc, nr))) {
+				visited[key] = true;
+				queue.push({ col: nc, row: nr, firstDir: cur.firstDir === dir.none ? d : cur.firstDir });
+			}
+		}
+	}
+	return dir.none;
+}
+
+function isGhostThreat(col, row, radius) {
+	for (var i = 0; i < ghosts.length; i++) {
+		var g = ghosts[i];
+		if (!g.exited || (scaredTimer > 0 && !g.immune)) continue;
+		if (Math.abs(g.col - col) + Math.abs(g.row - row) <= radius) return true;
+	}
+	return false;
+}
+
+function aiDecide() {
+	if (pacman.moving) return;
+
+	var threatened = isGhostThreat(pacman.col, pacman.row, 4);
+
+	// Jakt på skremt spøkelse
+	if (scaredTimer > 60) {
+		var chased = aiBFS(function(col, row) {
+			for (var i = 0; i < ghosts.length; i++) {
+				var g = ghosts[i];
+				if (g.exited && !g.immune && g.col === col && g.row === row) return true;
+			}
+			return false;
+		});
+		if (chased !== dir.none) { pacman.nextDir = chased; return; }
+	}
+
+	// Truet — prøv å nå en power pellet
+	if (threatened) {
+		var pellet = aiBFS(function(col, row) {
+			for (var i = 0; i < bigDots.length; i++) {
+				var bd = bigDots[i];
+				if (!bd.eaten && bd.col === col && bd.row === row) return true;
+			}
+			return false;
+		}, function(col, row) { return isGhostThreat(col, row, 2); });
+		if (pellet !== dir.none) { pacman.nextDir = pellet; return; }
+	}
+
+	// Gå mot nærmeste dot — unngå tiles nær spøkelser
+	var safe = aiBFS(
+		function(col, row) { return dots[row] && dots[row][col] === 1; },
+		function(col, row) { return isGhostThreat(col, row, 4); }
+	);
+	if (safe !== dir.none) { pacman.nextDir = safe; return; }
+
+	// Ingen trygg sti — flykt fra nærmeste spøkelse
+	var flee = aiBFS(function(col, row) {
+		return !isGhostThreat(col, row, 8);
+	});
+	if (flee !== dir.none) pacman.nextDir = flee;
 }
 
 function update() {
@@ -486,6 +566,7 @@ function update() {
 		if (scaredTimer === 0)
 			ghosts.forEach(function(g) { g.immune = false; });
 	}
+	if (aiMode) aiDecide();
 	pacman.update();
 	ghosts.forEach(function(g) { g.update(); });
 	ghosts.forEach(function(g) {
@@ -548,11 +629,45 @@ function drawDots() {
 	}
 }
 
+function renderMenu() {
+	ctx.save();
+	ctx.scale(2, 2);
+	s_map.draw(ctx, mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
+	// Mørkt overlay
+	ctx.fillStyle = 'rgba(0,0,0,0.72)';
+	ctx.fillRect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
+
+	var cx = mapOffX + GRID_COLS * TILE / 2;
+	var cy = mapOffY + GRID_ROWS * TILE / 2;
+
+	ctx.fillStyle = '#ffff00';
+	ctx.font = 'bold 20px monospace';
+	ctx.textAlign = 'center';
+	ctx.fillText('PAC-MAN', cx, cy - 60);
+
+	var opts = ['🕹  Spill selv', '🤖  La AI spille'];
+	for (var i = 0; i < opts.length; i++) {
+		ctx.fillStyle = menuSelected === i ? '#ffff00' : '#aaaaaa';
+		ctx.font = menuSelected === i ? 'bold 13px monospace' : '13px monospace';
+		ctx.fillText(opts[i], cx, cy - 10 + i * 28);
+	}
+	ctx.fillStyle = '#555';
+	ctx.font = '9px monospace';
+	ctx.fillText('↑ ↓ for å velge  •  Enter for å starte', cx, cy + 70);
+	ctx.restore();
+}
+
 function render() {
 	ctx.clearRect(0, 0, width, height);
-	ctx.save();
-	ctx.fillStyle = "rgba(0,0,0,1)";
+	ctx.fillStyle = '#000';
 	ctx.fillRect(0, 0, width, height);
+
+	if (gameState === 'menu') {
+		renderMenu();
+		return;
+	}
+
+	ctx.save();
 	ctx.scale(2, 2);
 	s_map.draw(ctx, mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
 	ctx.beginPath();
@@ -566,11 +681,24 @@ function render() {
 
 function keydown(e) {
 	initAudio();
-	switch (e.which) {
-		case 37: pacman.nextDir = dir.left;  break;
-		case 38: pacman.nextDir = dir.up;    break;
-		case 39: pacman.nextDir = dir.right; break;
-		case 40: pacman.nextDir = dir.down;  break;
+	if (gameState === 'menu') {
+		switch (e.which) {
+			case 38: menuSelected = 0; break; // opp
+			case 40: menuSelected = 1; break; // ned
+			case 13: // Enter
+				aiMode = menuSelected === 1;
+				gameState = 'playing';
+				break;
+		}
+		return;
+	}
+	if (!aiMode) {
+		switch (e.which) {
+			case 37: pacman.nextDir = dir.left;  break;
+			case 38: pacman.nextDir = dir.up;    break;
+			case 39: pacman.nextDir = dir.right; break;
+			case 40: pacman.nextDir = dir.down;  break;
+		}
 	}
 }
 
