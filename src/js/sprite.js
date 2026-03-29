@@ -71,6 +71,12 @@ export function initSprites(img){
 		new Sprite(img, 533, 9, 30, 30),
 		new Sprite(img, 567, 9, 30, 30)
 	];
+	s_dot    = new Sprite(img, 575, 151,  6,  6);
+	s_bigDot = new Sprite(img, 587, 147, 18, 18);
+	s_scaredGhost = [
+		new Sprite(img, 533, 139, 30, 30), // blue
+		new Sprite(img, 499, 139, 30, 30)  // white (blinking)
+	];
 	s_clyde = [    // orange, y=41
 		new Sprite(img, 465, 41, 30, 30),
 		new Sprite(img, 499, 41, 30, 30),

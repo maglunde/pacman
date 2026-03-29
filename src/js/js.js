@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_dot, s_bigDot } from './sprite.js';
 
 var
 canvas,
@@ -18,8 +18,12 @@ GRID_COLS,
 GRID_ROWS,
 grid,
 dots,
+bigDots,
 dotsEaten = 0,
 ghosts,
+
+SCARED_DURATION = 1000,
+scaredTimer = 0,
 
 audioCtx   = null,
 wakaBuffer = null,
@@ -85,9 +89,18 @@ pacman = {
 					dotsEaten++;
 					playWaka();
 				}
+				for (var i = 0; i < bigDots.length; i++) {
+					var bd = bigDots[i];
+					if (!bd.eaten && bd.col === this.col && bd.row === this.row) {
+						bd.eaten = true;
+						scaredTimer = SCARED_DURATION;
+						ghosts.forEach(function(g) { g.immune = false; });
+					}
+				}
 			} else {
-				this.x += Math.sign(dx) * SPEED;
-				this.y += Math.sign(dy) * SPEED;
+				var pacSpd = dots[this.row][this.col] === 1 ? SPEED * 0.9 : SPEED;
+				this.x += Math.sign(dx) * pacSpd;
+				this.y += Math.sign(dy) * pacSpd;
 			}
 		}
 
@@ -153,9 +166,9 @@ function isGridWall(col, row) {
 	return grid[row][col] === 1;
 }
 
-// Pac-Man treats door as wall
+// Pac-Man uses pixel-based wall detection only (door is already a wall in the sprite)
 function isPacWall(col, row) {
-	return isDoor(col, row) || isGridWall(col, row);
+	return isGridWall(col, row);
 }
 
 // Ghosts can move up through ghost house walls/door to exit; cannot re-enter going down
@@ -203,6 +216,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget) {
 			this.dir = dir.up;
 			this.moving = false;
 			this.exited = false;
+			this.immune = false;
 			this.releaseFrame = frames + this.releaseDelay;
 			var p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
@@ -223,24 +237,42 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget) {
 						this.dir = dir.up;
 						applyMove(this, 0, -1);
 					}
-					if (this.row < GHOST_HOUSE_ROW_MIN) this.exited = true;
+					// exited/immune sjekkes når bevegelsen er ferdig (se nedenfor)
 				} else {
 
 				var opp = oppositeDir(this.dir);
-				var target = this.getTarget();
-				var best = dir.none, bestDist = Infinity;
 				var dirs = [dir.up, dir.left, dir.down, dir.right];
-				for (var i = 0; i < dirs.length; i++) {
-					var d = dirs[i];
-					if (d === opp) continue;
-					var dl = delta(d);
-					var nc = this.col + dl[0], nr = this.row + dl[1];
-					if (!isGhostWall(nc, nr, d)) {
-						var dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
-						if (dist < bestDist) { bestDist = dist; best = d; }
+				var best = dir.none;
+
+				if (scaredTimer > 0 && !this.immune) {
+					// Tilfeldig retning når skremt (som i originalen)
+					var choices = [];
+					for (var i = 0; i < dirs.length; i++) {
+						var d = dirs[i];
+						var dl = delta(d);
+						if (!isGhostWall(this.col + dl[0], this.row + dl[1], d))
+							choices.push(d);
 					}
+					// Foretrekk å ikke reversere, men gjør det hvis det er eneste utvei
+					var noReverse = choices.filter(function(d) { return d !== opp; });
+					var pool = noReverse.length > 0 ? noReverse : choices;
+					best = pool[Math.floor(Math.random() * pool.length)];
+				} else {
+					var target = this.getTarget();
+					var bestDist = Infinity;
+					for (var i = 0; i < dirs.length; i++) {
+						var d = dirs[i];
+						if (d === opp) continue;
+						var dl = delta(d);
+						var nc = this.col + dl[0], nr = this.row + dl[1];
+						if (!isGhostWall(nc, nr, d)) {
+							var dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
+							if (dist < bestDist) { bestDist = dist; best = d; }
+						}
+					}
+					if (best === dir.none) best = opp;
 				}
-				if (best === dir.none) best = opp; // dead end — reverse
+
 				if (best !== dir.none) {
 					this.dir = best;
 					var dl = delta(best);
@@ -254,15 +286,25 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget) {
 				if (Math.abs(dx) <= GHOST_SPEED && Math.abs(dy) <= GHOST_SPEED) {
 					this.x = this.targetX; this.y = this.targetY;
 					this.moving = false;
+					if (!this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
+						this.exited = true;
+					}
 				} else {
-					this.x += Math.sign(dx) * GHOST_SPEED;
-					this.y += Math.sign(dy) * GHOST_SPEED;
+					var spd = (scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED;
+					this.x += Math.sign(dx) * spd;
+					this.y += Math.sign(dy) * spd;
 				}
 			}
 		},
 
 		draw: function() {
-			this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
+			if (scaredTimer > 0 && this.exited && !this.immune) {
+				// Blink mellom blå og hvit de siste 200 frames
+				var white = scaredTimer <= 200 && Math.floor(frames / 8) % 2 === 1;
+				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
+			} else {
+				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
+			}
 		}
 	};
 }
@@ -346,6 +388,18 @@ function buildGrid() {
 
 }
 
+// Classic power pellet positions
+var BIG_DOT_POSITIONS = [
+	{col: 1, row: 3}, {col: 26, row: 3},
+	{col: 1, row: 26}, {col: 26, row: 26}
+];
+
+function initBigDots() {
+	bigDots = BIG_DOT_POSITIONS.map(function(p) {
+		return { col: p.col, row: p.row, eaten: false };
+	});
+}
+
 function initDots() {
 	dots = [];
 	for (var row = 0; row < GRID_ROWS; row++) {
@@ -402,6 +456,7 @@ function main() {
 		initWallData();
 		buildGrid();
 		initDots();
+		initBigDots();
 		run();
 	};
 }
@@ -409,6 +464,8 @@ function main() {
 function resetGame() {
 	pacman.init();
 	initGhosts();
+	initBigDots();
+	scaredTimer = 0;
 }
 
 function run() {
@@ -424,10 +481,23 @@ function run() {
 
 function update() {
 	frames++;
+	if (scaredTimer > 0) {
+		scaredTimer--;
+		if (scaredTimer === 0)
+			ghosts.forEach(function(g) { g.immune = false; });
+	}
 	pacman.update();
 	ghosts.forEach(function(g) { g.update(); });
 	ghosts.forEach(function(g) {
-		if (g.col === pacman.col && g.row === pacman.row) resetGame();
+		if (!g.exited) return;
+		if (g.col === pacman.col && g.row === pacman.row) {
+			if (scaredTimer > 0 && !g.immune) {
+				g.init();
+				g.immune = true; // ikke redd igjen før ute av huset
+			} else {
+				resetGame();
+			}
+		}
 	});
 }
 
@@ -455,15 +525,24 @@ function playWaka() {
 }
 
 function drawDots() {
-	ctx.fillStyle = '#ffb8ae';
 	for (var row = 0; row < GRID_ROWS; row++) {
 		for (var col = 0; col < GRID_COLS; col++) {
 			if (dots[row][col] === 1) {
-				var cx = mapOffX + col * TILE + TILE / 2;
-				var cy = mapOffY + row * TILE + TILE / 2;
-				ctx.beginPath();
-				ctx.arc(cx, cy, 2, 0, Math.PI * 2);
-				ctx.fill();
+				var x = mapOffX + col * TILE + TILE / 2 - 3;
+				var y = mapOffY + row * TILE + TILE / 2 - 3;
+				s_dot.draw(ctx, x, y);
+			}
+		}
+	}
+	// Big dots — blink siste 120 frames av scared mode
+	var showBig = scaredTimer === 0 || scaredTimer > 120 || Math.floor(frames / 8) % 2 === 0;
+	if (showBig) {
+		for (var i = 0; i < bigDots.length; i++) {
+			var bd = bigDots[i];
+			if (!bd.eaten) {
+				var x = mapOffX + bd.col * TILE + TILE / 2 - 9;
+				var y = mapOffY + bd.row * TILE + TILE / 2 - 9;
+				s_bigDot.draw(ctx, x, y);
 			}
 		}
 	}
