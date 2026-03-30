@@ -71,6 +71,12 @@ export function initSprites(img){
 		new Sprite(img, 533, 9, 30, 30),
 		new Sprite(img, 567, 9, 30, 30)
 	];
+	s_eyes = [
+		new Sprite(img, 649, 151, 13, 13), // left
+		new Sprite(img, 616, 185, 13, 13), // up
+		new Sprite(img, 629, 185, 13, 13), // down
+		new Sprite(img, 670, 150, 13, 13)  // right
+	];
 	s_dot    = new Sprite(img, 575, 151,  6,  6);
 	s_bigDot = new Sprite(img, 587, 147, 18, 18);
 	s_scaredGhost = [

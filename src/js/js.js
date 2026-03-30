@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_dot, s_bigDot } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_eyes, s_dot, s_bigDot } from './sprite.js';
 
 var
 canvas,
@@ -220,7 +220,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		startCol: startCol, startRow: startRow,
 		pathColor: pathColor || '#ffffff',
 		col: startCol,      row: startRow,
-		dir: dir.up, moving: false,
+		dir: dir.up, moving: false, returning: false,
 		x: 0, y: 0, targetX: 0, targetY: 0,
 		sprites: sprites,
 		releaseDelay: releaseDelay,
@@ -234,6 +234,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 			this.moving = false;
 			this.exited = false;
 			this.immune = false;
+			this.returning = false;
 			this.releaseFrame = frames + this.releaseDelay;
 			var p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
@@ -241,8 +242,43 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		},
 
 		update: function(speedFactor) {
-			if (frames < this.releaseFrame) return;
 			speedFactor = speedFactor || 1;
+
+			// Returning to house after being eaten — navigerer rett til huset, ignorerer vegger
+			if (this.returning) {
+				var HOME_COL = 13, HOME_ROW = 14; // sentrum av huset
+				var rspd = GHOST_SPEED * 3;
+				if (!this.moving) {
+					if (this.col !== HOME_COL) {
+						var rdc = this.col < HOME_COL ? 1 : -1;
+						this.dir = rdc > 0 ? dir.right : dir.left;
+						applyMove(this, rdc, 0);
+					} else if (this.row !== HOME_ROW) {
+						var rdr = this.row < HOME_ROW ? 1 : -1;
+						this.dir = rdr > 0 ? dir.down : dir.up;
+						applyMove(this, 0, rdr);
+					} else {
+						// Fremme ved hjemsted — reset med kort fast ventetid
+						this.returning = false;
+						this.exited = false;
+						this.immune = false;
+						this.releaseFrame = frames + 90; // ~1.5s fast
+					}
+				}
+				if (this.moving) {
+					var rdx = this.targetX - this.x, rdy = this.targetY - this.y;
+					if (Math.abs(rdx) <= rspd && Math.abs(rdy) <= rspd) {
+						this.x = this.targetX; this.y = this.targetY;
+						this.moving = false;
+					} else {
+						this.x += Math.sign(rdx) * rspd;
+						this.y += Math.sign(rdy) * rspd;
+					}
+				}
+				return;
+			}
+
+			if (frames < this.releaseFrame) return;
 
 			if (!this.moving) {
 				// Exit routine: navigate to col 13, then move up until outside house
@@ -316,7 +352,9 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		},
 
 		draw: function() {
-			if (scaredTimer > 0 && this.exited && !this.immune) {
+			if (this.returning) {
+				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
+			} else if (scaredTimer > 0 && this.exited && !this.immune) {
 				// Blink mellom blå og hvit de siste 200 frames
 				var white = scaredTimer <= 200 && Math.floor(frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
@@ -550,6 +588,7 @@ function run() {
 
 var aiPath = [];
 var bfsDirOrder = [dir.up, dir.left, dir.down, dir.right];
+var aiLastShuffle = 0;
 var showPaths = { pacman: true, blinky: true, pinky: true, inky: true, clyde: true };
 var pathPanel = null;
 
@@ -589,7 +628,7 @@ function hexToRgb(hex) {
 }
 
 function ghostLookahead(g, steps) {
-	if (!g.exited) return [];
+	if (!g.exited || g.returning) return [];
 	var path = [];
 	var col = g.col, row = g.row, curDir = g.dir;
 	for (var s = 0; s < steps; s++) {
@@ -650,27 +689,68 @@ function aiBFS(goalFn, blockFn) {
 	return dir.none;
 }
 
-function buildGhostThreatMap(steps) {
-	var cells = {};
-	ghosts.forEach(function(g) {
-		if (!g.exited || (scaredTimer > 0 && !g.immune)) return;
-		cells[g.row + ',' + g.col] = true;
-		var path = ghostLookahead(g, steps);
-		path.forEach(function(p) { cells[p.row + ',' + p.col] = true; });
-	});
-	return cells;
+// --- AI helpers ---
+
+function aiFPT() { return Math.ceil(TILE / (SPEED * 0.9)); } // ~23 frames/tile on dots
+
+function nearestActiveDist() {
+	var m = Infinity;
+	for (var i = 0; i < ghosts.length; i++) {
+		var g = ghosts[i];
+		if (!g.exited || (scaredTimer > 0 && !g.immune)) continue;
+		var d = Math.abs(g.col - pacman.col) + Math.abs(g.row - pacman.row);
+		if (d < m) m = d;
+	}
+	return m;
 }
 
-function aiBFSLocal(goalFn, blockFn, maxDist) {
+function countScared() {
+	var n = 0;
+	for (var i = 0; i < ghosts.length; i++)
+		if (ghosts[i].exited && !ghosts[i].returning && !ghosts[i].immune && scaredTimer > 0) n++;
+	return n;
+}
+
+function pelletCount() {
+	var n = 0;
+	for (var i = 0; i < bigDots.length; i++)
+		if (!bigDots[i].eaten) n++;
+	return n;
+}
+
+function buildTimeAwareThreatMap() {
+	var map = {};
+	var LOOK = 15;
+	ghosts.forEach(function(g) {
+		if (!g.exited || g.returning || (scaredTimer > 0 && !g.immune)) return;
+		var key = g.row + ',' + g.col;
+		if (!(key in map) || map[key] > 0) map[key] = 0;
+		var path = ghostLookahead(g, LOOK);
+		for (var i = 0; i < path.length; i++) {
+			var pk = path[i].row + ',' + path[i].col;
+			var arr = i + 1;
+			if (!(pk in map) || map[pk] > arr) map[pk] = arr;
+		}
+	});
+	return map;
+}
+
+function isTimeAwareSafe(col, row, pacSteps, threatMap) {
+	var key = row + ',' + col;
+	if (!(key in threatMap)) return true;
+	return pacSteps < threatMap[key] - 1;
+}
+
+function aiBFSTimeAware(goalFn, threatMap) {
 	var start = { col: pacman.col, row: pacman.row };
-	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, path: [] }];
+	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, path: [], steps: 0 }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
 	while (queue.length > 0) {
 		var cur = queue.shift();
 		if (goalFn(cur.col, cur.row) && cur.firstDir !== dir.none) {
-			var md = Math.abs(cur.col - start.col) + Math.abs(cur.row - start.row);
-			if (md <= maxDist) { aiPath = cur.path; return cur.firstDir; }
+			aiPath = cur.path;
+			return cur.firstDir;
 		}
 		for (var i = 0; i < bfsDirOrder.length; i++) {
 			var d = bfsDirOrder[i];
@@ -678,18 +758,25 @@ function aiBFSLocal(goalFn, blockFn, maxDist) {
 			var nc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
 			var nr = cur.row + dl[1];
 			var key = nr + ',' + nc;
-			if (!visited[key] && !isPacWall(nc, nr) && !(blockFn && blockFn(nc, nr))) {
+			if (!visited[key] && !isPacWall(nc, nr) &&
+				isTimeAwareSafe(nc, nr, cur.steps + 1, threatMap)) {
 				visited[key] = true;
-				queue.push({ col: nc, row: nr, firstDir: cur.firstDir === dir.none ? d : cur.firstDir, path: cur.path.concat([{col:nc,row:nr}]) });
+				queue.push({
+					col: nc, row: nr,
+					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
+					path: cur.path.concat([{col: nc, row: nr}]),
+					steps: cur.steps + 1
+				});
 			}
 		}
 	}
+	aiPath = [];
 	return dir.none;
 }
 
-function aiBFSCandidates(goalFn, blockFn, n) {
+function aiBFSCandidatesTA(goalFn, threatMap, n) {
 	var start = { col: pacman.col, row: pacman.row };
-	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, pathLen: 0 }];
+	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, pathLen: 0, steps: 0 }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
 	var results = [];
@@ -705,47 +792,106 @@ function aiBFSCandidates(goalFn, blockFn, n) {
 			var nc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
 			var nr = cur.row + dl[1];
 			var key = nr + ',' + nc;
-			if (!visited[key] && !isPacWall(nc, nr) && !(blockFn && blockFn(nc, nr))) {
+			if (!visited[key] && !isPacWall(nc, nr) &&
+				isTimeAwareSafe(nc, nr, cur.steps + 1, threatMap)) {
 				visited[key] = true;
-				queue.push({ col: nc, row: nr, firstDir: cur.firstDir === dir.none ? d : cur.firstDir, pathLen: cur.pathLen + 1 });
+				queue.push({ col: nc, row: nr, firstDir: cur.firstDir === dir.none ? d : cur.firstDir, pathLen: cur.pathLen + 1, steps: cur.steps + 1 });
 			}
 		}
 	}
 	return results;
 }
 
+function aiBFSFlee(threatMap) {
+	var start = { col: pacman.col, row: pacman.row };
+	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, steps: 0, path: [] }];
+	var visited = {};
+	visited[start.row + ',' + start.col] = true;
+	var bestDir = dir.none, bestScore = -Infinity, bestPath = [];
+	while (queue.length > 0) {
+		var cur = queue.shift();
+		if (cur.steps > 12) continue;
+		if (cur.firstDir !== dir.none) {
+			var minGD = Infinity;
+			for (var gi = 0; gi < ghosts.length; gi++) {
+				var gg = ghosts[gi];
+				if (!gg.exited || (scaredTimer > 0 && !gg.immune)) continue;
+				var gd = Math.abs(gg.col - cur.col) + Math.abs(gg.row - cur.row);
+				if (gd < minGD) minGD = gd;
+			}
+			var exits = 0;
+			var ds = [dir.up, dir.left, dir.down, dir.right];
+			for (var di = 0; di < ds.length; di++) {
+				var ddl = delta(ds[di]);
+				if (!isPacWall(cur.col + ddl[0], cur.row + ddl[1])) exits++;
+			}
+			var sc = (minGD === Infinity ? 50 : minGD) + exits * 0.5;
+			if (sc > bestScore) { bestScore = sc; bestDir = cur.firstDir; bestPath = cur.path; }
+		}
+		for (var i = 0; i < bfsDirOrder.length; i++) {
+			var d = bfsDirOrder[i];
+			var dl = delta(d);
+			var nc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+			var nr = cur.row + dl[1];
+			var key = nr + ',' + nc;
+			if (!visited[key] && !isPacWall(nc, nr)) {
+				visited[key] = true;
+				queue.push({
+					col: nc, row: nr,
+					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
+					steps: cur.steps + 1,
+					path: cur.path.concat([{col: nc, row: nr}])
+				});
+			}
+		}
+	}
+	aiPath = bestPath;
+	return bestDir;
+}
+
+function ghostClusterScore() {
+	var best = null, bestSc = -Infinity;
+	for (var i = 0; i < bigDots.length; i++) {
+		var bd = bigDots[i];
+		if (bd.eaten) continue;
+		var sc = 0;
+		for (var j = 0; j < ghosts.length; j++) {
+			var g = ghosts[j];
+			if (!g.exited) continue;
+			var d = Math.abs(g.col - bd.col) + Math.abs(g.row - bd.row);
+			if (d <= 6) sc += 4;
+			else if (d <= 10) sc += 2;
+			else if (d <= 15) sc += 1;
+		}
+		var pd = Math.abs(pacman.col - bd.col) + Math.abs(pacman.row - bd.row);
+		sc -= pd * 0.15;
+		if (sc > bestSc) { bestSc = sc; best = { col: bd.col, row: bd.row, score: sc }; }
+	}
+	return best;
+}
+
 function isGhostThreat(col, row, radius) {
 	for (var i = 0; i < ghosts.length; i++) {
 		var g = ghosts[i];
-		if (!g.exited || (scaredTimer > 0 && !g.immune)) continue;
+		if (!g.exited || g.returning || (scaredTimer > 0 && !g.immune)) continue;
 		if (Math.abs(g.col - col) + Math.abs(g.row - row) <= radius) return true;
 	}
 	return false;
 }
 
+// --- AI decision ---
+
 function aiDecide() {
 	if (pacman.moving) return;
 
-	// 0. Ta skremt spøkelse som er rett ved siden av
-	if (scaredTimer > 0) {
-		var adjDirs = [dir.up, dir.left, dir.down, dir.right];
-		for (var ai = 0; ai < adjDirs.length; ai++) {
-			var adl = delta(adjDirs[ai]);
-			var anc = ((pacman.col + adl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
-			var anr = pacman.row + adl[1];
-			if (isPacWall(anc, anr)) continue;
-			for (var aj = 0; aj < ghosts.length; aj++) {
-				var ag = ghosts[aj];
-				if (ag.exited && !ag.immune && ag.col === anc && ag.row === anr) {
-					pacman.nextDir = adjDirs[ai]; return;
-				}
-			}
-		}
+	// Varier BFS-retning med jevne mellomrom
+	if (frames - aiLastShuffle > 200 + Math.random() * 200) {
+		shuffleBFSDirs();
+		aiLastShuffle = frames;
 	}
 
-	var threatMap = buildGhostThreatMap(10);
-	function isThreatened(col, row) { return !!threatMap[row + ',' + col]; }
-	var nearThreat = isGhostThreat(pacman.col, pacman.row, 4);
+	var threatMap = buildTimeAwareThreatMap();
+	var fpt = aiFPT();
 
 	function isPellet(col, row) {
 		for (var i = 0; i < bigDots.length; i++) {
@@ -755,81 +901,159 @@ function aiDecide() {
 		return false;
 	}
 	function isDot(col, row) { return !!(dots[row] && dots[row][col] === 1); }
-
-	// 1. Truet — ta power pellet uansett
-	if (nearThreat) {
-		var pellet = aiBFS(isPellet);
-		if (pellet !== dir.none) { pacman.nextDir = pellet; return; }
+	function isActiveGhostAt(col, row) {
+		for (var i = 0; i < ghosts.length; i++) {
+			var g = ghosts[i];
+			if (g.exited && !g.returning && (scaredTimer === 0 || g.immune) && g.col === col && g.row === row) return true;
+		}
+		return false;
 	}
 
-	// 1.5. Ta skremt spøkelse innen 5 tiles — via BFS
-	if (scaredTimer > 120) {
-		var nearGhost = aiBFS(function(col, row) {
-			for (var i = 0; i < ghosts.length; i++) {
-				var g = ghosts[i];
-				if (g.exited && !g.immune && g.col === col && g.row === row) {
-					return Math.abs(col - pacman.col) + Math.abs(row - pacman.row) <= 5;
+	// 0. Spis skremt spøkelse rett ved siden av (med sikkerhetssjekk)
+	if (scaredTimer > 0) {
+		var adjDirs = [dir.up, dir.left, dir.down, dir.right];
+		for (var ai = 0; ai < adjDirs.length; ai++) {
+			var adl = delta(adjDirs[ai]);
+			var anc = ((pacman.col + adl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+			var anr = pacman.row + adl[1];
+			if (isPacWall(anc, anr)) continue;
+			var hasScared = false, hasActive = false;
+			for (var aj = 0; aj < ghosts.length; aj++) {
+				var ag = ghosts[aj];
+				if (!ag.exited) continue;
+				if (ag.col === anc && ag.row === anr) {
+					if (!ag.immune) hasScared = true;
+					else hasActive = true;
 				}
 			}
-			return false;
-		}, isThreatened);
-		var framesPerTile2 = Math.ceil(TILE / SPEED);
-		if (nearGhost !== dir.none && aiPath.length * framesPerTile2 < scaredTimer - 60) {
-			pacman.nextDir = nearGhost; return;
+			if (hasScared && !hasActive) { pacman.nextDir = adjDirs[ai]; return; }
 		}
 	}
 
-	// 2. Spis dots — bruk multi-kandidat med litt tilfeldighet for variasjon
-	var candidates = aiBFSCandidates(isDot, isThreatened, 4);
-	if (candidates.length > 0) {
-		var weights = candidates.map(function(c) {
-			return 1 / (c.pathLen + 1) + Math.random() * 0.12;
-		});
-		var bestIdx = 0;
-		for (var wi = 1; wi < weights.length; wi++)
-			if (weights[wi] > weights[bestIdx]) bestIdx = wi;
-		pacman.nextDir = candidates[bestIdx].firstDir;
-		return;
-	}
-
-	// Ingen trygg dot-sti — prøv uten blokkering
-	var any = aiBFS(isDot);
-	if (any !== dir.none) { pacman.nextDir = any; return; }
-
-	// 3. Jag skremt spøkelse — bare hvis vi rekker det
-	if (scaredTimer > 60) {
-		var chased = aiBFS(function(col, row) {
+	// 1. HUNT — jag skremte spøkelser aggressivt (FØR dot-spising!)
+	if (scaredTimer > 0 && countScared() > 0) {
+		var huntDir = aiBFS(function(col, row) {
 			for (var i = 0; i < ghosts.length; i++) {
 				var g = ghosts[i];
 				if (g.exited && !g.immune && g.col === col && g.row === row) return true;
 			}
 			return false;
-		}, isThreatened);
-		var framesPerTile = Math.ceil(TILE / SPEED);
-		if (chased !== dir.none && aiPath.length * framesPerTile < scaredTimer - 60) {
-			pacman.nextDir = chased; return;
+		}, function(col, row) {
+			return isActiveGhostAt(col, row);
+		});
+		if (huntDir !== dir.none && aiPath.length * fpt < scaredTimer - 30) {
+			pacman.nextDir = huntDir; return;
 		}
 	}
 
-	// 4. Flykt — maksimer avstand til nærmeste ghost
-	var bestFlee = dir.none, bestDist = -1;
-	var fDirs = [dir.up, dir.left, dir.down, dir.right];
-	for (var fi = 0; fi < fDirs.length; fi++) {
-		var fdl = delta(fDirs[fi]);
-		var fnc = ((pacman.col + fdl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
-		var fnr = pacman.row + fdl[1];
-		if (isPacWall(fnc, fnr)) continue;
-		var minDist = Infinity;
-		for (var gi = 0; gi < ghosts.length; gi++) {
-			var gg = ghosts[gi];
-			if (!gg.exited || (scaredTimer > 0 && !gg.immune)) continue;
-			var gd = Math.abs(gg.col - fnc) + Math.abs(gg.row - fnr);
-			if (gd < minDist) minDist = gd;
+	// 2. FLEE — flykt når aktiv ghost er for nær
+	var ngd = nearestActiveDist();
+	if (ngd <= 4) {
+		// 2a. Prøv å nå en pellet defensivt
+		if (pelletCount() > 0) {
+			var defPellet = aiBFSTimeAware(isPellet, threatMap);
+			if (defPellet !== dir.none && aiPath.length <= 6) {
+				pacman.nextDir = defPellet; return;
+			}
 		}
-		if (minDist === Infinity) minDist = 0;
-		if (minDist > bestDist) { bestDist = minDist; bestFlee = fDirs[fi]; }
+		// 2b. BFS-flukt
+		var fleeDir = aiBFSFlee(threatMap);
+		if (fleeDir !== dir.none) { pacman.nextDir = fleeDir; return; }
 	}
-	if (bestFlee !== dir.none) pacman.nextDir = bestFlee;
+
+	// 3. LURE — lokk spøkelser mot en pellet, spis den når de er nær nok
+	if (scaredTimer === 0 && ngd > 4 && pelletCount() > 0) {
+		var cluster = ghostClusterScore();
+		if (cluster && cluster.score >= 6) {
+			var pacDistP = Math.abs(pacman.col - cluster.col) + Math.abs(pacman.row - cluster.row);
+			if (pacDistP <= 2) {
+				// Nær pellet — sjekk om nok ghosts er i nærheten
+				var gnp = 0;
+				for (var gi = 0; gi < ghosts.length; gi++) {
+					var gg = ghosts[gi];
+					if (gg.exited) {
+						var gdd = Math.abs(gg.col - cluster.col) + Math.abs(gg.row - cluster.row);
+						if (gdd <= 8) gnp++;
+					}
+				}
+				if (gnp >= 2) {
+					var eatDir = aiBFSTimeAware(function(c, r) {
+						return c === cluster.col && r === cluster.row;
+					}, threatMap);
+					if (eatDir !== dir.none) { pacman.nextDir = eatDir; return; }
+				}
+			}
+			// Spis dots nær pelleten mens vi venter
+			var lureDir = aiBFSTimeAware(function(col, row) {
+				var dp = Math.abs(col - cluster.col) + Math.abs(row - cluster.row);
+				return dp <= 5 && dots[row] && dots[row][col] === 1;
+			}, threatMap);
+			if (lureDir !== dir.none) { pacman.nextDir = lureDir; return; }
+		}
+	}
+
+	// 4. CHERRY — hent kirsebær om det er der
+	if (cherry) {
+		var cherryDir = aiBFSTimeAware(function(c, r) {
+			return c === cherry.col && r === cherry.row;
+		}, threatMap);
+		if (cherryDir !== dir.none && aiPath.length * fpt < cherry.timer - 60) {
+			pacman.nextDir = cherryDir; return;
+		}
+	}
+
+	// 5. IDLE — spis dots med variasjon
+	var useVariation = (frames % 60 < 15);
+	if (useVariation) {
+		var cands = aiBFSCandidatesTA(isDot, threatMap, 4);
+		if (cands.length > 0) {
+			var wts = cands.map(function(c) {
+				return 1 / (c.pathLen + 1) + Math.random() * 0.2;
+			});
+			var bi = 0;
+			for (var wi = 1; wi < wts.length; wi++)
+				if (wts[wi] > wts[bi]) bi = wi;
+			pacman.nextDir = cands[bi].firstDir; return;
+		}
+	}
+
+	var dotDir = aiBFSTimeAware(isDot, threatMap);
+	if (dotDir !== dir.none) { pacman.nextDir = dotDir; return; }
+
+	// 6. Desperat — ignorer trusler
+	var anyDot = aiBFS(isDot);
+	if (anyDot !== dir.none) { pacman.nextDir = anyDot; return; }
+
+	// 7. Siste utvei — flykt
+	var fallback = aiBFSFlee(threatMap);
+	if (fallback !== dir.none) pacman.nextDir = fallback;
+
+	// Sikkerhetssjekk: aldri gå rett inn i en aktiv ghost
+	if (pacman.nextDir !== dir.none) {
+		var sd = delta(pacman.nextDir);
+		var sc = ((pacman.col + sd[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+		var sr = pacman.row + sd[1];
+		if (isActiveGhostAt(sc, sr)) {
+			// Velg den tryggeste alternative retningen
+			var safest = dir.none, safeDist = -1;
+			var sdirs = [dir.up, dir.left, dir.down, dir.right];
+			for (var si = 0; si < sdirs.length; si++) {
+				var sdl = delta(sdirs[si]);
+				var snc = ((pacman.col + sdl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+				var snr = pacman.row + sdl[1];
+				if (isPacWall(snc, snr) || isActiveGhostAt(snc, snr)) continue;
+				var smd = Infinity;
+				for (var sj = 0; sj < ghosts.length; sj++) {
+					var sg = ghosts[sj];
+					if (!sg.exited || (scaredTimer > 0 && !sg.immune)) continue;
+					var sgd = Math.abs(sg.col - snc) + Math.abs(sg.row - snr);
+					if (sgd < smd) smd = sgd;
+				}
+				if (smd > safeDist) { safeDist = smd; safest = sdirs[si]; }
+			}
+			if (safest !== dir.none) pacman.nextDir = safest;
+		}
+	}
 }
 
 function addPopup(text, col, row) {
@@ -892,12 +1116,13 @@ function update() {
 	ghosts.forEach(function(g) {
 		if (!g.exited) return;
 		if (g.col === pacman.col && g.row === pacman.row) {
+			if (g.returning) return; // på vei tilbake — ufarlig
 			if (scaredTimer > 0 && !g.immune) {
 				ghostCombo++;
 				var pts = 200 * Math.pow(2, ghostCombo - 1);
 				score += pts;
 				addPopup(pts.toString(), g.col, g.row);
-				g.init();
+				g.returning = true;
 				g.immune = true;
 			} else {
 				loseLife();
@@ -931,7 +1156,7 @@ function playWaka() {
 	if (!audioCtx || !wakaBuffer) return;
 	var offset = (dotsEaten % 2) * WAKA_DURATION;
 	var gain = audioCtx.createGain();
-	gain.gain.value = 0.5;
+	gain.gain.value = 0.1;
 	gain.connect(audioCtx.destination);
 	var src = audioCtx.createBufferSource();
 	src.buffer = wakaBuffer;
