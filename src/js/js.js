@@ -24,6 +24,7 @@ ghosts,
 
 SCARED_DURATION = 1000,
 scaredTimer = 0,
+ghostEatenFreezeTimer = 0,
 
 score     = 0,
 highScore = parseInt(localStorage.getItem('pacman-hi') || '0'),
@@ -193,6 +194,40 @@ function isGhostWall(col, row, moveDir) {
 	return isGridWall(col, row);
 }
 
+// Returning eyes can pass through ghost door and house in any direction
+function isReturningGhostWall(col, row) {
+	col = ((col % GRID_COLS) + GRID_COLS) % GRID_COLS;
+	if (isDoor(col, row) || inGhostHouse(col, row)) return false;
+	return isGridWall(col, row);
+}
+
+// BFS shortest path for returning ghost eyes
+function bfsReturnPath(startCol, startRow) {
+	var HOME_COL = 13, HOME_ROW = 14;
+	if (startCol === HOME_COL && startRow === HOME_ROW) return [];
+	var dirs4 = [dir.up, dir.left, dir.down, dir.right];
+	var queue = [{ col: startCol, row: startRow, path: [] }];
+	var visited = {};
+	visited[startRow + ',' + startCol] = true;
+	while (queue.length > 0) {
+		var cur = queue.shift();
+		for (var i = 0; i < dirs4.length; i++) {
+			var d = dirs4[i];
+			var dl = delta(d);
+			var nc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+			var nr = cur.row + dl[1];
+			if (nr < 0 || nr >= GRID_ROWS) continue;
+			var key = nr + ',' + nc;
+			if (visited[key] || isReturningGhostWall(nc, nr)) continue;
+			visited[key] = true;
+			var newPath = cur.path.concat([{ col: nc, row: nr }]);
+			if (nc === HOME_COL && nr === HOME_ROW) return newPath;
+			queue.push({ col: nc, row: nr, path: newPath });
+		}
+	}
+	return [];
+}
+
 function oppositeDir(d) {
 	if (d === dir.left)  return dir.right;
 	if (d === dir.right) return dir.left;
@@ -244,25 +279,28 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		update: function(speedFactor) {
 			speedFactor = speedFactor || 1;
 
-			// Returning to house after being eaten — navigerer rett til huset, ignorerer vegger
+			// Returning to house after being eaten — følger BFS korteste vei
 			if (this.returning) {
-				var HOME_COL = 13, HOME_ROW = 14; // sentrum av huset
 				var rspd = GHOST_SPEED * 3;
 				if (!this.moving) {
-					if (this.col !== HOME_COL) {
-						var rdc = this.col < HOME_COL ? 1 : -1;
-						this.dir = rdc > 0 ? dir.right : dir.left;
-						applyMove(this, rdc, 0);
-					} else if (this.row !== HOME_ROW) {
-						var rdr = this.row < HOME_ROW ? 1 : -1;
-						this.dir = rdr > 0 ? dir.down : dir.up;
-						applyMove(this, 0, rdr);
+					if (this.returnPath && this.returnPathIdx < this.returnPath.length) {
+						var next = this.returnPath[this.returnPathIdx];
+						var rdc = next.col - this.col;
+						var rdr = next.row - this.row;
+						// håndter wrap-around
+						if (rdc > 1) rdc = -1;
+						else if (rdc < -1) rdc = 1;
+						this.dir = rdc > 0 ? dir.right : rdc < 0 ? dir.left : rdr > 0 ? dir.down : dir.up;
+						applyMove(this, rdc, rdr);
+						this.returnPathIdx++;
 					} else {
 						// Fremme ved hjemsted — reset med kort fast ventetid
 						this.returning = false;
 						this.exited = false;
 						this.immune = scaredTimer > 0; // immun mot gjeldende power-pellet
 						this.releaseFrame = frames + 90; // ~1.5s fast
+						this.returnPath = null;
+						this.returnPathIdx = 0;
 					}
 				}
 				if (this.moving) {
@@ -506,7 +544,7 @@ function main() {
 	initPathPanel();
 
 	img     = new Image();
-	img.src = "res/sheet.png";
+	img.src = "res/sheet3.png";
 
 	img.onload = function() {
 		initSprites(img);
@@ -523,8 +561,9 @@ function levelSpeedFactor() { return 1 + (level - 1) * 0.06; }
 function startReady() {
 	pacman.init();
 	initGhosts();
-	scaredTimer  = 0;
-	ghostCombo   = 0;
+	scaredTimer           = 0;
+	ghostEatenFreezeTimer = 0;
+	ghostCombo            = 0;
 	cherry       = null;
 	scorePopups  = [];
 	gameState    = 'ready';
@@ -1107,6 +1146,22 @@ function update() {
 	}
 	if (gameState !== 'playing') return;
 
+	// Freeze etter at ghost er spist — 2 sekunder pause
+	if (ghostEatenFreezeTimer > 0) {
+		ghostEatenFreezeTimer--;
+		if (ghostEatenFreezeTimer === 0) {
+			ghosts.forEach(function(g) {
+				if (g.pendingReturn) {
+					g.pendingReturn = false;
+					g.returning = true;
+					g.returnPath = bfsReturnPath(g.col, g.row);
+					g.returnPathIdx = 0;
+				}
+			});
+		}
+		return;
+	}
+
 	// Scared timer
 	if (scaredTimer > 0) {
 		scaredTimer--;
@@ -1147,8 +1202,9 @@ function update() {
 				var pts = 200 * Math.pow(2, ghostCombo - 1);
 				score += pts;
 				addPopup(pts.toString(), g.col, g.row);
-				g.returning = true;
+				g.pendingReturn = true;
 				g.immune = true;
+				ghostEatenFreezeTimer = 120; // 2 sekunder freeze
 			} else {
 				loseLife();
 			}
