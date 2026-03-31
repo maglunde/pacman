@@ -545,7 +545,7 @@ function main() {
 	initPathPanel();
 
 	img     = new Image();
-	img.src = "res/sheet3.png";
+	img.src = "res/sheet.png";
 
 	img.onload = function() {
 		initSprites(img);
@@ -1129,7 +1129,7 @@ function update() {
 	frames++;
 
 	// State timers
-	if (gameState === 'ready') return; // venter på piltast
+	if (gameState === 'ready') { if (aiMode) gameState = 'playing'; return; }
 	if (paused) return;
 	if (gameState === 'dead') {
 		if (--stateTimer <= 0) startReady();
