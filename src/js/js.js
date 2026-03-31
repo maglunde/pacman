@@ -842,9 +842,21 @@ function aiBFSCandidatesTA(goalFn, threatMap, n) {
 	return results;
 }
 
+function ghostDistAt(col, row) {
+	var minGD = Infinity;
+	for (var gi = 0; gi < ghosts.length; gi++) {
+		var gg = ghosts[gi];
+		if (!gg.exited || gg.returning || (scaredTimer > 0 && !gg.immune)) continue;
+		var gd = Math.abs(gg.col - col) + Math.abs(gg.row - row);
+		if (gd < minGD) minGD = gd;
+	}
+	return minGD;
+}
+
 function aiBFSFlee(threatMap) {
 	var start = { col: pacman.col, row: pacman.row };
-	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, steps: 0, path: [] }];
+	var startGD = ghostDistAt(start.col, start.row);
+	var queue = [{ col: start.col, row: start.row, firstDir: dir.none, steps: 0, path: [], minPathGD: startGD }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
 	var bestDir = dir.none, bestScore = -Infinity, bestPath = [];
@@ -852,20 +864,15 @@ function aiBFSFlee(threatMap) {
 		var cur = queue.shift();
 		if (cur.steps > 12) continue;
 		if (cur.firstDir !== dir.none) {
-			var minGD = Infinity;
-			for (var gi = 0; gi < ghosts.length; gi++) {
-				var gg = ghosts[gi];
-				if (!gg.exited || (scaredTimer > 0 && !gg.immune)) continue;
-				var gd = Math.abs(gg.col - cur.col) + Math.abs(gg.row - cur.row);
-				if (gd < minGD) minGD = gd;
-			}
+			var curGD = ghostDistAt(cur.col, cur.row);
 			var exits = 0;
 			var ds = [dir.up, dir.left, dir.down, dir.right];
 			for (var di = 0; di < ds.length; di++) {
 				var ddl = delta(ds[di]);
 				if (!isPacWall(cur.col + ddl[0], cur.row + ddl[1])) exits++;
 			}
-			var sc = (minGD === Infinity ? 50 : minGD) + exits * 0.5;
+			// minPathGD weighted heavily — never pick a path that passes near a ghost
+			var sc = cur.minPathGD * 4 + (curGD === Infinity ? 50 : curGD) + exits * 0.5;
 			if (sc > bestScore) { bestScore = sc; bestDir = cur.firstDir; bestPath = cur.path; }
 		}
 		for (var i = 0; i < bfsDirOrder.length; i++) {
@@ -876,11 +883,14 @@ function aiBFSFlee(threatMap) {
 			var key = nr + ',' + nc;
 			if (!visited[key] && !isPacWall(nc, nr)) {
 				visited[key] = true;
+				var nextGD = ghostDistAt(nc, nr);
+				var newMinPathGD = Math.min(cur.minPathGD, nextGD === Infinity ? 50 : nextGD);
 				queue.push({
 					col: nc, row: nr,
 					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
 					steps: cur.steps + 1,
-					path: cur.path.concat([{col: nc, row: nr}])
+					path: cur.path.concat([{col: nc, row: nr}]),
+					minPathGD: newMinPathGD
 				});
 			}
 		}
