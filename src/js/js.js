@@ -261,7 +261,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						// Fremme ved hjemsted — reset med kort fast ventetid
 						this.returning = false;
 						this.exited = false;
-						this.immune = false;
+						this.immune = scaredTimer > 0; // immun mot gjeldende power-pellet
 						this.releaseFrame = frames + 90; // ~1.5s fast
 					}
 				}
@@ -879,179 +879,204 @@ function isGhostThreat(col, row, radius) {
 	return false;
 }
 
+function isMoveTrapped(moveDir, threatMap) {
+	var d = delta(moveDir);
+	var nc = ((pacman.col + d[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+	var nr = pacman.row + d[1];
+	
+	// Hvis trekket i seg selv er usikkert i følge threatMap, er det i praksis en felle
+	if (!isTimeAwareSafe(nc, nr, 1, threatMap)) return true;
+
+	// BFS-sjekk: Kan vi nå et "trygt kryss" (junction med minst 3 utveier eller et område langt fra ghosts)
+	// innenfor de neste 10 stegene uten å bli tatt?
+	var queue = [{ col: nc, row: nr, steps: 1 }];
+	var visited = {};
+	visited[nr + ',' + nc] = true;
+	var foundSafeExit = false;
+
+	while (queue.length > 0) {
+		var cur = queue.shift();
+		if (cur.steps > 12) { foundSafeExit = true; break; }
+
+		var exits = 0;
+		var ds = [dir.up, dir.left, dir.down, dir.right];
+		for (var i = 0; i < ds.length; i++) {
+			var dl = delta(ds[i]);
+			var nnc = ((cur.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+			var nnr = cur.row + dl[1];
+			if (!isPacWall(nnc, nnr)) {
+				exits++;
+				var key = nnr + ',' + nnc;
+				if (!visited[key] && isTimeAwareSafe(nnc, nnr, cur.steps + 1, threatMap)) {
+					visited[key] = true;
+					queue.push({ col: nnc, row: nnr, steps: cur.steps + 1 });
+				}
+			}
+		}
+		// Hvis vi er i et kryss og det fortsatt er trygt, regner vi det som en utvei
+		if (exits >= 3) { foundSafeExit = true; break; }
+	}
+	return !foundSafeExit;
+}
+
+function findSafestNonTrappedDir(threatMap) {
+	var sdirs = [dir.up, dir.left, dir.down, dir.right];
+	var best = dir.none;
+	var maxDist = -1;
+
+	for (var i = 0; i < sdirs.length; i++) {
+		var d = sdirs[i];
+		var dl = delta(d);
+		var nc = ((pacman.col + dl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+		var nr = pacman.row + dl[1];
+		if (isPacWall(nc, nr)) continue;
+
+		if (!isMoveTrapped(d, threatMap)) {
+			// Velg den av de "trygge" veiene som har størst avstand til nærmeste ghost
+			var minDist = Infinity;
+			for (var j = 0; j < ghosts.length; j++) {
+				var g = ghosts[j];
+				if (!g.exited || (scaredTimer > 0 && !g.immune)) continue;
+				var dist = Math.abs(g.col - nc) + Math.abs(g.row - nr);
+				if (dist < minDist) minDist = dist;
+			}
+			if (minDist > maxDist) {
+				maxDist = minDist;
+				best = d;
+			}
+		}
+	}
+	return best;
+}
+
 // --- AI decision ---
+
+// --- AI decision (PAC-MAN MASTER AI v3.0) ---
 
 function aiDecide() {
 	if (pacman.moving) return;
 
-	// Varier BFS-retning med jevne mellomrom
-	if (frames - aiLastShuffle > 200 + Math.random() * 200) {
-		shuffleBFSDirs();
-		aiLastShuffle = frames;
-	}
-
 	var threatMap = buildTimeAwareThreatMap();
 	var fpt = aiFPT();
+	var ngd = nearestActiveDist();
 
-	function isPellet(col, row) {
+	// Hjelpefunksjoner for Master AI
+	function isPellet(c, r) {
 		for (var i = 0; i < bigDots.length; i++) {
 			var bd = bigDots[i];
-			if (!bd.eaten && bd.col === col && bd.row === row) return true;
+			if (!bd.eaten && bd.col === c && bd.row === r) return true;
 		}
 		return false;
 	}
-	function isDot(col, row) { return !!(dots[row] && dots[row][col] === 1); }
-	function isActiveGhostAt(col, row) {
+	function isDot(c, r) { return !!(dots[r] && dots[r][c] === 1); }
+	function isScaredGhostAt(c, r) {
 		for (var i = 0; i < ghosts.length; i++) {
 			var g = ghosts[i];
-			if (g.exited && !g.returning && (scaredTimer === 0 || g.immune) && g.col === col && g.row === row) return true;
+			if (g.exited && !g.returning && scaredTimer > 0 && !g.immune && g.col === c && g.row === r) return true;
+		}
+		return false;
+	}
+	function isActiveGhostAt(c, r) {
+		for (var i = 0; i < ghosts.length; i++) {
+			var g = ghosts[i];
+			if (g.exited && !g.returning && (scaredTimer === 0 || g.immune) && g.col === c && g.row === r) return true;
 		}
 		return false;
 	}
 
-	// 0. Spis skremt spøkelse rett ved siden av (med sikkerhetssjekk)
-	if (scaredTimer > 0) {
-		var adjDirs = [dir.up, dir.left, dir.down, dir.right];
-		for (var ai = 0; ai < adjDirs.length; ai++) {
-			var adl = delta(adjDirs[ai]);
-			var anc = ((pacman.col + adl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
-			var anr = pacman.row + adl[1];
-			if (isPacWall(anc, anr)) continue;
-			var hasScared = false, hasActive = false;
-			for (var aj = 0; aj < ghosts.length; aj++) {
-				var ag = ghosts[aj];
-				if (!ag.exited) continue;
-				if (ag.col === anc && ag.row === anr) {
-					if (!ag.immune) hasScared = true;
-					else hasActive = true;
-				}
-			}
-			if (hasScared && !hasActive) { pacman.nextDir = adjDirs[ai]; return; }
+	// 1. OVERLEVELSE & RISIKOVURDERING (Prioritet 1 & 2)
+	if (ngd <= 3) {
+		var fleeDir = aiBFSFlee(threatMap);
+		if (fleeDir !== dir.none) { 
+			console.log("PAC-MAN AI: [FLEE] Ghost too close (" + ngd + ")");
+			pacman.nextDir = fleeDir; return; 
 		}
 	}
 
-	// 1. HUNT — jag skremte spøkelser aggressivt (FØR dot-spising!)
-	if (scaredTimer > 0 && countScared() > 0) {
-		var huntDir = aiBFS(function(col, row) {
-			for (var i = 0; i < ghosts.length; i++) {
-				var g = ghosts[i];
-				if (g.exited && !g.immune && g.col === col && g.row === row) return true;
+	// 2. POWER PELLET STRATEGI (Prioritet 3)
+	if (scaredTimer === 0 && pelletCount() > 0) {
+		var nearestPellet = aiBFSTimeAware(isPellet, threatMap);
+		if (nearestPellet !== dir.none) {
+			var distToPellet = aiPath.length;
+			var cluster = ghostClusterScore();
+			if ((cluster && cluster.score >= 6 && distToPellet <= 3) || isMoveTrapped(pacman.dir, threatMap)) {
+				console.log("PAC-MAN AI: [POWER PELLET] Strategic activation");
+				pacman.nextDir = nearestPellet; return;
 			}
-			return false;
-		}, function(col, row) {
-			return isActiveGhostAt(col, row);
+		}
+	}
+
+	// 3. JAKT (Frightened Mode)
+	if (scaredTimer > 0 && countScared() > 0) {
+		var huntDir = aiBFS(function(c, r) {
+			return isScaredGhostAt(c, r);
+		}, function(c, r) {
+			return isActiveGhostAt(c, r);
 		});
-		if (huntDir !== dir.none && aiPath.length * fpt < scaredTimer - 30) {
+		if (huntDir !== dir.none && aiPath.length * fpt < scaredTimer - 60) {
+			console.log("PAC-MAN AI: [HUNT] Chasing scared ghosts");
 			pacman.nextDir = huntDir; return;
 		}
 	}
 
-	// 2. FLEE — flykt når aktiv ghost er for nær
-	var ngd = nearestActiveDist();
-	if (ngd <= 4) {
-		// 2a. Prøv å nå en pellet defensivt
-		if (pelletCount() > 0) {
-			var defPellet = aiBFSTimeAware(isPellet, threatMap);
-			if (defPellet !== dir.none && aiPath.length <= 6) {
-				pacman.nextDir = defPellet; return;
-			}
-		}
-		// 2b. BFS-flukt
-		var fleeDir = aiBFSFlee(threatMap);
-		if (fleeDir !== dir.none) { pacman.nextDir = fleeDir; return; }
-	}
-
-	// 3. LURE — lokk spøkelser mot en pellet, spis den når de er nær nok
-	if (scaredTimer === 0 && ngd > 4 && pelletCount() > 0) {
-		var cluster = ghostClusterScore();
-		if (cluster && cluster.score >= 6) {
-			var pacDistP = Math.abs(pacman.col - cluster.col) + Math.abs(pacman.row - cluster.row);
-			if (pacDistP <= 2) {
-				// Nær pellet — sjekk om nok ghosts er i nærheten
-				var gnp = 0;
-				for (var gi = 0; gi < ghosts.length; gi++) {
-					var gg = ghosts[gi];
-					if (gg.exited) {
-						var gdd = Math.abs(gg.col - cluster.col) + Math.abs(gg.row - cluster.row);
-						if (gdd <= 8) gnp++;
-					}
-				}
-				if (gnp >= 2) {
-					var eatDir = aiBFSTimeAware(function(c, r) {
-						return c === cluster.col && r === cluster.row;
-					}, threatMap);
-					if (eatDir !== dir.none) { pacman.nextDir = eatDir; return; }
-				}
-			}
-			// Spis dots nær pelleten mens vi venter
-			var lureDir = aiBFSTimeAware(function(col, row) {
-				var dp = Math.abs(col - cluster.col) + Math.abs(row - cluster.row);
-				return dp <= 5 && dots[row] && dots[row][col] === 1;
-			}, threatMap);
-			if (lureDir !== dir.none) { pacman.nextDir = lureDir; return; }
-		}
-	}
-
-	// 4. CHERRY — hent kirsebær om det er der
+	// 4. CHERRY (Prioritet: Høy hvis trygt)
 	if (cherry) {
 		var cherryDir = aiBFSTimeAware(function(c, r) {
 			return c === cherry.col && r === cherry.row;
 		}, threatMap);
 		if (cherryDir !== dir.none && aiPath.length * fpt < cherry.timer - 60) {
+			console.log("PAC-MAN AI: [CHERRY] Collecting fruit");
 			pacman.nextDir = cherryDir; return;
 		}
 	}
 
-	// 5. IDLE — spis dots med variasjon
-	var useVariation = (frames % 60 < 15);
-	if (useVariation) {
-		var cands = aiBFSCandidatesTA(isDot, threatMap, 4);
-		if (cands.length > 0) {
-			var wts = cands.map(function(c) {
-				return 1 / (c.pathLen + 1) + Math.random() * 0.2;
-			});
-			var bi = 0;
-			for (var wi = 1; wi < wts.length; wi++)
-				if (wts[wi] > wts[bi]) bi = wi;
-			pacman.nextDir = cands[bi].firstDir; return;
-		}
+	// 5. PRIKKER & TUNNEL (Prioritet 4 & 5)
+	var bestDotDir = aiBFSTimeAware(function(c, r) {
+		if (!isDot(c, r)) return false;
+		return !isMoveTrapped(pacman.dir, threatMap); 
+	}, threatMap);
+
+	if (bestDotDir !== dir.none) {
+		// Bare logg dot-eating av og til for å unngå spam
+		if (frames % 120 === 0) console.log("PAC-MAN AI: [DOTS] Clearing map");
+		pacman.nextDir = bestDotDir; return;
 	}
 
-	var dotDir = aiBFSTimeAware(isDot, threatMap);
-	if (dotDir !== dir.none) { pacman.nextDir = dotDir; return; }
-
-	// 6. Desperat — ignorer trusler
-	var anyDot = aiBFS(isDot);
-	if (anyDot !== dir.none) { pacman.nextDir = anyDot; return; }
-
-	// 7. Siste utvei — flykt
+	// 6. IDLE / Siste utvei
 	var fallback = aiBFSFlee(threatMap);
-	if (fallback !== dir.none) pacman.nextDir = fallback;
+	if (fallback !== dir.none) {
+		console.log("PAC-MAN AI: [IDLE] No safe dots, wandering");
+		pacman.nextDir = fallback; return;
+	}
 
-	// Sikkerhetssjekk: aldri gå rett inn i en aktiv ghost
-	if (pacman.nextDir !== dir.none) {
-		var sd = delta(pacman.nextDir);
-		var sc = ((pacman.col + sd[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
-		var sr = pacman.row + sd[1];
-		if (isActiveGhostAt(sc, sr)) {
-			// Velg den tryggeste alternative retningen
-			var safest = dir.none, safeDist = -1;
+	// --- ULTRA-AGRESSIV SIKKERHETSSJEKK (Alltid aktiv) ---
+	var finalDir = pacman.nextDir !== dir.none ? pacman.nextDir : pacman.dir;
+	if (finalDir !== dir.none) {
+		var d = delta(finalDir);
+		var nc = ((pacman.col + d[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
+		var nr = pacman.row + d[1];
+
+		if (isActiveGhostAt(nc, nr) || !isTimeAwareSafe(nc, nr, 1, threatMap)) {
+			console.log("PAC-MAN AI: [EMERGENCY] Collision imminent! Recalculating...");
 			var sdirs = [dir.up, dir.left, dir.down, dir.right];
-			for (var si = 0; si < sdirs.length; si++) {
-				var sdl = delta(sdirs[si]);
+			var safest = dir.none, bestDist = -1;
+			for (var i = 0; i < sdirs.length; i++) {
+				var sd = sdirs[i];
+				var sdl = delta(sd);
 				var snc = ((pacman.col + sdl[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
 				var snr = pacman.row + sdl[1];
-				if (isPacWall(snc, snr) || isActiveGhostAt(snc, snr)) continue;
-				var smd = Infinity;
-				for (var sj = 0; sj < ghosts.length; sj++) {
-					var sg = ghosts[sj];
-					if (!sg.exited || (scaredTimer > 0 && !sg.immune)) continue;
-					var sgd = Math.abs(sg.col - snc) + Math.abs(sg.row - snr);
-					if (sgd < smd) smd = sgd;
+				if (isPacWall(snc, snr) || isActiveGhostAt(snc, snr) || !isTimeAwareSafe(snc, snr, 1, threatMap)) continue;
+				var minDist = Infinity;
+				for (var j = 0; j < ghosts.length; j++) {
+					var g = ghosts[j];
+					if (!g.exited || (scaredTimer > 0 && !g.immune)) continue;
+					var dist = Math.abs(g.col - snc) + Math.abs(g.row - snr);
+					if (dist < minDist) minDist = dist;
 				}
-				if (smd > safeDist) { safeDist = smd; safest = sdirs[si]; }
+				if (minDist > bestDist) { bestDist = minDist; safest = sd; }
 			}
 			if (safest !== dir.none) pacman.nextDir = safest;
+			else pacman.nextDir = oppositeDir(pacman.dir);
 		}
 	}
 }

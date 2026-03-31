@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/malund84/priv/pacman/public/res)",
+      "Bash(cp /Users/malund84/priv/pacman/src/res/sheet.png /Users/malund84/priv/pacman/public/res/)",
+      "Bash(npx vite:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(node -e \":*)",
+      "Bash(npm run:*)",
+      "Bash(node:*)",
+      "Read(//Users/malund84/.agents/**)",
+      "Read(//Users/malund84/**)",
+      "Bash(PLUGIN_ROOT=\"$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.9.0\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(PLUGIN_ROOT=\"$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.9.0\" echo '{\"\"\"\"tool_name\"\"\"\":\"\"\"\"Bash\"\"\"\",\"\"\"\"tool_input\"\"\"\":{\"\"\"\"command\"\"\"\":\"\"\"\"echo test\"\"\"\"}}')"
+    ]
+  }
+}
