@@ -36,6 +36,7 @@ cherry = null,
 scorePopups = [],
 
 gameState = 'menu',  // 'menu'|'ready'|'playing'|'dead'|'gameover'|'win'
+paused = false,
 aiMode = false,
 menuSelected = 0,
 
@@ -567,7 +568,7 @@ function startReady() {
 	cherry       = null;
 	scorePopups  = [];
 	gameState    = 'ready';
-	stateTimer   = 150; // ~2.5s
+	paused       = false;
 }
 
 function shuffleBFSDirs() {
@@ -1128,10 +1129,8 @@ function update() {
 	frames++;
 
 	// State timers
-	if (gameState === 'ready') {
-		if (--stateTimer <= 0) gameState = 'playing';
-		return;
-	}
+	if (gameState === 'ready') return; // venter på piltast
+	if (paused) return;
 	if (gameState === 'dead') {
 		if (--stateTimer <= 0) startReady();
 		return;
@@ -1386,6 +1385,17 @@ function render() {
 		ctx.font = 'bold 14px monospace';
 		ctx.textAlign = 'center';
 		ctx.fillText('READY!', mx, my + 20);
+		ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		ctx.font = '11px monospace';
+		ctx.fillText('press arrow to start', mx, my + 38);
+	}
+	if (paused) {
+		ctx.fillStyle = 'rgba(0,0,0,0.5)';
+		ctx.fillRect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
+		ctx.fillStyle = '#ffffff';
+		ctx.font = 'bold 18px monospace';
+		ctx.textAlign = 'center';
+		ctx.fillText('PAUSED', mx, my);
 	}
 	if (gameState === 'gameover') {
 		ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -1476,7 +1486,13 @@ function keydown(e) {
 		}
 		return;
 	}
+	if (e.which === 80 && (gameState === 'playing' || gameState === 'paused')) { // P
+		paused = !paused;
+		return;
+	}
 	if (!aiMode) {
+		var arrowKey = e.which >= 37 && e.which <= 40;
+		if (arrowKey && gameState === 'ready') gameState = 'playing';
 		switch (e.which) {
 			case 37: pacman.nextDir = dir.left;  break;
 			case 38: pacman.nextDir = dir.up;    break;
