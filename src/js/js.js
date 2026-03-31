@@ -298,7 +298,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						this.returning = false;
 						this.exited = false;
 						this.immune = scaredTimer > 0; // immun mot gjeldende power-pellet
-						this.releaseFrame = frames + 90; // ~1.5s fast
+						this.releaseFrame = frames + 300; // ~5s ventetid
 						this.returnPath = null;
 						this.returnPathIdx = 0;
 					}
@@ -392,8 +392,8 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		draw: function() {
 			if (this.returning) {
 				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
-			} else if (scaredTimer > 0 && this.exited && !this.immune) {
-				// Blink mellom blå og hvit de siste 200 frames
+			} else if (this.pendingReturn || (scaredTimer > 0 && this.exited && !this.immune)) {
+				// Blå skremt ghost under freeze og normal skremt-modus
 				var white = scaredTimer <= 200 && Math.floor(frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {
