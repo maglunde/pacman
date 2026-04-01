@@ -72,6 +72,7 @@ export function initSprites(img){
 		new Sprite(img, 567, 9, 30, 30)
 	];
 	s_eyes = [
+
 		new Sprite(img, 649, 151, 30, 30), // left
 		new Sprite(img, 616, 185, 30, 30), // up
 		new Sprite(img, 629, 185, 30, 30), // down
