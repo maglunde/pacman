@@ -42,6 +42,8 @@ menuSelected = 0,
 
 audioCtx   = null,
 wakaBuffer = null,
+volume     = parseFloat(localStorage.getItem('pacman-vol') || '0.5'),
+muted      = localStorage.getItem('pacman-muted') === '1',
 
 frames = 0,
 frame  = 0,
@@ -64,7 +66,7 @@ pacman = {
 		this.sprite  = s_pacman.round;
 
 		var p = tilePixel(this.col, this.row);
-		this.x = p.x;
+		this.x = p.x+9;
 		this.y = p.y;
 		this.targetX = p.x;
 		this.targetY = p.y;
@@ -543,6 +545,9 @@ function main() {
 	document.body.appendChild(canvas);
 	document.addEventListener("keydown", keydown);
 	initPathPanel();
+	canvas.addEventListener('mousedown', onVolMouseDown);
+	canvas.addEventListener('mousemove', onVolMouseMove);
+	canvas.addEventListener('mouseup',   onVolMouseUp);
 
 	img     = new Image();
 	img.src = "res/sheet.png";
@@ -631,6 +636,7 @@ var bfsDirOrder = [dir.up, dir.left, dir.down, dir.right];
 var aiLastShuffle = 0;
 var showPaths = { pacman: true, blinky: true, pinky: true, inky: true, clyde: true };
 var pathPanel = null;
+
 
 function initPathPanel() {
 	pathPanel = document.createElement('div');
@@ -1246,7 +1252,7 @@ function playWaka() {
 	if (!audioCtx || !wakaBuffer) return;
 	var offset = (dotsEaten % 2) * WAKA_DURATION;
 	var gain = audioCtx.createGain();
-	gain.gain.value = 0.1;
+	gain.gain.value = muted ? 0 : volume * 0.3;
 	gain.connect(audioCtx.destination);
 	var src = audioCtx.createBufferSource();
 	src.buffer = wakaBuffer;
@@ -1433,6 +1439,83 @@ function render() {
 	drawHUD();
 }
 
+function saveVolume() {
+	localStorage.setItem('pacman-vol',   volume);
+	localStorage.setItem('pacman-muted', muted ? '1' : '0');
+}
+
+var volTrackBounds  = null; // { x, y, w } in canvas px
+var volIconBounds   = null; // { x, y, w, h }
+var draggingVolume  = false;
+
+function canvasPt(e) {
+	var r = canvas.getBoundingClientRect();
+	return {
+		x: (e.clientX - r.left) * (canvas.width  / r.width),
+		y: (e.clientY - r.top)  * (canvas.height / r.height)
+	};
+}
+
+function setVolumeFromX(cx) {
+	var t = volTrackBounds;
+	volume = Math.max(0, Math.min(1, (cx - t.x) / t.w));
+	saveVolume();
+}
+
+function onVolMouseDown(e) {
+	if (gameState === 'menu') return;
+	var p = canvasPt(e);
+	if (volIconBounds && p.x >= volIconBounds.x && p.x <= volIconBounds.x + volIconBounds.w &&
+	    p.y >= volIconBounds.y && p.y <= volIconBounds.y + volIconBounds.h) {
+		muted = !muted; saveVolume(); return;
+	}
+	if (volTrackBounds && p.x >= volTrackBounds.x - 10 && p.x <= volTrackBounds.x + volTrackBounds.w + 10 &&
+	    Math.abs(p.y - volTrackBounds.y) < 16) {
+		draggingVolume = true;
+		setVolumeFromX(p.x);
+	}
+}
+function onVolMouseMove(e) {
+	if (!draggingVolume) return;
+	setVolumeFromX(canvasPt(e).x);
+}
+function onVolMouseUp() { draggingVolume = false; }
+
+function drawVolumeSlider(mapX, mapW, lifeY) {
+	var sx       = 2;
+	var trackW   = 120;
+	var trackX   = mapX + mapW - trackW;
+	var trackY   = lifeY - 6;
+	var iconX    = trackX - 26;
+	var iconY    = trackY + 5;
+
+	// store bounds for hit-testing (canvas px = HUD px here)
+	volTrackBounds = { x: trackX, y: trackY, w: trackW };
+	volIconBounds  = { x: iconX - 2, y: trackY - 14, w: 24, h: 20 };
+
+	// icon
+	var icon = muted ? '\uD83D\uDD07' : volume < 0.33 ? '\uD83D\uDD08' : volume < 0.66 ? '\uD83D\uDD09' : '\uD83D\uDD0A';
+	ctx.font = '16px sans-serif';
+	ctx.textAlign = 'left';
+	ctx.fillText(icon, iconX, iconY);
+
+	// track background
+	ctx.fillStyle = '#444444';
+	ctx.fillRect(trackX, trackY - 2, trackW, 4);
+
+	// track fill
+	var fillW = muted ? 0 : volume * trackW;
+	ctx.fillStyle = '#ffff00';
+	ctx.fillRect(trackX, trackY - 2, fillW, 4);
+
+	// thumb
+	var thumbX = trackX + (muted ? 0 : fillW);
+	ctx.beginPath();
+	ctx.arc(thumbX, trackY, 6, 0, Math.PI * 2);
+	ctx.fillStyle = '#ffff00';
+	ctx.fill();
+}
+
 function drawHUD() {
 	var sx = 2; // scale factor for HUD coords
 	var mapX = mapOffX * sx, mapY = mapOffY * sx;
@@ -1474,6 +1557,8 @@ function drawHUD() {
 		ctx.fillStyle = '#ffff00';
 		ctx.fill();
 	}
+
+	drawVolumeSlider(mapX, mapW, lifeY);
 }
 
 function keydown(e) {
@@ -1496,6 +1581,7 @@ function keydown(e) {
 		}
 		return;
 	}
+	if (e.which === 77) { muted = !muted; saveVolume(); return; } // M
 	if (e.which === 80 && (gameState === 'playing' || gameState === 'paused')) { // P
 		paused = !paused;
 		return;

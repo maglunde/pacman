@@ -18,6 +18,11 @@ canvas {
 	width: min(100vw, 100vh);
 	height: min(100vw, 100vh);
 	image-rendering: pixelated;
+	z-index: 1;
+}
+
+#path-panel {
+	z-index: 100;
 }
 
 #path-panel {
@@ -50,3 +55,4 @@ canvas {
 		}
 	}
 }
+
