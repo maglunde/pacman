@@ -39,6 +39,15 @@ gameState = 'menu',  // 'menu'|'ready'|'playing'|'dead'|'gameover'|'win'
 paused = false,
 aiMode = false,
 menuSelected = 0,
+menuSubState = 'main',  // 'main' | 'personality'
+AI_PERSONALITIES = {
+	coward:     { fleeAt: 5, look: 20, trapDepth: 16, pelletCluster: 8, safetyMargin: 2, huntScared: false, label: 'Coward'     },
+	balanced:   { fleeAt: 3, look: 15, trapDepth: 12, pelletCluster: 6, safetyMargin: 1, huntScared: true,  label: 'Balanced'   },
+	aggressive: { fleeAt: 2, look: 10, trapDepth:  8, pelletCluster: 4, safetyMargin: 0, huntScared: true,  label: 'Aggressive' },
+	greedy:     { fleeAt: 3, look: 12, trapDepth: 10, pelletCluster: 5, safetyMargin: 1, huntScared: true,  label: 'Greedy'     },
+},
+aiPersonalityKeys = ['coward', 'balanced', 'aggressive', 'greedy'],
+aiPersonalityIdx = 1,
 
 audioCtx   = null,
 wakaBuffer = null,
@@ -74,7 +83,7 @@ pacman = {
 
 	update: function() {
 		if (!this.moving) {
-			// Forsøk ønsket retning først; hvis blokkert, prøv nåværende retning
+			// Try desired direction first; if blocked, try current direction
 			var turned = false;
 			if (this.nextDir !== dir.none) {
 				var d = delta(this.nextDir);
@@ -284,7 +293,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 		update: function(speedFactor) {
 			speedFactor = speedFactor || 1;
 
-			// Returning to house after being eaten — følger BFS korteste vei
+			// Returning to house after being eaten — follows BFS shortest path
 			if (this.returning) {
 				var rspd = GHOST_SPEED * 3;
 				if (!this.moving) {
@@ -292,7 +301,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						var next = this.returnPath[this.returnPathIdx];
 						var rdc = next.col - this.col;
 						var rdr = next.row - this.row;
-						// håndter wrap-around
+						// handle wrap-around
 						if (rdc > 1) rdc = -1;
 						else if (rdc < -1) rdc = 1;
 						this.dir = rdc > 0 ? dir.right : rdc < 0 ? dir.left : rdr > 0 ? dir.down : dir.up;
@@ -357,7 +366,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						this.dir = dir.up;
 						applyMove(this, 0, -1);
 					}
-					// exited/immune sjekkes når bevegelsen er ferdig (se nedenfor)
+					// exited/immune checked when movement completes (see below)
 				} else {
 
 				var opp = oppositeDir(this.dir);
@@ -365,7 +374,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 				var best = dir.none;
 
 				if (scaredTimer > 0 && !this.immune) {
-					// Tilfeldig retning når skremt (som i originalen)
+					// Random direction when scared (as in the original)
 					var choices = [];
 					for (var i = 0; i < dirs.length; i++) {
 						var d = dirs[i];
@@ -373,7 +382,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						if (!isGhostWall(this.col + dl[0], this.row + dl[1], d))
 							choices.push(d);
 					}
-					// Foretrekk å ikke reversere, men gjør det hvis det er eneste utvei
+					// Prefer not to reverse, but do so if it's the only exit
 					var noReverse = choices.filter(function(d) { return d !== opp; });
 					var pool = noReverse.length > 0 ? noReverse : choices;
 					best = pool[Math.floor(Math.random() * pool.length)];
@@ -422,7 +431,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 			if (this.returning) {
 				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
 			} else if (this.pendingReturn || (scaredTimer > 0 && this.exited && !this.immune)) {
-				// Blå skremt ghost under freeze og normal skremt-modus
+				// Blue scared ghost during freeze and normal scared mode
 				var white = scaredTimer <= 200 && Math.floor(frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {
@@ -492,7 +501,7 @@ function isWall(mx, my) {
 }
 
 function buildGrid() {
-	// Tile er vegg hvis mer enn 5% av pikslene er vegger (fanger anti-aliasede hjørner)
+	// Tile is a wall if more than 5% of pixels are walls (catches anti-aliased corners)
 	var threshold = Math.floor(TILE * TILE * 0.05);
 	grid = [];
 	for (var row = 0; row < GRID_ROWS; row++) {
@@ -792,7 +801,7 @@ function pelletCount() {
 
 function buildTimeAwareThreatMap() {
 	var map = {};
-	var LOOK = 15;
+	var LOOK = AI_PERSONALITIES[aiPersonalityKeys[aiPersonalityIdx]].look;
 	ghosts.forEach(function(g) {
 		if (!g.exited || g.returning || (scaredTimer > 0 && !g.immune)) return;
 		var key = g.row + ',' + g.col;
@@ -810,7 +819,8 @@ function buildTimeAwareThreatMap() {
 function isTimeAwareSafe(col, row, pacSteps, threatMap) {
 	var key = row + ',' + col;
 	if (!(key in threatMap)) return true;
-	return pacSteps < threatMap[key] - 1;
+	var margin = AI_PERSONALITIES[aiPersonalityKeys[aiPersonalityIdx]].safetyMargin;
+	return pacSteps < threatMap[key] - margin;
 }
 
 function aiBFSTimeAware(goalFn, threatMap) {
@@ -892,9 +902,10 @@ function aiBFSFlee(threatMap) {
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
 	var bestDir = dir.none, bestScore = -Infinity, bestPath = [];
+	var trapDepth = AI_PERSONALITIES[aiPersonalityKeys[aiPersonalityIdx]].trapDepth;
 	while (queue.length > 0) {
 		var cur = queue.shift();
-		if (cur.steps > 12) continue;
+		if (cur.steps > trapDepth) continue;
 		if (cur.firstDir !== dir.none) {
 			var curGD = ghostDistAt(cur.col, cur.row);
 			var exits = 0;
@@ -966,11 +977,11 @@ function isMoveTrapped(moveDir, threatMap) {
 	var nc = ((pacman.col + d[0]) % GRID_COLS + GRID_COLS) % GRID_COLS;
 	var nr = pacman.row + d[1];
 	
-	// Hvis trekket i seg selv er usikkert i følge threatMap, er det i praksis en felle
+	// If the move itself is unsafe according to threatMap, it's effectively a trap
 	if (!isTimeAwareSafe(nc, nr, 1, threatMap)) return true;
 
-	// BFS-sjekk: Kan vi nå et "trygt kryss" (junction med minst 3 utveier eller et område langt fra ghosts)
-	// innenfor de neste 10 stegene uten å bli tatt?
+	// BFS check: Can we reach a "safe junction" (at least 3 exits or far from ghosts)
+	// within the next 10 steps without being caught?
 	var queue = [{ col: nc, row: nr, steps: 1 }];
 	var visited = {};
 	visited[nr + ',' + nc] = true;
@@ -1014,7 +1025,7 @@ function findSafestNonTrappedDir(threatMap) {
 		if (isPacWall(nc, nr)) continue;
 
 		if (!isMoveTrapped(d, threatMap)) {
-			// Velg den av de "trygge" veiene som har størst avstand til nærmeste ghost
+			// Pick the "safe" direction with the greatest distance from the nearest ghost
 			var minDist = Infinity;
 			for (var j = 0; j < ghosts.length; j++) {
 				var g = ghosts[j];
@@ -1038,6 +1049,7 @@ function findSafestNonTrappedDir(threatMap) {
 function aiDecide() {
 	if (pacman.moving) return;
 
+	var cfg = AI_PERSONALITIES[aiPersonalityKeys[aiPersonalityIdx]];
 	var threatMap = buildTimeAwareThreatMap();
 	var fpt = aiFPT();
 	var ngd = nearestActiveDist();
@@ -1066,8 +1078,8 @@ function aiDecide() {
 		return false;
 	}
 
-	// 1. OVERLEVELSE & RISIKOVURDERING (Prioritet 1 & 2)
-	if (ngd <= 3) {
+	// 1. SURVIVAL & RISK ASSESSMENT (Priority 1 & 2)
+	if (ngd <= cfg.fleeAt) {
 		var fleeDir = aiBFSFlee(threatMap);
 		if (fleeDir !== dir.none) { 
 			console.log("PAC-MAN AI: [FLEE] Ghost too close (" + ngd + ")");
@@ -1075,21 +1087,21 @@ function aiDecide() {
 		}
 	}
 
-	// 2. POWER PELLET STRATEGI (Prioritet 3)
+	// 2. POWER PELLET STRATEGY (Priority 3)
 	if (scaredTimer === 0 && pelletCount() > 0) {
 		var nearestPellet = aiBFSTimeAware(isPellet, threatMap);
 		if (nearestPellet !== dir.none) {
 			var distToPellet = aiPath.length;
 			var cluster = ghostClusterScore();
-			if ((cluster && cluster.score >= 6 && distToPellet <= 3) || isMoveTrapped(pacman.dir, threatMap)) {
+			if ((cluster && cluster.score >= cfg.pelletCluster && distToPellet <= 3) || isMoveTrapped(pacman.dir, threatMap)) {
 				console.log("PAC-MAN AI: [POWER PELLET] Strategic activation");
 				pacman.nextDir = nearestPellet; return;
 			}
 		}
 	}
 
-	// 3. JAKT (Frightened Mode)
-	if (scaredTimer > 0 && countScared() > 0) {
+	// 3. HUNT (Frightened Mode)
+	if (cfg.huntScared && scaredTimer > 0 && countScared() > 0) {
 		var huntDir = aiBFS(function(c, r) {
 			return isScaredGhostAt(c, r);
 		}, function(c, r) {
@@ -1101,7 +1113,7 @@ function aiDecide() {
 		}
 	}
 
-	// 4. CHERRY (Prioritet: Høy hvis trygt)
+	// 4. CHERRY (Priority: High if safe)
 	if (cherry) {
 		var cherryDir = aiBFSTimeAware(function(c, r) {
 			return c === cherry.col && r === cherry.row;
@@ -1112,19 +1124,19 @@ function aiDecide() {
 		}
 	}
 
-	// 5. PRIKKER & TUNNEL (Prioritet 4 & 5)
+	// 5. DOTS & TUNNEL (Priority 4 & 5)
 	var bestDotDir = aiBFSTimeAware(function(c, r) {
 		if (!isDot(c, r)) return false;
 		return !isMoveTrapped(pacman.dir, threatMap); 
 	}, threatMap);
 
 	if (bestDotDir !== dir.none) {
-		// Bare logg dot-eating av og til for å unngå spam
+		// Only log dot-eating occasionally to avoid spam
 		if (frames % 120 === 0) console.log("PAC-MAN AI: [DOTS] Clearing map");
 		pacman.nextDir = bestDotDir; return;
 	}
 
-	// 6. IDLE / Siste utvei
+	// 6. IDLE / Last resort
 	var fallback = aiBFSFlee(threatMap);
 	if (fallback !== dir.none) {
 		console.log("PAC-MAN AI: [IDLE] No safe dots, wandering");
@@ -1237,7 +1249,7 @@ function update() {
 	ghosts.forEach(function(g) {
 		if (!g.exited) return;
 		if (g.col === pacman.col && g.row === pacman.row) {
-			if (g.returning) return; // på vei tilbake — ufarlig
+			if (g.returning) return; // returning to house — harmless
 			if (scaredTimer > 0 && !g.immune) {
 				ghostCombo++;
 				var pts = 200 * Math.pow(2, ghostCombo - 1);
@@ -1314,7 +1326,7 @@ function renderMenu() {
 	ctx.save();
 	ctx.scale(2, 2);
 	s_map.draw(ctx, mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
-	// Mørkt overlay
+	// Dark overlay
 	ctx.fillStyle = 'rgba(0,0,0,0.72)';
 	ctx.fillRect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
 
@@ -1326,20 +1338,46 @@ function renderMenu() {
 	ctx.textAlign = 'center';
 	ctx.fillText('PAC-MAN', cx, cy - 60);
 
-	var opts = ['🕹  Spill selv', '🤖  La AI spille'];
-	for (var i = 0; i < opts.length; i++) {
-		ctx.fillStyle = menuSelected === i ? '#ffff00' : '#aaaaaa';
-		ctx.font = menuSelected === i ? 'bold 13px monospace' : '13px monospace';
-		ctx.fillText(opts[i], cx, cy - 10 + i * 28);
-	}
-	if (highScore > 0) {
-		ctx.fillStyle = '#aaa';
+	if (menuSubState === 'personality') {
+		ctx.fillStyle = '#aaaaaa';
+		ctx.font = '12px monospace';
+		ctx.fillText('Choose AI style:', cx, cy - 20);
+
+		var pKey = aiPersonalityKeys[aiPersonalityIdx];
+		var pCfg = AI_PERSONALITIES[pKey];
+		ctx.fillStyle = '#ffff00';
+		ctx.font = 'bold 16px monospace';
+		ctx.fillText('◄  ' + pCfg.label + '  ►', cx, cy + 10);
+
+		var descs = {
+			coward:     'Flees early, avoids all risk',
+			balanced:   'Balanced and efficient',
+			aggressive: 'Actively hunts ghosts',
+			greedy:     'Maximizes score, takes risks',
+		};
+		ctx.fillStyle = '#888888';
 		ctx.font = '10px monospace';
-		ctx.fillText('HI-SCORE: ' + highScore, cx, cy + 48);
+		ctx.fillText(descs[pKey], cx, cy + 32);
+
+		ctx.fillStyle = '#555';
+		ctx.font = '9px monospace';
+		ctx.fillText('← → to choose  •  Enter to start  •  Esc back', cx, cy + 60);
+	} else {
+		var opts = ['🕹  Play yourself', '🤖  Let AI play'];
+		for (var i = 0; i < opts.length; i++) {
+			ctx.fillStyle = menuSelected === i ? '#ffff00' : '#aaaaaa';
+			ctx.font = menuSelected === i ? 'bold 13px monospace' : '13px monospace';
+			ctx.fillText(opts[i], cx, cy - 10 + i * 28);
+		}
+		if (highScore > 0) {
+			ctx.fillStyle = '#aaa';
+			ctx.font = '10px monospace';
+			ctx.fillText('HI-SCORE: ' + highScore, cx, cy + 48);
+		}
+		ctx.fillStyle = '#555';
+		ctx.font = '9px monospace';
+		ctx.fillText('↑ ↓ to select  •  Enter to start', cx, cy + 70);
 	}
-	ctx.fillStyle = '#555';
-	ctx.font = '9px monospace';
-	ctx.fillText('↑ ↓ for å velge  •  Enter for å starte', cx, cy + 70);
 	ctx.restore();
 }
 
@@ -1353,7 +1391,7 @@ function render() {
 		return;
 	}
 	if (gameState === 'gameover' && stateTimer > 120) {
-		// kort flash før overlay
+		// brief flash before overlay
 	}
 
 	ctx.save();
@@ -1429,7 +1467,7 @@ function render() {
 		ctx.fillText('READY!', mx, my + 20);
 		ctx.fillStyle = 'rgba(255,255,255,0.5)';
 		ctx.font = '11px monospace';
-		ctx.fillText('press arrow to start', mx, my + 38);
+		ctx.fillText('press any arrow to start', mx, my + 38);
 	}
 	if (paused) {
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -1570,6 +1608,15 @@ function drawHUD() {
 	ctx.fillStyle = '#ffff00';
 	ctx.fillText(level, mapX + mapW, mapY - 8);
 
+	// AI personality label
+	if (aiMode) {
+		var pLabel = AI_PERSONALITIES[aiPersonalityKeys[aiPersonalityIdx]].label;
+		ctx.fillStyle = '#00ccff';
+		ctx.textAlign = 'center';
+		ctx.font = '11px monospace';
+		ctx.fillText('🤖 AI: ' + pLabel, mapX + mapW / 2, mapY - 48);
+	}
+
 	// Lives
 	var lifeY = mapY + GRID_ROWS * TILE * sx + 24;
 	ctx.fillStyle = '#ffff00';
@@ -1589,21 +1636,40 @@ function drawHUD() {
 
 function keydown(e) {
 	initAudio();
-	if (e.which === 27) { // Escape → tilbake til meny
+	if (e.which === 27) { // Escape → back to menu
 		setPathPanelVisible(false);
 		newGame();
 		gameState = 'menu';
+		menuSubState = 'main';
 		return;
 	}
 	if (gameState === 'menu') {
-		switch (e.which) {
-			case 38: menuSelected = 0; break;
-			case 40: menuSelected = 1; break;
-			case 13:
-				aiMode = menuSelected === 1;
-				newGame();
-				setPathPanelVisible(aiMode);
-				break;
+		if (menuSubState === 'personality') {
+			switch (e.which) {
+				case 37: aiPersonalityIdx = (aiPersonalityIdx - 1 + aiPersonalityKeys.length) % aiPersonalityKeys.length; break;
+				case 39: aiPersonalityIdx = (aiPersonalityIdx + 1) % aiPersonalityKeys.length; break;
+				case 27: menuSubState = 'main'; break;
+				case 13:
+					aiMode = true;
+					menuSubState = 'main';
+					newGame();
+					setPathPanelVisible(true);
+					break;
+			}
+		} else {
+			switch (e.which) {
+				case 38: menuSelected = 0; break;
+				case 40: menuSelected = 1; break;
+				case 13:
+					if (menuSelected === 1) {
+						menuSubState = 'personality';
+					} else {
+						aiMode = false;
+						newGame();
+						setPathPanelVisible(false);
+					}
+					break;
+			}
 		}
 		return;
 	}
