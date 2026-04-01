@@ -273,6 +273,8 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 			this.exited = false;
 			this.immune = false;
 			this.returning = false;
+			this.pendingReturn = false;
+			this.bounceDir = dir.up;
 			this.releaseFrame = frames + this.releaseDelay;
 			var p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
@@ -304,6 +306,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						this.releaseFrame = frames + 300; // ~5s ventetid
 						this.returnPath = null;
 						this.returnPathIdx = 0;
+						this.bounceDir = dir.up;
 					}
 				}
 				if (this.moving) {
@@ -319,7 +322,29 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 				return;
 			}
 
-			if (frames < this.releaseFrame) return;
+			if (frames < this.releaseFrame) {
+				// Bounce up and down in the house while waiting
+				if (!this.moving) {
+					if (this.bounceDir === dir.up && this.row <= GHOST_HOUSE_ROW_MIN + 1) {
+						this.bounceDir = dir.down;
+					} else if (this.bounceDir === dir.down && this.row >= GHOST_HOUSE_ROW_MAX) {
+						this.bounceDir = dir.up;
+					}
+					this.dir = this.bounceDir;
+					applyMove(this, 0, this.bounceDir === dir.up ? -1 : 1);
+				}
+				if (this.moving) {
+					var bdx = this.targetX - this.x, bdy = this.targetY - this.y;
+					if (Math.abs(bdx) <= GHOST_SPEED && Math.abs(bdy) <= GHOST_SPEED) {
+						this.x = this.targetX; this.y = this.targetY;
+						this.moving = false;
+					} else {
+						this.x += Math.sign(bdx) * GHOST_SPEED;
+						this.y += Math.sign(bdy) * GHOST_SPEED;
+					}
+				}
+				return;
+			}
 
 			if (!this.moving) {
 				// Exit routine: navigate to col 13, then move up until outside house
@@ -383,6 +408,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 					this.moving = false;
 					if (!this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
 						this.exited = true;
+						this.immune = scaredTimer > 0;
 					}
 				} else {
 					var spd = ((scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
