@@ -4,11 +4,10 @@ import {
 } from './constants.js';
 import { state } from './state.js';
 import {
-	delta, oppositeDir, applyMove,
+	delta, oppositeDir, applyMove, moveTowardTarget,
 	ghostTilePixel, isGhostWall, isReturningGhostWall, wrapCol
 } from './grid.js';
 import { s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_eyes } from './sprite.js';
-import { pacman } from './pacman-entity.js';
 
 // ── Sprite helpers ────────────────────────────────────────────────────────────
 
@@ -138,14 +137,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 					}
 				}
 				if (this.moving) {
-					var rdx = this.targetX - this.x, rdy = this.targetY - this.y;
-					if (Math.abs(rdx) <= rspd && Math.abs(rdy) <= rspd) {
-						this.x = this.targetX; this.y = this.targetY;
-						this.moving = false;
-					} else {
-						this.x += Math.sign(rdx) * rspd;
-						this.y += Math.sign(rdy) * rspd;
-					}
+					moveTowardTarget(this, rspd);
 				}
 				return;
 			}
@@ -159,15 +151,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 					applyMove(this, 0, this.bounceDir === dir.up ? -1 : 1);
 				}
 				if (this.moving) {
-					var bdx = this.targetX - this.x, bdy = this.targetY - this.y;
-					var bspd = GHOST_SPEED * state.gameSpeed;
-					if (Math.abs(bdx) <= bspd && Math.abs(bdy) <= bspd) {
-						this.x = this.targetX; this.y = this.targetY;
-						this.moving = false;
-					} else {
-						this.x += Math.sign(bdx) * bspd;
-						this.y += Math.sign(bdy) * bspd;
-					}
+					moveTowardTarget(this, GHOST_SPEED * state.gameSpeed);
 				}
 				return;
 			}
@@ -224,18 +208,10 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			}
 
 			if (this.moving) {
-				var dx  = this.targetX - this.x, dy = this.targetY - this.y;
 				var spd = ((state.scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
-				if (Math.abs(dx) <= spd && Math.abs(dy) <= spd) {
-					this.x = this.targetX; this.y = this.targetY;
-					this.moving = false;
-					if (!this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
-						this.exited = true;
-						this.immune = state.scaredTimer > 0;
-					}
-				} else {
-					this.x += Math.sign(dx) * spd;
-					this.y += Math.sign(dy) * spd;
+				if (moveTowardTarget(this, spd) && !this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
+					this.exited = true;
+					this.immune = state.scaredTimer > 0;
 				}
 			}
 		},
@@ -259,26 +235,26 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 export function initGhosts() {
 	state.ghosts = [
 		makeGhost(12, 14, s_blinky, 0, function() {
-			return { col: pacman.col, row: pacman.row };
+			return { col: state.pacman.col, row: state.pacman.row };
 		}, '#ff0000'),
 
 		makeGhost(13, 14, s_pinky, 300, function() {
-			var d = delta(pacman.dir !== dir.none ? pacman.dir : dir.up);
-			return { col: pacman.col + d[0]*4, row: pacman.row + d[1]*4 };
+			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
 		}, '#ffb8ff'),
 
 		makeGhost(14, 14, s_inky, 600, function() {
-			var d      = delta(pacman.dir !== dir.none ? pacman.dir : dir.up);
-			var pivot  = { col: pacman.col + d[0]*2, row: pacman.row + d[1]*2 };
+			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
 			var blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
 		}, '#00ffff'),
 
 		makeGhost(15, 14, s_clyde, 900, function() {
-			var dist = Math.abs(pacman.col - state.ghosts[3].col)
-			         + Math.abs(pacman.row - state.ghosts[3].row);
+			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
+			         + Math.abs(state.pacman.row - state.ghosts[3].row);
 			return dist > 8
-				? { col: pacman.col,      row: pacman.row          }
+				? { col: state.pacman.col, row: state.pacman.row }
 				: { col: 0,               row: state.GRID_ROWS - 1 };
 		}, '#ffb851')
 	];

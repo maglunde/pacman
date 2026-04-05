@@ -1,10 +1,10 @@
 import { TILE, SPEED, SCARED_DURATION, dir } from './constants.js';
 import { state } from './state.js';
-import { delta, tilePixel, isPacWall, applyMove } from './grid.js';
+import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
 import { s_pacman } from './sprite.js';
 
-export var pacman = {
+state.pacman = {
 	col: 13, row: 23,
 	dir: dir.none, nextDir: dir.none,
 	moving: false,
@@ -46,14 +46,8 @@ export var pacman = {
 		}
 
 		if (this.moving) {
-			var dx = this.targetX - this.x;
-			var dy = this.targetY - this.y;
 			var pacSpd = (state.dots[this.row][this.col] === 1 ? SPEED * 0.9 : SPEED) * state.gameSpeed;
-			if (Math.abs(dx) <= pacSpd && Math.abs(dy) <= pacSpd) {
-				this.x      = this.targetX;
-				this.y      = this.targetY;
-				this.moving = false;
-
+			if (moveTowardTarget(this, pacSpd)) {
 				if (state.dots[this.row][this.col] === 1) {
 					state.dots[this.row][this.col] = 0;
 					state.dotsEaten++;
@@ -71,9 +65,6 @@ export var pacman = {
 						state.ghosts.forEach(function(g) { g.immune = false; });
 					}
 				}
-			} else {
-				this.x += Math.sign(dx) * pacSpd;
-				this.y += Math.sign(dy) * pacSpd;
 			}
 		}
 

@@ -22,6 +22,7 @@ export var state = {
 	dotsEaten: 0,
 
 	// Entities
+	pacman: null,
 	ghosts: null,
 
 	// Timers

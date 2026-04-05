@@ -5,7 +5,7 @@ import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
 import { initDots, initBigDots, drawDots } from './dots.js';
 import { initGhosts, bfsReturnPath, ghostLookahead } from './ghost.js';
-import { pacman } from './pacman-entity.js';
+import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
 import { initAudio } from './audio.js';
 import {
@@ -33,7 +33,7 @@ function addPopup(text, col, row) {
 // ── Game state transitions ────────────────────────────────────────────────────
 
 function startReady() {
-	pacman.init();
+	state.pacman.init();
 	initGhosts();
 	state.scaredTimer           = 0;
 	state.ghostEatenFreezeTimer = 0;
@@ -133,7 +133,7 @@ function update() {
 		state.cherry.timer -= state.gameSpeed;
 		if (state.cherry.timer <= 0) {
 			state.cherry = null;
-		} else if (state.cherry.col === pacman.col && state.cherry.row === pacman.row) {
+		} else if (state.cherry.col === state.pacman.col && state.cherry.row === state.pacman.row) {
 			state.score += 100;
 			addPopup('100', state.cherry.col, state.cherry.row);
 			state.cherry = null;
@@ -143,13 +143,13 @@ function update() {
 	}
 
 	if (state.aiMode) aiDecide();
-	pacman.update();
+	state.pacman.update();
 	state.ghosts.forEach(function(g) { g.update(levelSpeedFactor() * state.gameSpeed); });
 
 	// Ghost collision
 	state.ghosts.forEach(function(g) {
 		if (!g.exited) return;
-		if (g.col !== pacman.col || g.row !== pacman.row) return;
+		if (g.col !== state.pacman.col || g.row !== state.pacman.row) return;
 		if (g.returning) return;
 		if (state.scaredTimer > 0 && !g.immune) {
 			state.ghostCombo++;
@@ -259,7 +259,7 @@ function render() {
 	if (state.aiMode && state.showPaths.pacman && state.aiPath.length > 0) {
 		ctx.strokeStyle = 'rgba(255,255,0,0.5)';
 		ctx.beginPath();
-		ctx.moveTo(pacman.x + 14, pacman.y + 14);
+		ctx.moveTo(state.pacman.x + 14, state.pacman.y + 14);
 		for (var i = 0; i < state.aiPath.length; i++) {
 			var p = state.aiPath[i];
 			ctx.lineTo(state.mapOffX + p.col * TILE + TILE / 2, state.mapOffY + p.row * TILE + TILE / 2);
@@ -283,7 +283,7 @@ function render() {
 	ctx.restore();
 
 	state.ghosts.forEach(function(g) { g.draw(); });
-	pacman.draw();
+	state.pacman.draw();
 
 	// Cherry
 	if (state.cherry) {
@@ -408,10 +408,10 @@ function keydown(e) {
 		var arrowKey = e.which >= 37 && e.which <= 40;
 		if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
 		switch (e.which) {
-			case 37: pacman.nextDir = dir.left;  break;
-			case 38: pacman.nextDir = dir.up;    break;
-			case 39: pacman.nextDir = dir.right; break;
-			case 40: pacman.nextDir = dir.down;  break;
+			case 37: state.pacman.nextDir = dir.left;  break;
+			case 38: state.pacman.nextDir = dir.up;    break;
+			case 39: state.pacman.nextDir = dir.right; break;
+			case 40: state.pacman.nextDir = dir.down;  break;
 		}
 	}
 }

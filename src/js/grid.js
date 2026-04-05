@@ -92,6 +92,22 @@ export function isReturningGhostWall(col, row) {
 
 // ── Movement ──────────────────────────────────────────────────────────────────
 
+// Move entity one frame toward its targetX/targetY at the given speed.
+// Sets entity.moving = false and returns true when it arrives.
+export function moveTowardTarget(entity, spd) {
+	var dx = entity.targetX - entity.x;
+	var dy = entity.targetY - entity.y;
+	if (Math.abs(dx) <= spd && Math.abs(dy) <= spd) {
+		entity.x      = entity.targetX;
+		entity.y      = entity.targetY;
+		entity.moving = false;
+		return true;
+	}
+	entity.x += Math.sign(dx) * spd;
+	entity.y += Math.sign(dy) * spd;
+	return false;
+}
+
 export function applyMove(entity, dc, dr) {
 	entity.col += dc;
 	entity.row += dr;

@@ -2,11 +2,10 @@ import { dir, TILE, SPEED, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './const
 import { state } from './state.js';
 import { delta, isPacWall, wrapCol } from './grid.js';
 import { ghostLookahead } from './ghost.js';
-import { pacman } from './pacman-entity.js';
 
 // ── Internal AI state ─────────────────────────────────────────────────────────
 
-export var bfsDirOrder = [dir.up, dir.left, dir.down, dir.right];
+var bfsDirOrder = [dir.up, dir.left, dir.down, dir.right];
 
 export function shuffleBFSDirs() {
 	var a = [dir.up, dir.left, dir.down, dir.right];
@@ -26,7 +25,7 @@ function nearestActiveDist() {
 	for (var i = 0; i < state.ghosts.length; i++) {
 		var g = state.ghosts[i];
 		if (!g.exited || (state.scaredTimer > 0 && !g.immune)) continue;
-		var d = Math.abs(g.col - pacman.col) + Math.abs(g.row - pacman.row);
+		var d = Math.abs(g.col - state.pacman.col) + Math.abs(g.row - state.pacman.row);
 		if (d < m) m = d;
 	}
 	return m;
@@ -88,7 +87,7 @@ function isTimeAwareSafe(col, row, pacSteps, threatMap) {
 // ── BFS variants ──────────────────────────────────────────────────────────────
 
 function aiBFS(goalFn, blockFn) {
-	var start   = { col: pacman.col, row: pacman.row };
+	var start   = { col: state.pacman.col, row: state.pacman.row };
 	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, path: [] }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
@@ -119,7 +118,7 @@ function aiBFS(goalFn, blockFn) {
 }
 
 function aiBFSTimeAware(goalFn, threatMap) {
-	var start   = { col: pacman.col, row: pacman.row };
+	var start   = { col: state.pacman.col, row: state.pacman.row };
 	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, path: [], steps: 0 }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
@@ -151,7 +150,7 @@ function aiBFSTimeAware(goalFn, threatMap) {
 }
 
 function aiBFSCandidatesTA(goalFn, threatMap, n) {
-	var start   = { col: pacman.col, row: pacman.row };
+	var start   = { col: state.pacman.col, row: state.pacman.row };
 	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, pathLen: 0, steps: 0 }];
 	var visited = {};
 	visited[start.row + ',' + start.col] = true;
@@ -185,7 +184,7 @@ function aiBFSCandidatesTA(goalFn, threatMap, n) {
 }
 
 function aiBFSFlee(threatMap) {
-	var start    = { col: pacman.col, row: pacman.row };
+	var start    = { col: state.pacman.col, row: state.pacman.row };
 	var startGD  = ghostDistAt(start.col, start.row);
 	var queue    = [{ col: start.col, row: start.row, firstDir: dir.none, steps: 0, path: [], minPathGD: startGD }];
 	var visited  = {};
@@ -235,8 +234,8 @@ function aiBFSFlee(threatMap) {
 
 function isMoveTrapped(moveDir, threatMap) {
 	var d  = delta(moveDir);
-	var nc = wrapCol(pacman.col + d[0]);
-	var nr = pacman.row + d[1];
+	var nc = wrapCol(state.pacman.col + d[0]);
+	var nr = state.pacman.row + d[1];
 	if (!isTimeAwareSafe(nc, nr, 1, threatMap)) return true;
 
 	// BFS check: can we reach a safe junction within the next ~10 steps?
@@ -275,8 +274,8 @@ function findSafestNonTrappedDir(threatMap) {
 	for (var i = 0; i < sdirs.length; i++) {
 		var d  = sdirs[i];
 		var dl = delta(d);
-		var nc = wrapCol(pacman.col + dl[0]);
-		var nr = pacman.row + dl[1];
+		var nc = wrapCol(state.pacman.col + dl[0]);
+		var nr = state.pacman.row + dl[1];
 		if (isPacWall(nc, nr)) continue;
 		if (!isMoveTrapped(d, threatMap)) {
 			var minDist = Infinity;
@@ -308,7 +307,7 @@ function ghostClusterScore() {
 			else if (d <= 10) sc += 2;
 			else if (d <= 15) sc += 1;
 		}
-		var pd = Math.abs(pacman.col - bd.col) + Math.abs(pacman.row - bd.row);
+		var pd = Math.abs(state.pacman.col - bd.col) + Math.abs(state.pacman.row - bd.row);
 		sc -= pd * 0.15;
 		if (sc > bestSc) { bestSc = sc; best = { col: bd.col, row: bd.row, score: sc }; }
 	}
@@ -318,7 +317,7 @@ function ghostClusterScore() {
 // ── Main AI decision ──────────────────────────────────────────────────────────
 
 export function aiDecide() {
-	if (pacman.moving) return;
+	if (state.pacman.moving) return;
 
 	var cfg       = AI_PERSONALITIES[AI_PERSONALITY_KEYS[state.aiPersonalityIdx]];
 	var threatMap = buildTimeAwareThreatMap();
@@ -347,7 +346,7 @@ export function aiDecide() {
 	// 1. Flee if a ghost is dangerously close
 	if (ngd <= cfg.fleeAt) {
 		var fleeDir = aiBFSFlee(threatMap);
-		if (fleeDir !== dir.none) { pacman.nextDir = fleeDir; return; }
+		if (fleeDir !== dir.none) { state.pacman.nextDir = fleeDir; return; }
 	}
 
 	// 2. Strategic power pellet
@@ -357,8 +356,8 @@ export function aiDecide() {
 			var distToPellet = state.aiPath.length;
 			var cluster      = ghostClusterScore();
 			if ((cluster && cluster.score >= cfg.pelletCluster && distToPellet <= 3)
-				|| isMoveTrapped(pacman.dir, threatMap)) {
-				pacman.nextDir = nearestPellet; return;
+				|| isMoveTrapped(state.pacman.dir, threatMap)) {
+				state.pacman.nextDir = nearestPellet; return;
 			}
 		}
 	}
@@ -370,7 +369,7 @@ export function aiDecide() {
 			function(c, r) { return isActiveGhostAt(c, r); }
 		);
 		if (huntDir !== dir.none && state.aiPath.length * fpt < state.scaredTimer - 60) {
-			pacman.nextDir = huntDir; return;
+			state.pacman.nextDir = huntDir; return;
 		}
 	}
 
@@ -380,35 +379,35 @@ export function aiDecide() {
 			return c === state.cherry.col && r === state.cherry.row;
 		}, threatMap);
 		if (cherryDir !== dir.none && state.aiPath.length * fpt < state.cherry.timer - 60) {
-			pacman.nextDir = cherryDir; return;
+			state.pacman.nextDir = cherryDir; return;
 		}
 	}
 
 	// 5. Eat dots
 	var bestDotDir = aiBFSTimeAware(function(c, r) {
 		if (!isDot(c, r)) return false;
-		return !isMoveTrapped(pacman.dir, threatMap);
+		return !isMoveTrapped(state.pacman.dir, threatMap);
 	}, threatMap);
-	if (bestDotDir !== dir.none) { pacman.nextDir = bestDotDir; return; }
+	if (bestDotDir !== dir.none) { state.pacman.nextDir = bestDotDir; return; }
 
 	// 6. Fallback: flee
 	var fallback = aiBFSFlee(threatMap);
-	if (fallback !== dir.none) { pacman.nextDir = fallback; return; }
+	if (fallback !== dir.none) { state.pacman.nextDir = fallback; return; }
 
 	// Emergency: imminent collision check
-	var finalDir = pacman.nextDir !== dir.none ? pacman.nextDir : pacman.dir;
+	var finalDir = state.pacman.nextDir !== dir.none ? state.pacman.nextDir : state.pacman.dir;
 	if (finalDir !== dir.none) {
 		var d  = delta(finalDir);
-		var nc = wrapCol(pacman.col + d[0]);
-		var nr = pacman.row + d[1];
+		var nc = wrapCol(state.pacman.col + d[0]);
+		var nr = state.pacman.row + d[1];
 		if (isActiveGhostAt(nc, nr) || !isTimeAwareSafe(nc, nr, 1, threatMap)) {
 			var sdirs = [dir.up, dir.left, dir.down, dir.right];
 			var safest = dir.none, bestDist = -1;
 			for (var i = 0; i < sdirs.length; i++) {
 				var sd  = sdirs[i];
 				var sdl = delta(sd);
-				var snc = wrapCol(pacman.col + sdl[0]);
-				var snr = pacman.row + sdl[1];
+				var snc = wrapCol(state.pacman.col + sdl[0]);
+				var snr = state.pacman.row + sdl[1];
 				if (isPacWall(snc, snr) || isActiveGhostAt(snc, snr) || !isTimeAwareSafe(snc, snr, 1, threatMap)) continue;
 				var minDist = Infinity;
 				for (var j = 0; j < state.ghosts.length; j++) {
@@ -419,7 +418,7 @@ export function aiDecide() {
 				}
 				if (minDist > bestDist) { bestDist = minDist; safest = sd; }
 			}
-			pacman.nextDir = safest !== dir.none ? safest : oppositeDir(pacman.dir);
+			state.pacman.nextDir = safest !== dir.none ? safest : oppositeDir(state.pacman.dir);
 		}
 	}
 }
