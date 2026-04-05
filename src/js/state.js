@@ -65,9 +65,9 @@ export var state = {
 	aiPath: [],
 
 	// Debug panel
-	showPaths:     { pacman: true, blinky: true, pinky: true, inky: true, clyde: true },
+	showPaths:     { pacman: false, blinky: false, pinky: false, inky: false, clyde: false },
 	pathPanel:     null,
-	showInfoPanel: true,
+	showInfoPanel: false,
 
 	// Slider hit-test bounds (set each frame by drawHUD)
 	volTrackBounds:   null,

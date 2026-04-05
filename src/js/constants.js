@@ -21,7 +21,7 @@ export var CLYDE_RELEASE_DELAY  = 900;
 
 // Cherry
 export var CHERRY_DOT_THRESHOLD = 70;   // Dots eaten before cherry appears
-export var CHERRY_DURATION      = 600;  // Frames cherry stays on board
+export var CHERRY_DURATION      = 800;  // Frames cherry stays on board
 
 // HUD
 export var LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD

@@ -419,9 +419,9 @@ function render() {
 		ctx.font      = 'bold 14px monospace';
 		ctx.textAlign = 'center';
 		ctx.fillText('READY!', mx, my + 20);
-		ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		ctx.fillStyle = 'rgba(255,255,255,0.9)';
 		ctx.font      = '11px monospace';
-		ctx.fillText('press any arrow to start', mx, my + 38);
+		ctx.fillText('press any arrow to start', mx, my + 44);
 	}
 	if (state.paused) {
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';

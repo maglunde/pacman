@@ -75,7 +75,8 @@ export function initSprites(img){
 
 		new Sprite(img, 649, 151, 30, 30), // left
 		new Sprite(img, 616, 185, 30, 30), // up
-		new Sprite(img, 629, 185, 30, 30), // down
+		// new Sprite(img, 629, 185, 30, 30), // down
+		new Sprite(img, 649, 183, 30, 30), // down
 		new Sprite(img, 618, 150, 30, 30)  // right
 	];
 	s_dot    = new Sprite(img, 575, 151,  6,  6);
