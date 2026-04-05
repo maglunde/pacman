@@ -27,6 +27,15 @@ function levelSpeedFactor() { return 1 + (state.level - 1) * 0.06; }
 
 // ── Score popups ──────────────────────────────────────────────────────────────
 
+export function addScore(pts) {
+	state.score += pts;
+	while (state.score - state.lastExtraLifeScore >= 10000) {
+		state.lives++;
+		state.lastExtraLifeScore += 10000;
+		playExtraPac();
+	}
+}
+
 function addPopup(text, col, row) {
 	state.scorePopups.push({
 		text: text,
@@ -54,6 +63,7 @@ function startReady() {
 
 export function newGame() {
 	state.score = 0;
+	state.lastExtraLifeScore = 0;
 	state.lives = 3;
 	state.level = 1;
 	initDots();
@@ -64,8 +74,6 @@ export function newGame() {
 
 function nextLevel() {
 	state.level++;
-	state.lives++;
-	playExtraPac();
 	initDots();
 	initBigDots();
 	startReady();
@@ -154,7 +162,7 @@ function update() {
 		if (state.cherry.timer <= 0) {
 			state.cherry = null;
 		} else if (state.cherry.col === state.pacman.col && state.cherry.row === state.pacman.row) {
-			state.score += 100;
+			addScore(100);
 			addPopup('100', state.cherry.col, state.cherry.row);
 			state.cherry = null;
 			playEatFruit();
@@ -194,7 +202,7 @@ function update() {
 
 				state.ghostCombo++;
 				var pts = 200 * Math.pow(2, state.ghostCombo - 1);
-				state.score += pts;
+				addScore(pts);
 				addPopup(pts.toString(), g.col, g.row);
 				g.pendingReturn             = true;
 				g.immune                    = true;

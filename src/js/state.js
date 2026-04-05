@@ -32,8 +32,9 @@ export var state = {
 	scatterTimer:          420, // frames left in current phase
 
 	// Scoring
-	score:       0,
-	highScore:   parseInt(localStorage.getItem('pacman-hi')    || '0'),
+	score:               0,
+	lastExtraLifeScore:  0,
+	highScore:           parseInt(localStorage.getItem('pacman-hi')    || '0'),
 	lives:       3,
 	level:       1,
 	ghostCombo:  0,

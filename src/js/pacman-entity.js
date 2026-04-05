@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
 import { s_pacman } from './sprite.js';
+import { addScore } from './game.js';
 
 state.pacman = {
 	col: 13, row: 23,
@@ -51,7 +52,7 @@ state.pacman = {
 				if (state.dots[this.row][this.col] === 1) {
 					state.dots[this.row][this.col] = 0;
 					state.dotsEaten++;
-					state.score += 10;
+					addScore(10);
 					playWaka();
 				}
 
@@ -59,7 +60,7 @@ state.pacman = {
 					var bd = state.bigDots[i];
 					if (!bd.eaten && bd.col === this.col && bd.row === this.row) {
 						bd.eaten = true;
-						state.score += 50;
+						addScore(50);
 						state.scaredTimer = SCARED_DURATION;
 						state.ghostCombo  = 0;
 						state.ghosts.forEach(function(g) { g.immune = false; });
