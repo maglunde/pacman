@@ -237,22 +237,31 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 export function initGhosts() {
 	var br = state.GRID_ROWS - 1; // bottom row
+	var corners = [
+		{ col: 25, row: 0 },  // top-right
+		{ col: 2,  row: 0 },  // top-left
+		{ col: 25, row: br }, // bottom-right
+		{ col: 2,  row: br }  // bottom-left
+	];
+	// Shift corners based on level to vary scatter paths
+	var shift = (state.level - 1) % corners.length;
+
 	state.ghosts = [
 		makeGhost(12, 14, s_blinky, 0, function() {
 			return { col: state.pacman.col, row: state.pacman.row };
-		}, '#ff0000', { col: 25, row: 0 }),           // Blinky → top-right
+		}, '#ff0000', corners[(0 + shift) % 4]),           // Blinky
 
 		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
 			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
-		}, '#ffb8ff', { col: 2, row: 0 }),            // Pinky → top-left
+		}, '#ffb8ff', corners[(1 + shift) % 4]),            // Pinky
 
 		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
 			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
 			var blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
-		}, '#00ffff', { col: 25, row: br }),           // Inky → bottom-right
+		}, '#00ffff', corners[(2 + shift) % 4]),           // Inky
 
 		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
 			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
@@ -260,7 +269,7 @@ export function initGhosts() {
 			return dist > 8
 				? { col: state.pacman.col, row: state.pacman.row }
 				: { col: 0,               row: state.GRID_ROWS - 1 };
-		}, '#ffb851', { col: 2, row: br })             // Clyde → bottom-left
+		}, '#ffb851', corners[(3 + shift) % 4])             // Clyde
 	];
 	state.ghosts.forEach(function(g) { g.init(); });
 }

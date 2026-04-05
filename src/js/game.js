@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map } from './sprite.js';
+import { initSprites, s_map, s_pacman } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -12,7 +12,7 @@ import { initGhosts, bfsReturnPath, ghostLookahead } from './ghost.js';
 import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
 import {
-	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playIntermission
+	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playExtraPac, playIntermission
 } from './audio.js';
 import {
 	drawHUD, initPathPanel, setPathPanelVisible, togglePath, hexToRgb,
@@ -64,6 +64,8 @@ export function newGame() {
 
 function nextLevel() {
 	state.level++;
+	state.lives++;
+	playExtraPac();
 	initDots();
 	initBigDots();
 	startReady();
@@ -166,23 +168,45 @@ function update() {
 	state.ghosts.forEach(function(g) { g.update(levelSpeedFactor() * state.gameSpeed); });
 
 	// Ghost collision
-	state.ghosts.forEach(function(g) {
-		if (!g.exited) return;
-		if (g.col !== state.pacman.col || g.row !== state.pacman.row) return;
-		if (g.returning) return;
-		if (state.scaredTimer > 0 && !g.immune) {
-			state.ghostCombo++;
-			var pts = 200 * Math.pow(2, state.ghostCombo - 1);
-			state.score += pts;
-			addPopup(pts.toString(), g.col, g.row);
-			g.pendingReturn             = true;
-			g.immune                    = true;
-			state.ghostEatenFreezeTimer = GHOST_EATEN_FREEZE_FRAMES;
-			playEatGhost();
-		} else {
-			loseLife();
+	for (var i = 0; i < state.ghosts.length; i++) {
+		var g = state.ghosts[i];
+		if (!g.exited) continue;
+		if (g.returning) continue;
+
+		var dx = g.x - state.pacman.x;
+		var dy = g.y - state.pacman.y;
+		var dist = Math.sqrt(dx * dx + dy * dy);
+
+		if (dist < 10) {
+			if (state.scaredTimer > 0 && !g.immune) {
+				// Face the ghost being eaten
+				if (Math.abs(dx) > Math.abs(dy)) {
+					state.pacman.dir = dx > 0 ? dir.right : dir.left;
+				} else {
+					state.pacman.dir = dy > 0 ? dir.down : dir.up;
+				}
+				switch (state.pacman.dir) {
+					case dir.left:  state.pacman.sprite = s_pacman.left;  break;
+					case dir.up:    state.pacman.sprite = s_pacman.up;    break;
+					case dir.right: state.pacman.sprite = s_pacman.right; break;
+					case dir.down:  state.pacman.sprite = s_pacman.down;  break;
+				}
+
+				state.ghostCombo++;
+				var pts = 200 * Math.pow(2, state.ghostCombo - 1);
+				state.score += pts;
+				addPopup(pts.toString(), g.col, g.row);
+				g.pendingReturn             = true;
+				g.immune                    = true;
+				state.ghostEatenFreezeTimer = GHOST_EATEN_FREEZE_FRAMES;
+				playEatGhost();
+				break;
+			} else {
+				loseLife();
+				break;
+			}
 		}
-	});
+	}
 
 	// Win check
 	var remaining = 0;
