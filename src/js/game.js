@@ -11,7 +11,9 @@ import { initDots, initBigDots, drawDots } from './dots.js';
 import { initGhosts, bfsReturnPath, ghostLookahead } from './ghost.js';
 import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
-import { initAudio } from './audio.js';
+import {
+	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playIntermission
+} from './audio.js';
 import {
 	drawHUD, initPathPanel, setPathPanelVisible, togglePath, hexToRgb,
 	saveVolume, saveSpeed,
@@ -48,6 +50,7 @@ function startReady() {
 	state.scatterTimer          = SCATTER_CHASE_PHASES[0];
 	state.gameState             = 'ready';
 	state.paused                = false;
+	playBeginning();
 }
 
 export function newGame() {
@@ -69,6 +72,7 @@ function nextLevel() {
 
 function loseLife() {
 	state.lives--;
+	playDeath();
 	if (state.lives <= 0) {
 		if (state.score > state.highScore) {
 			state.highScore = state.score;
@@ -152,6 +156,7 @@ function update() {
 			state.score += 100;
 			addPopup('100', state.cherry.col, state.cherry.row);
 			state.cherry = null;
+			playEatFruit();
 		}
 	} else if (state.dotsEaten === CHERRY_DOT_THRESHOLD && state.level <= 5) {
 		state.cherry = { col: 13, row: 17, timer: CHERRY_DURATION };
@@ -174,6 +179,7 @@ function update() {
 			g.pendingReturn             = true;
 			g.immune                    = true;
 			state.ghostEatenFreezeTimer = GHOST_EATEN_FREEZE_FRAMES;
+			playEatGhost();
 		} else {
 			loseLife();
 		}
@@ -187,6 +193,7 @@ function update() {
 	if (remaining === 0) {
 		state.gameState  = 'win';
 		state.stateTimer = RESULT_STATE_FRAMES;
+		playIntermission();
 	}
 }
 

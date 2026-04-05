@@ -51,7 +51,7 @@ export var state = {
 
 	// Audio
 	audioCtx:   null,
-	wakaBuffer: null,
+	audioBuffers: {},
 	volume:     parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
 	muted:      localStorage.getItem('pacman-muted') === '1',
 	gameSpeed:  parseFloat(localStorage.getItem('pacman-speed') || '1'),
