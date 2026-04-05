@@ -21,9 +21,8 @@ function ghostSpriteIdx(d) {
 
 // ── BFS path back to the ghost house ─────────────────────────────────────────
 
-export function bfsReturnPath(startCol, startRow) {
-	var HOME_COL = 13, HOME_ROW = 14;
-	if (startCol === HOME_COL && startRow === HOME_ROW) return [];
+export function bfsReturnPath(startCol, startRow, targetCol, targetRow) {
+	if (startCol === targetCol && startRow === targetRow) return [];
 	var dirs4 = [dir.up, dir.left, dir.down, dir.right];
 	var queue   = [{ col: startCol, row: startRow, path: [] }];
 	var visited = {};
@@ -40,7 +39,7 @@ export function bfsReturnPath(startCol, startRow) {
 			if (visited[key] || isReturningGhostWall(nc, nr)) continue;
 			visited[key] = true;
 			var newPath = cur.path.concat([{ col: nc, row: nr }]);
-			if (nc === HOME_COL && nr === HOME_ROW) return newPath;
+			if (nc === targetCol && nr === targetRow) return newPath;
 			queue.push({ col: nc, row: nr, path: newPath });
 		}
 	}
@@ -53,9 +52,10 @@ export function ghostLookahead(g, steps) {
 	if (!g.exited || g.returning) return [];
 	var path = [];
 	var col = g.col, row = g.row, curDir = g.dir;
+	var inScatter = state.scatterPhase % 2 === 0;
 	for (var s = 0; s < steps; s++) {
 		var opp = oppositeDir(curDir);
-		var target = g.getTarget();
+		var target = inScatter ? g.scatterTarget : g.getTarget();
 		var best = dir.none, bestDist = Infinity;
 		var ds = [dir.up, dir.left, dir.down, dir.right];
 		for (var i = 0; i < ds.length; i++) {
@@ -82,7 +82,7 @@ export function ghostLookahead(g, steps) {
 
 // ── Ghost factory ─────────────────────────────────────────────────────────────
 
-export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathColor) {
+export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathColor, scatterTarget) {
 	return {
 		startCol: startCol, startRow: startRow,
 		pathColor: pathColor || '#ffffff',
@@ -93,6 +93,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 		releaseDelay: releaseDelay,
 		releaseFrame: releaseDelay,
 		getTarget: getTarget,
+		scatterTarget: scatterTarget || { col: 0, row: 0 },
 
 		init: function() {
 			this.col          = this.startCol;
@@ -184,8 +185,9 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						var pool = noReverse.length > 0 ? noReverse : choices;
 						best = pool[Math.floor(Math.random() * pool.length)];
 					} else {
-						// Chase: move toward target, no reversing
-						var target = this.getTarget();
+						// Chase or scatter: move toward target, no reversing
+						var inScatter = state.scatterPhase % 2 === 0;
+						var target = inScatter ? this.scatterTarget : this.getTarget();
 						var bestDist = Infinity;
 						for (var i = 0; i < dirs.length; i++) {
 							var d = dirs[i];
@@ -234,22 +236,23 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 // ── Ghost initialisation ──────────────────────────────────────────────────────
 
 export function initGhosts() {
+	var br = state.GRID_ROWS - 1; // bottom row
 	state.ghosts = [
 		makeGhost(12, 14, s_blinky, 0, function() {
 			return { col: state.pacman.col, row: state.pacman.row };
-		}, '#ff0000'),
+		}, '#ff0000', { col: 25, row: 0 }),           // Blinky → top-right
 
 		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
 			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
-		}, '#ffb8ff'),
+		}, '#ffb8ff', { col: 2, row: 0 }),            // Pinky → top-left
 
 		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
 			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
 			var blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
-		}, '#00ffff'),
+		}, '#00ffff', { col: 25, row: br }),           // Inky → bottom-right
 
 		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
 			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
@@ -257,7 +260,7 @@ export function initGhosts() {
 			return dist > 8
 				? { col: state.pacman.col, row: state.pacman.row }
 				: { col: 0,               row: state.GRID_ROWS - 1 };
-		}, '#ffb851')
+		}, '#ffb851', { col: 2, row: br })             // Clyde → bottom-left
 	];
 	state.ghosts.forEach(function(g) { g.init(); });
 }

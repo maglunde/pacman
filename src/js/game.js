@@ -3,7 +3,7 @@ import { initSprites, s_map } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
-	CHERRY_DOT_THRESHOLD, CHERRY_DURATION
+	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, SCATTER_CHASE_PHASES
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -44,6 +44,8 @@ function startReady() {
 	state.ghostCombo            = 0;
 	state.cherry                = null;
 	state.scorePopups           = [];
+	state.scatterPhase          = 0;
+	state.scatterTimer          = SCATTER_CHASE_PHASES[0];
 	state.gameState             = 'ready';
 	state.paused                = false;
 }
@@ -110,7 +112,7 @@ function update() {
 				if (g.pendingReturn) {
 					g.pendingReturn    = false;
 					g.returning        = true;
-					g.returnPath       = bfsReturnPath(g.col, g.row);
+					g.returnPath       = bfsReturnPath(g.col, g.row, g.startCol, g.startRow);
 					g.returnPathIdx    = 0;
 				}
 			});
@@ -125,6 +127,15 @@ function update() {
 			state.scaredTimer = 0;
 			state.ghostCombo  = 0;
 			state.ghosts.forEach(function(g) { g.immune = false; });
+		}
+	}
+
+	// Scatter/chase cycle (pauses while ghosts are scared)
+	if (state.scaredTimer === 0 && state.scatterPhase < SCATTER_CHASE_PHASES.length - 1) {
+		state.scatterTimer -= state.gameSpeed;
+		if (state.scatterTimer <= 0) {
+			state.scatterPhase++;
+			state.scatterTimer = SCATTER_CHASE_PHASES[state.scatterPhase];
 		}
 	}
 

@@ -46,6 +46,10 @@ export var BIG_DOT_POSITIONS = [
 	{ col: 26, row: 26 }
 ];
 
+// Scatter/chase cycle: alternating durations in frames (even idx = scatter, odd = chase).
+// Last entry is Infinity so the final chase phase never ends.
+export var SCATTER_CHASE_PHASES = [420, 1200, 420, 1200, 300, 1200, 300, Infinity];
+
 export var AI_PERSONALITIES = {
 	coward:     { fleeAt: 5, look: 20, trapDepth: 16, pelletCluster: 8, safetyMargin: 2, huntScared: false, label: 'Coward'     },
 	balanced:   { fleeAt: 3, look: 15, trapDepth: 12, pelletCluster: 6, safetyMargin: 1, huntScared: true,  label: 'Balanced'   },

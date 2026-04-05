@@ -28,6 +28,8 @@ export var state = {
 	// Timers
 	scaredTimer:           0,
 	ghostEatenFreezeTimer: 0,
+	scatterPhase:          0,   // index into SCATTER_CHASE_PHASES; even = scatter, odd = chase
+	scatterTimer:          420, // frames left in current phase
 
 	// Scoring
 	score:       0,
