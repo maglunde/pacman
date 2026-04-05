@@ -84,40 +84,13 @@ function isTimeAwareSafe(col, row, pacSteps, threatMap) {
 	return pacSteps < threatMap[key] - margin;
 }
 
-// ── BFS variants ──────────────────────────────────────────────────────────────
+// ── BFS ───────────────────────────────────────────────────────────────────────
+// opts: { blockFn?(col,row)→bool, threatMap? }
+// Returns the first direction toward the nearest tile where goalFn returns true,
+// or dir.none if unreachable. Also writes the path to state.aiPath.
 
-function aiBFS(goalFn, blockFn) {
-	var start   = { col: state.pacman.col, row: state.pacman.row };
-	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, path: [] }];
-	var visited = {};
-	visited[start.row + ',' + start.col] = true;
-	while (queue.length > 0) {
-		var cur = queue.shift();
-		if (goalFn(cur.col, cur.row) && cur.firstDir !== dir.none) {
-			state.aiPath = cur.path;
-			return cur.firstDir;
-		}
-		for (var i = 0; i < bfsDirOrder.length; i++) {
-			var d  = bfsDirOrder[i];
-			var dl = delta(d);
-			var nc = wrapCol(cur.col + dl[0]);
-			var nr = cur.row + dl[1];
-			var key = nr + ',' + nc;
-			if (!visited[key] && !isPacWall(nc, nr) && !(blockFn && blockFn(nc, nr))) {
-				visited[key] = true;
-				queue.push({
-					col: nc, row: nr,
-					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
-					path: cur.path.concat([{ col: nc, row: nr }])
-				});
-			}
-		}
-	}
-	state.aiPath = [];
-	return dir.none;
-}
-
-function aiBFSTimeAware(goalFn, threatMap) {
+function pacmanBFS(goalFn, opts) {
+	opts = opts || {};
 	var start   = { col: state.pacman.col, row: state.pacman.row };
 	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, path: [], steps: 0 }];
 	var visited = {};
@@ -134,53 +107,20 @@ function aiBFSTimeAware(goalFn, threatMap) {
 			var nc = wrapCol(cur.col + dl[0]);
 			var nr = cur.row + dl[1];
 			var key = nr + ',' + nc;
-			if (!visited[key] && !isPacWall(nc, nr) && isTimeAwareSafe(nc, nr, cur.steps + 1, threatMap)) {
-				visited[key] = true;
-				queue.push({
-					col: nc, row: nr,
-					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
-					path: cur.path.concat([{ col: nc, row: nr }]),
-					steps: cur.steps + 1
-				});
-			}
+			if (visited[key] || isPacWall(nc, nr)) continue;
+			if (opts.blockFn   && opts.blockFn(nc, nr)) continue;
+			if (opts.threatMap && !isTimeAwareSafe(nc, nr, cur.steps + 1, opts.threatMap)) continue;
+			visited[key] = true;
+			queue.push({
+				col: nc, row: nr,
+				firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
+				path: cur.path.concat([{ col: nc, row: nr }]),
+				steps: cur.steps + 1
+			});
 		}
 	}
 	state.aiPath = [];
 	return dir.none;
-}
-
-function aiBFSCandidatesTA(goalFn, threatMap, n) {
-	var start   = { col: state.pacman.col, row: state.pacman.row };
-	var queue   = [{ col: start.col, row: start.row, firstDir: dir.none, pathLen: 0, steps: 0 }];
-	var visited = {};
-	visited[start.row + ',' + start.col] = true;
-	var results = [], seen = {};
-	while (queue.length > 0 && results.length < n) {
-		var cur = queue.shift();
-		if (goalFn(cur.col, cur.row) && cur.firstDir !== dir.none) {
-			if (!seen[cur.firstDir]) {
-				seen[cur.firstDir] = true;
-				results.push({ firstDir: cur.firstDir, pathLen: cur.pathLen });
-			}
-		}
-		for (var i = 0; i < bfsDirOrder.length; i++) {
-			var d  = bfsDirOrder[i];
-			var dl = delta(d);
-			var nc = wrapCol(cur.col + dl[0]);
-			var nr = cur.row + dl[1];
-			var key = nr + ',' + nc;
-			if (!visited[key] && !isPacWall(nc, nr) && isTimeAwareSafe(nc, nr, cur.steps + 1, threatMap)) {
-				visited[key] = true;
-				queue.push({
-					col: nc, row: nr,
-					firstDir: cur.firstDir === dir.none ? d : cur.firstDir,
-					pathLen: cur.pathLen + 1,
-					steps:   cur.steps   + 1
-				});
-			}
-		}
-	}
-	return results;
 }
 
 function aiBFSFlee(threatMap) {
@@ -351,7 +291,7 @@ export function aiDecide() {
 
 	// 2. Strategic power pellet
 	if (state.scaredTimer === 0 && pelletCount() > 0) {
-		var nearestPellet = aiBFSTimeAware(isPellet, threatMap);
+		var nearestPellet = pacmanBFS(isPellet, { threatMap: threatMap });
 		if (nearestPellet !== dir.none) {
 			var distToPellet = state.aiPath.length;
 			var cluster      = ghostClusterScore();
@@ -364,9 +304,9 @@ export function aiDecide() {
 
 	// 3. Hunt scared ghosts
 	if (cfg.huntScared && state.scaredTimer > 0 && countScared() > 0) {
-		var huntDir = aiBFS(
+		var huntDir = pacmanBFS(
 			function(c, r) { return isScaredGhostAt(c, r); },
-			function(c, r) { return isActiveGhostAt(c, r); }
+			{ blockFn: function(c, r) { return isActiveGhostAt(c, r); } }
 		);
 		if (huntDir !== dir.none && state.aiPath.length * fpt < state.scaredTimer - 60) {
 			state.pacman.nextDir = huntDir; return;
@@ -375,19 +315,19 @@ export function aiDecide() {
 
 	// 4. Cherry
 	if (state.cherry) {
-		var cherryDir = aiBFSTimeAware(function(c, r) {
+		var cherryDir = pacmanBFS(function(c, r) {
 			return c === state.cherry.col && r === state.cherry.row;
-		}, threatMap);
+		}, { threatMap: threatMap });
 		if (cherryDir !== dir.none && state.aiPath.length * fpt < state.cherry.timer - 60) {
 			state.pacman.nextDir = cherryDir; return;
 		}
 	}
 
 	// 5. Eat dots
-	var bestDotDir = aiBFSTimeAware(function(c, r) {
+	var bestDotDir = pacmanBFS(function(c, r) {
 		if (!isDot(c, r)) return false;
 		return !isMoveTrapped(state.pacman.dir, threatMap);
-	}, threatMap);
+	}, { threatMap: threatMap });
 	if (bestDotDir !== dir.none) { state.pacman.nextDir = bestDotDir; return; }
 
 	// 6. Fallback: flee
