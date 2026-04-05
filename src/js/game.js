@@ -267,32 +267,83 @@ function render() {
 	ctx.clip();
 	drawDots();
 
-	// AI path
+	// --- Render paths (Pac-Man and Ghosts) with overlap offsets ---
 	ctx.save();
 	ctx.lineWidth = 3;
 	ctx.setLineDash([3, 5]);
+
+	const allPaths = [];
+	const ghostKeys = ['blinky', 'pinky', 'inky', 'clyde'];
+
+	// 1. Collect Pac-Man path
 	if (state.aiMode && state.showPaths.pacman && state.aiPath.length > 0) {
-		ctx.strokeStyle = 'rgba(255,255,0,0.5)';
-		ctx.beginPath();
-		ctx.moveTo(state.pacman.x + 14, state.pacman.y + 14);
-		for (var i = 0; i < state.aiPath.length; i++) {
-			var p = state.aiPath[i];
-			ctx.lineTo(state.mapOffX + p.col * TILE + TILE / 2, state.mapOffY + p.row * TILE + TILE / 2);
-		}
-		ctx.stroke();
+		const pPath = [{ col: state.pacman.col, row: state.pacman.row }].concat(state.aiPath);
+		allPaths.push({ id: 'pacman', color: 'rgba(255,255,0,0.5)', points: pPath, index: 0 });
 	}
 
-	// Ghost paths
-	var ghostKeys = ['blinky', 'pinky', 'inky', 'clyde'];
+	// 2. Collect Ghost paths
 	state.ghosts.forEach(function(g, idx) {
 		if (!state.showPaths[ghostKeys[idx]] || !g.exited || state.scaredTimer > 0) return;
-		var gPath = ghostLookahead(g, 20);
-		if (gPath.length === 0) return;
-		ctx.strokeStyle = 'rgba(' + hexToRgb(g.pathColor) + ',0.45)';
+		const gLook = ghostLookahead(g, 20);
+		if (gLook.length === 0) return;
+		const gPath = [{ col: g.col, row: g.row }].concat(gLook);
+		allPaths.push({ id: ghostKeys[idx], color: 'rgba(' + hexToRgb(g.pathColor) + ',0.45)', points: gPath, index: idx + 1 });
+	});
+
+	// 3. Draw each segment of each path with potential offsets
+	allPaths.forEach(function(pathObj) {
+		ctx.strokeStyle = pathObj.color;
 		ctx.beginPath();
-		ctx.moveTo(g.x + 15, g.y + 15);
-		for (var i = 0; i < gPath.length; i++)
-			ctx.lineTo(state.mapOffX + gPath[i].col * TILE + TILE / 2, state.mapOffY + gPath[i].row * TILE + TILE / 2);
+		
+		for (let i = 0; i < pathObj.points.length - 1; i++) {
+			const p1 = pathObj.points[i];
+			const p2 = pathObj.points[i+1];
+
+			// Create a canonical segment key to identify shared segments
+			const key = [p1.row + ',' + p1.col, p2.row + ',' + p2.col].sort().join('-');
+			
+			// Count how many active paths share this segment
+			const sharingPaths = allPaths.filter(function(other) {
+				for (let j = 0; j < other.points.length - 1; j++) {
+					const op1 = other.points[j];
+					const op2 = other.points[j+1];
+					const okey = [op1.row + ',' + op1.col, op2.row + ',' + op2.col].sort().join('-');
+					if (okey === key) return true;
+				}
+				return false;
+			});
+
+			// Only offset if more than one path shares the segment
+			let offsetX = 0, offsetY = 0;
+			if (sharingPaths.length > 1) {
+				// Sort by their inherent index to keep ordering consistent
+				sharingPaths.sort((a, b) => a.index - b.index);
+				const myRank = sharingPaths.indexOf(pathObj);
+				const offsetMag = (myRank - (sharingPaths.length - 1) / 2) * 4;
+
+				// Perpendicular offset
+				if (p1.row === p2.row) { // Horizontal
+					offsetY = offsetMag;
+				} else { // Vertical or wrap-around (approx)
+					offsetX = offsetMag;
+				}
+			}
+
+			const x1 = state.mapOffX + p1.col * TILE + TILE / 2 + offsetX;
+			const y1 = state.mapOffY + p1.row * TILE + TILE / 2 + offsetY;
+			const x2 = state.mapOffX + p2.col * TILE + TILE / 2 + offsetX;
+			const y2 = state.mapOffY + p2.row * TILE + TILE / 2 + offsetY;
+
+			if (i === 0) ctx.moveTo(x1, y1);
+			
+			// Simple wrap-around check: don't draw long lines across the screen
+			const dx = Math.abs(p1.col - p2.col);
+			if (dx > 1) {
+				ctx.moveTo(x2, y2);
+			} else {
+				ctx.lineTo(x2, y2);
+			}
+		}
 		ctx.stroke();
 	});
 	ctx.restore();
