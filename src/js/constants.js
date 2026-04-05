@@ -20,7 +20,7 @@ export var INKY_RELEASE_DELAY   = 600;
 export var CLYDE_RELEASE_DELAY  = 900;
 
 // Cherry
-export var CHERRY_DOT_THRESHOLD = 100;   // Dots eaten before cherry appears
+export var CHERRY_DOT_THRESHOLD = 70;   // Dots eaten before cherry appears
 export var CHERRY_DURATION      = 1000;  // Frames cherry stays on board
 
 // HUD

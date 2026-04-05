@@ -51,11 +51,13 @@ export var state = {
 	aiPersonalityIdx: 1,
 
 	// Audio
-	audioCtx:   null,
-	audioBuffers: {},
-	volume:     parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
-	muted:      localStorage.getItem('pacman-muted') === '1',
-	gameSpeed:  parseFloat(localStorage.getItem('pacman-speed') || '1'),
+	audioCtx:      null,
+	audioBuffers:  {},
+	volume:        parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
+	muted:         localStorage.getItem('pacman-muted') === '1',
+	gameSpeed:     parseFloat(localStorage.getItem('pacman-speed') || '1'),
+	activeLoopTrack: null,  // 'fright' | 'eyes' | null
+	loopNodes:       null,  // { intro: AudioBufferSourceNode, loop: AudioBufferSourceNode, gain: GainNode }
 
 	// Animation counters
 	frames: 0,

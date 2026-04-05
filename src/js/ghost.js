@@ -214,7 +214,6 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 				var spd = ((state.scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
 				if (moveTowardTarget(this, spd) && !this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
 					this.exited = true;
-					this.immune = state.scaredTimer > 0;
 				}
 			}
 		},
@@ -223,7 +222,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			var ctx = state.ctx;
 			if (this.returning) {
 				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
-			} else if (this.pendingReturn || (state.scaredTimer > 0 && this.exited && !this.immune)) {
+			} else if (this.pendingReturn || (state.scaredTimer > 0 && !this.immune)) {
 				var white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {

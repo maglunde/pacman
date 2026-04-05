@@ -12,7 +12,8 @@ import { initGhosts, bfsReturnPath, ghostLookahead } from './ghost.js';
 import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
 import {
-	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playExtraPac, playIntermission
+	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playExtraPac, playIntermission,
+	startFright, startEyes, stopLoopingMusic, updateLoopVolume
 } from './audio.js';
 import {
 	drawHUD, initPathPanel, setPathPanelVisible, togglePath, hexToRgb,
@@ -81,6 +82,7 @@ function nextLevel() {
 
 function loseLife() {
 	state.lives--;
+	stopLoopingMusic();
 	playDeath();
 	if (state.lives <= 0) {
 		if (state.score > state.highScore) {
@@ -143,6 +145,18 @@ function update() {
 		}
 	}
 
+	// Background music manager
+	if (state.ghostEatenFreezeTimer <= 0) {
+		var anyReturning = state.ghosts.some(function(g) { return g.returning; });
+		if (anyReturning) {
+			startEyes();
+		} else if (state.scaredTimer > 0) {
+			if (state.activeLoopTrack !== 'fright') { stopLoopingMusic(); startFright(); }
+		} else {
+			stopLoopingMusic();
+		}
+	}
+
 	// Scatter/chase cycle (pauses while ghosts are scared)
 	if (state.scaredTimer === 0 && state.scatterPhase < SCATTER_CHASE_PHASES.length - 1) {
 		state.scatterTimer -= state.gameSpeed;
@@ -167,7 +181,7 @@ function update() {
 			state.cherry = null;
 			playEatFruit();
 		}
-	} else if (state.dotsEaten % CHERRY_DOT_THRESHOLD === CHERRY_DOT_THRESHOLD-1) {
+	} else if ((state.dotsEaten+1) % CHERRY_DOT_THRESHOLD === 0) {
 		var fruits = [
 			{ sprite: function() { return s_cherry; },     points: 100 },
 			{ sprite: function() { return s_strawberry; }, points: 300 },
@@ -230,6 +244,7 @@ function update() {
 	if (remaining === 0) {
 		state.gameState  = 'win';
 		state.stateTimer = RESULT_STATE_FRAMES;
+		stopLoopingMusic();
 		playIntermission();
 	}
 }
@@ -498,7 +513,7 @@ function keydown(e) {
 		}
 		return;
 	}
-	if (e.code === 'KeyM') { state.muted = !state.muted; saveVolume(); return; }
+	if (e.code === 'KeyM') { state.muted = !state.muted; saveVolume(); updateLoopVolume(); return; }
 	if (e.code === 'KeyQ') { state.showInfoPanel = !state.showInfoPanel; return; }
 	if (e.code === 'Comma')  { state.gameSpeed = Math.max(SPEED_MIN, Math.round((state.gameSpeed - 0.25) * 100) / 100); saveSpeed(); return; }
 	if (e.code === 'Period') { state.gameSpeed = Math.min(SPEED_MAX, Math.round((state.gameSpeed + 0.25) * 100) / 100); saveSpeed(); return; }
