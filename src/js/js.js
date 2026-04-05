@@ -53,6 +53,7 @@ audioCtx   = null,
 wakaBuffer = null,
 volume     = parseFloat(localStorage.getItem('pacman-vol') || '0.5'),
 muted      = localStorage.getItem('pacman-muted') === '1',
+gameSpeed  = parseFloat(localStorage.getItem('pacman-speed') || '1'),
 
 frames = 0,
 frame  = 0,
@@ -106,7 +107,8 @@ pacman = {
 		if (this.moving) {
 			var dx = this.targetX - this.x;
 			var dy = this.targetY - this.y;
-			if (Math.abs(dx) <= SPEED && Math.abs(dy) <= SPEED) {
+			var pacSpd = (dots[this.row][this.col] === 1 ? SPEED * 0.9 : SPEED) * gameSpeed;
+			if (Math.abs(dx) <= pacSpd && Math.abs(dy) <= pacSpd) {
 				this.x      = this.targetX;
 				this.y      = this.targetY;
 				this.moving = false;
@@ -127,7 +129,6 @@ pacman = {
 					}
 				}
 			} else {
-				var pacSpd = dots[this.row][this.col] === 1 ? SPEED * 0.9 : SPEED;
 				this.x += Math.sign(dx) * pacSpd;
 				this.y += Math.sign(dy) * pacSpd;
 			}
@@ -284,7 +285,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 			this.returning = false;
 			this.pendingReturn = false;
 			this.bounceDir = dir.up;
-			this.releaseFrame = frames + this.releaseDelay;
+			this.releaseFrame = frames + this.releaseDelay / gameSpeed;
 			var p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
 			this.targetX = p.x; this.targetY = p.y;
@@ -295,7 +296,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 
 			// Returning to house after being eaten — follows BFS shortest path
 			if (this.returning) {
-				var rspd = GHOST_SPEED * 3;
+				var rspd = GHOST_SPEED * 3 * gameSpeed;
 				if (!this.moving) {
 					if (this.returnPath && this.returnPathIdx < this.returnPath.length) {
 						var next = this.returnPath[this.returnPathIdx];
@@ -312,7 +313,7 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						this.returning = false;
 						this.exited = false;
 						this.immune = scaredTimer > 0; // immun mot gjeldende power-pellet
-						this.releaseFrame = frames + 300; // ~5s ventetid
+						this.releaseFrame = frames + 300 / gameSpeed; // ~5s ventetid
 						this.returnPath = null;
 						this.returnPathIdx = 0;
 						this.bounceDir = dir.up;
@@ -344,12 +345,13 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 				}
 				if (this.moving) {
 					var bdx = this.targetX - this.x, bdy = this.targetY - this.y;
-					if (Math.abs(bdx) <= GHOST_SPEED && Math.abs(bdy) <= GHOST_SPEED) {
+					var bspd = GHOST_SPEED * gameSpeed;
+					if (Math.abs(bdx) <= bspd && Math.abs(bdy) <= bspd) {
 						this.x = this.targetX; this.y = this.targetY;
 						this.moving = false;
 					} else {
-						this.x += Math.sign(bdx) * GHOST_SPEED;
-						this.y += Math.sign(bdy) * GHOST_SPEED;
+						this.x += Math.sign(bdx) * bspd;
+						this.y += Math.sign(bdy) * bspd;
 					}
 				}
 				return;
@@ -412,7 +414,8 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 
 			if (this.moving) {
 				var dx = this.targetX - this.x, dy = this.targetY - this.y;
-				if (Math.abs(dx) <= GHOST_SPEED && Math.abs(dy) <= GHOST_SPEED) {
+				var spd = ((scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
+				if (Math.abs(dx) <= spd && Math.abs(dy) <= spd) {
 					this.x = this.targetX; this.y = this.targetY;
 					this.moving = false;
 					if (!this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
@@ -420,7 +423,6 @@ function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathCol
 						this.immune = scaredTimer > 0;
 					}
 				} else {
-					var spd = ((scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
 					this.x += Math.sign(dx) * spd;
 					this.y += Math.sign(dy) * spd;
 				}
@@ -573,16 +575,16 @@ function initDots() {
 function main() {
 	canvas = document.createElement("canvas");
 	ctx    = canvas.getContext("2d");
-	width  = 1200;
+	width  = 1800;
 	height = 1200;
 	canvas.width  = width;
 	canvas.height = height;
 	document.body.appendChild(canvas);
 	document.addEventListener("keydown", keydown);
 	initPathPanel();
-	canvas.addEventListener('mousedown', onVolMouseDown);
-	canvas.addEventListener('mousemove', onVolMouseMove);
-	canvas.addEventListener('mouseup',   onVolMouseUp);
+	canvas.addEventListener('mousedown', function(e) { onVolMouseDown(e); onSpeedMouseDown(e); });
+	canvas.addEventListener('mousemove', function(e) { onVolMouseMove(e); onSpeedMouseMove(e); });
+	canvas.addEventListener('mouseup',   function(e) { onVolMouseUp();    onSpeedMouseUp(); });
 
 	img     = new Image();
 	img.src = "res/sheet.png";
@@ -671,6 +673,7 @@ var bfsDirOrder = [dir.up, dir.left, dir.down, dir.right];
 var aiLastShuffle = 0;
 var showPaths = { pacman: true, blinky: true, pinky: true, inky: true, clyde: true };
 var pathPanel = null;
+var showInfoPanel = true;
 
 
 function initPathPanel() {
@@ -699,6 +702,17 @@ function initPathPanel() {
 
 function setPathPanelVisible(v) {
 	if (pathPanel) pathPanel.style.display = v ? 'block' : 'none';
+}
+
+// key order matches panel entry order: pacman, blinky, pinky, inky, clyde
+var PATH_KEYS = ['pacman', 'blinky', 'pinky', 'inky', 'clyde'];
+function togglePath(key) {
+	showPaths[key] = !showPaths[key];
+	if (pathPanel) {
+		var cbs = pathPanel.querySelectorAll('input');
+		var idx = PATH_KEYS.indexOf(key);
+		if (idx >= 0 && cbs[idx]) cbs[idx].checked = showPaths[key];
+	}
 }
 
 function hexToRgb(hex) {
@@ -1186,23 +1200,23 @@ function update() {
 	if (gameState === 'ready') { if (aiMode) gameState = 'playing'; return; }
 	if (paused) return;
 	if (gameState === 'dead') {
-		if (--stateTimer <= 0) startReady();
+		if ((stateTimer -= gameSpeed) <= 0) startReady();
 		return;
 	}
 	if (gameState === 'gameover') {
-		if (--stateTimer <= 0) gameState = 'menu';
+		if ((stateTimer -= gameSpeed) <= 0) gameState = 'menu';
 		return;
 	}
 	if (gameState === 'win') {
-		if (--stateTimer <= 0) nextLevel();
+		if ((stateTimer -= gameSpeed) <= 0) nextLevel();
 		return;
 	}
 	if (gameState !== 'playing') return;
 
 	// Freeze etter at ghost er spist — 2 sekunder pause
 	if (ghostEatenFreezeTimer > 0) {
-		ghostEatenFreezeTimer--;
-		if (ghostEatenFreezeTimer === 0) {
+		ghostEatenFreezeTimer -= gameSpeed;
+		if (ghostEatenFreezeTimer <= 0) {
 			ghosts.forEach(function(g) {
 				if (g.pendingReturn) {
 					g.pendingReturn = false;
@@ -1217,8 +1231,9 @@ function update() {
 
 	// Scared timer
 	if (scaredTimer > 0) {
-		scaredTimer--;
-		if (scaredTimer === 0) {
+		scaredTimer -= gameSpeed;
+		if (scaredTimer <= 0) {
+			scaredTimer = 0;
 			ghostCombo = 0;
 			ghosts.forEach(function(g) { g.immune = false; });
 		}
@@ -1230,7 +1245,7 @@ function update() {
 
 	// Cherry
 	if (cherry) {
-		cherry.timer--;
+		cherry.timer -= gameSpeed;
 		if (cherry.timer <= 0) cherry = null;
 		else if (cherry.col === pacman.col && cherry.row === pacman.row) {
 			score += 100;
@@ -1243,7 +1258,7 @@ function update() {
 
 	if (aiMode) aiDecide();
 	pacman.update();
-	ghosts.forEach(function(g) { g.update(levelSpeedFactor()); });
+	ghosts.forEach(function(g) { g.update(levelSpeedFactor() * gameSpeed); });
 
 	// Ghost collision
 	ghosts.forEach(function(g) {
@@ -1401,40 +1416,38 @@ function render() {
 	ctx.rect(mapOffX, mapOffY, GRID_COLS * TILE, GRID_ROWS * TILE);
 	ctx.clip();
 	drawDots();
-	if (aiMode) {
-		ctx.save();
-		ctx.lineWidth = 3;
-		ctx.setLineDash([3, 5]);
+	ctx.save();
+	ctx.lineWidth = 3;
+	ctx.setLineDash([3, 5]);
 
-		// Pac-Man sin sti
-		if (showPaths.pacman && aiPath.length > 0) {
-			ctx.strokeStyle = 'rgba(255,255,0,0.5)';
-			ctx.beginPath();
-			ctx.moveTo(pacman.x + 14, pacman.y + 14);
-			for (var i = 0; i < aiPath.length; i++) {
-				var p = aiPath[i];
-				ctx.lineTo(mapOffX + p.col * TILE + TILE / 2, mapOffY + p.row * TILE + TILE / 2);
-			}
-			ctx.stroke();
+	// Pac-Man sin sti (kun AI-modus)
+	if (aiMode && showPaths.pacman && aiPath.length > 0) {
+		ctx.strokeStyle = 'rgba(255,255,0,0.5)';
+		ctx.beginPath();
+		ctx.moveTo(pacman.x + 14, pacman.y + 14);
+		for (var i = 0; i < aiPath.length; i++) {
+			var p = aiPath[i];
+			ctx.lineTo(mapOffX + p.col * TILE + TILE / 2, mapOffY + p.row * TILE + TILE / 2);
 		}
-
-		// Ghost-stier
-		var ghostKeys = ['blinky', 'pinky', 'inky', 'clyde'];
-		ghosts.forEach(function(g, idx) {
-			if (!showPaths[ghostKeys[idx]] || !g.exited || scaredTimer > 0) return;
-			var gPath = ghostLookahead(g, 20);
-			if (gPath.length === 0) return;
-			ctx.strokeStyle = 'rgba(' + hexToRgb(g.pathColor) + ',0.45)';
-			ctx.beginPath();
-			ctx.moveTo(g.x + 15, g.y + 15);
-			for (var i = 0; i < gPath.length; i++) {
-				ctx.lineTo(mapOffX + gPath[i].col * TILE + TILE / 2, mapOffY + gPath[i].row * TILE + TILE / 2);
-			}
-			ctx.stroke();
-		});
-
-		ctx.restore();
+		ctx.stroke();
 	}
+
+	// Ghost-stier (begge moduser)
+	var ghostKeys = ['blinky', 'pinky', 'inky', 'clyde'];
+	ghosts.forEach(function(g, idx) {
+		if (!showPaths[ghostKeys[idx]] || !g.exited || scaredTimer > 0) return;
+		var gPath = ghostLookahead(g, 20);
+		if (gPath.length === 0) return;
+		ctx.strokeStyle = 'rgba(' + hexToRgb(g.pathColor) + ',0.45)';
+		ctx.beginPath();
+		ctx.moveTo(g.x + 15, g.y + 15);
+		for (var i = 0; i < gPath.length; i++) {
+			ctx.lineTo(mapOffX + gPath[i].col * TILE + TILE / 2, mapOffY + gPath[i].row * TILE + TILE / 2);
+		}
+		ctx.stroke();
+	});
+
+	ctx.restore();
 	ghosts.forEach(function(g) { g.draw(); });
 	pacman.draw();
 
@@ -1508,9 +1521,17 @@ function saveVolume() {
 	localStorage.setItem('pacman-muted', muted ? '1' : '0');
 }
 
-var volTrackBounds  = null; // { x, y, w } in canvas px
-var volIconBounds   = null; // { x, y, w, h }
-var draggingVolume  = false;
+function saveSpeed() {
+	localStorage.setItem('pacman-speed', gameSpeed);
+}
+
+var volTrackBounds   = null; // { x, y, w } in canvas px
+var volIconBounds    = null; // { x, y, w, h }
+var draggingVolume   = false;
+
+var speedTrackBounds = null; // { x, y, w } in canvas px
+var speedIconBounds  = null; // { x, y, w, h }
+var draggingSpeed    = false;
 
 function canvasPt(e) {
 	var r = canvas.getBoundingClientRect();
@@ -1544,6 +1565,77 @@ function onVolMouseMove(e) {
 	setVolumeFromX(canvasPt(e).x);
 }
 function onVolMouseUp() { draggingVolume = false; }
+
+var SPEED_MIN = 0.25;
+var SPEED_MAX = 8.0;
+
+function setSpeedFromX(cx) {
+	var t = speedTrackBounds;
+	var ratio = Math.max(0, Math.min(1, (cx - t.x) / t.w));
+	var raw = SPEED_MIN + ratio * (SPEED_MAX - SPEED_MIN);
+	// snap to 1.0 when close
+	gameSpeed = Math.abs(raw - 1.0) < 0.1 ? 1.0 : Math.round(raw * 100) / 100;
+	saveSpeed();
+}
+
+function onSpeedMouseDown(e) {
+	if (gameState === 'menu') return;
+	var p = canvasPt(e);
+	if (speedIconBounds && p.x >= speedIconBounds.x && p.x <= speedIconBounds.x + speedIconBounds.w &&
+	    p.y >= speedIconBounds.y && p.y <= speedIconBounds.y + speedIconBounds.h) {
+		gameSpeed = 1.0; saveSpeed(); return;
+	}
+	if (speedTrackBounds && p.x >= speedTrackBounds.x - 10 && p.x <= speedTrackBounds.x + speedTrackBounds.w + 10 &&
+	    Math.abs(p.y - speedTrackBounds.y) < 16) {
+		draggingSpeed = true;
+		setSpeedFromX(p.x);
+	}
+}
+function onSpeedMouseMove(e) {
+	if (!draggingSpeed) return;
+	setSpeedFromX(canvasPt(e).x);
+}
+function onSpeedMouseUp() { draggingSpeed = false; }
+
+function drawSpeedSlider(mapX, mapW, lifeY) {
+	var trackW  = 160;
+	var trackX  = mapX + mapW / 2 - trackW / 2; // centered between LIVES and volume
+	var trackY  = lifeY - 6;
+	var iconX   = trackX - 10;
+	var iconY   = trackY + 5;
+
+	speedTrackBounds = { x: trackX, y: trackY, w: trackW };
+	speedIconBounds  = { x: iconX - 38, y: trackY - 14, w: 36, h: 20 };
+
+	// icon: shows current speed as text, click to reset
+	var label = gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7';
+	ctx.font = '13px monospace';
+	ctx.fillStyle = gameSpeed === 1.0 ? '#888888' : '#ffff00';
+	ctx.textAlign = 'right';
+	ctx.fillText(label, iconX, iconY);
+
+	// track background
+	ctx.fillStyle = '#444444';
+	ctx.fillRect(trackX, trackY - 2, trackW, 4);
+
+	// track fill (1.0 is at the position corresponding to its ratio)
+	var oneRatio  = (1.0 - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
+	var thisRatio = (gameSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
+	var fillW = thisRatio * trackW;
+	ctx.fillStyle = gameSpeed < 1.0 ? '#00ccff' : gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
+	ctx.fillRect(trackX, trackY - 2, fillW, 4);
+
+	// 1x marker tick
+	ctx.fillStyle = '#888888';
+	ctx.fillRect(trackX + oneRatio * trackW - 1, trackY - 5, 2, 10);
+
+	// thumb
+	var thumbX = trackX + fillW;
+	ctx.beginPath();
+	ctx.arc(thumbX, trackY, 6, 0, Math.PI * 2);
+	ctx.fillStyle = gameSpeed < 1.0 ? '#00ccff' : gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
+	ctx.fill();
+}
 
 function drawVolumeSlider(mapX, mapW, lifeY) {
 	var sx       = 2;
@@ -1631,7 +1723,66 @@ function drawHUD() {
 		ctx.fill();
 	}
 
+	drawSpeedSlider(mapX, mapW, lifeY);
 	drawVolumeSlider(mapX, mapW, lifeY);
+	if (showInfoPanel) drawInfoPanel(mapX, mapY);
+}
+
+function drawInfoPanel(mapX, mapY) {
+	var x  = mapX - 18; // høyrejustert mot venstre kant av brettet
+	var lh = 30;
+	var y  = mapY;
+
+	ctx.textAlign = 'right';
+
+	// ── Ghost behaviour ──────────────────────────────
+	ctx.font = 'bold 22px monospace';
+	ctx.fillStyle = '#aaaaaa';
+	ctx.fillText('GHOSTS', x, y); y += lh + 4;
+
+	var ghostInfo = [
+		{ color: '#ff0000', name: 'Blinky', lines: ['Jager Pac-Man', 'direkte til målet.'] },
+		{ color: '#ffb8ff', name: 'Pinky',  lines: ['Sikter 4 ruter', 'foran Pac-Man.'] },
+		{ color: '#00ffff', name: 'Inky',   lines: ['Bruker Blinky og', '2 ruter foran', 'for å flankere.'] },
+		{ color: '#ffb851', name: 'Clyde',  lines: ['Jager når langt unna,', 'flykter til hjørnet', 'når nær (<8 ruter).'] },
+	];
+	ghostInfo.forEach(function(g) {
+		ctx.font = 'bold 22px monospace';
+		ctx.fillStyle = g.color;
+		ctx.fillText(g.name, x, y); y += lh - 4;
+		ctx.font = '20px monospace';
+		ctx.fillStyle = '#888888';
+		g.lines.forEach(function(line) {
+			ctx.fillText(line, x, y); y += lh - 4;
+		});
+		y += 8;
+	});
+
+	y += 8;
+
+	// ── Keyboard shortcuts ───────────────────────────
+	ctx.font = 'bold 22px monospace';
+	ctx.fillStyle = '#aaaaaa';
+	ctx.fillText('TASTER', x, y); y += lh + 4;
+
+	var shortcuts = [
+		{ key: '← → ↑ ↓', desc: 'Beveg' },
+		{ key: 'P',        desc: 'Pause' },
+		{ key: 'M',        desc: 'Lyd av/på' },
+		{ key: ', / .',    desc: 'Fart −/+' },
+		{ key: 'Z X C V',  desc: 'Ghost-sti' },
+		{ key: 'B',        desc: 'Pac-sti (AI)' },
+		{ key: 'Q',        desc: 'Skjul/vis info' },
+		{ key: 'Esc',      desc: 'Meny' },
+	];
+	shortcuts.forEach(function(s) {
+		ctx.font = 'bold 20px monospace';
+		ctx.fillStyle = '#ffff00';
+		ctx.fillText(s.key, x, y); y += lh - 4;
+		ctx.font = '20px monospace';
+		ctx.fillStyle = '#888888';
+		ctx.fillText(s.desc, x, y); y += lh;
+	});
 }
 
 function keydown(e) {
@@ -1674,6 +1825,14 @@ function keydown(e) {
 		return;
 	}
 	if (e.which === 77) { muted = !muted; saveVolume(); return; } // M
+	if (e.which === 81) { showInfoPanel = !showInfoPanel; return; } // Q
+	if (e.which === 188) { gameSpeed = Math.max(SPEED_MIN, Math.round((gameSpeed - 0.25) * 100) / 100); saveSpeed(); return; } // ,
+	if (e.which === 190) { gameSpeed = Math.min(SPEED_MAX, Math.round((gameSpeed + 0.25) * 100) / 100); saveSpeed(); return; } // .
+	if (e.which === 90) { togglePath('blinky'); return; } // Z
+	if (e.which === 88) { togglePath('pinky');  return; } // X
+	if (e.which === 67) { togglePath('inky');   return; } // C
+	if (e.which === 86) { togglePath('clyde');  return; } // V
+	if (e.which === 66) { togglePath('pacman'); return; } // B
 	if (e.which === 80 && (gameState === 'playing' || gameState === 'paused')) { // P
 		paused = !paused;
 		return;

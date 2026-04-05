@@ -15,8 +15,8 @@ html, body {
 }
 
 canvas {
-	width: min(100vw, 100vh);
-	height: min(100vw, 100vh);
+	width: min(100vw, 150vh);
+	height: min(100vh, 66.667vw);
 	image-rendering: pixelated;
 	z-index: 1;
 }
@@ -29,7 +29,7 @@ canvas {
 	display: none;
 	position: fixed;
 	top: 12px;
-	left: 12px;
+	left: calc((100vw - min(100vw, 150vh)) / 2 + 12px);
 	background: rgba(0,0,0,0.75);
 	border: 1px solid #333;
 	border-radius: 6px;
