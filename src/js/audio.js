@@ -3,7 +3,7 @@ import { state } from './state.js';
 
 const AUDIO_FILES = [
 	{ key: 'beginning',    url: 'res/pacman_beginning.wav' },
-	{ key: 'chomp',        url: 'res/pacman_chomp.wav' },
+	{ key: 'chomp',        url: 'res/waka.mp3' },
 	{ key: 'death',        url: 'res/pacman_death.wav' },
 	{ key: 'eatfruit',     url: 'res/pacman_eatfruit.wav' },
 	{ key: 'eatghost',     url: 'res/pacman_eatghost.wav' },
