@@ -1,4 +1,4 @@
-import { TILE, SPEED, SCARED_DURATION, dir } from './constants.js';
+import { TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, SCARED_DURATION, dir } from './constants.js';
 import { state } from './state.js';
 import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
@@ -46,7 +46,7 @@ state.pacman = {
 		}
 
 		if (this.moving) {
-			var pacSpd = (state.dots[this.row][this.col] === 1 ? SPEED * 0.9 : SPEED) * state.gameSpeed;
+			var pacSpd = (state.dots[this.row][this.col] === 1 ? SPEED * PACMAN_DOT_SPEED_FACTOR : SPEED) * state.gameSpeed;
 			if (moveTowardTarget(this, pacSpd)) {
 				if (state.dots[this.row][this.col] === 1) {
 					state.dots[this.row][this.col] = 0;

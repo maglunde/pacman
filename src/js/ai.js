@@ -1,4 +1,4 @@
-import { dir, TILE, SPEED, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
+import { dir, TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
 import { state } from './state.js';
 import { delta, isPacWall, wrapCol } from './grid.js';
 import { ghostLookahead } from './ghost.js';
@@ -18,7 +18,7 @@ export function shuffleBFSDirs() {
 
 // ── Helper queries ────────────────────────────────────────────────────────────
 
-function aiFPT() { return Math.ceil(TILE / (SPEED * 0.9)); } // frames per tile
+function aiFPT() { return Math.ceil(TILE / (SPEED * PACMAN_DOT_SPEED_FACTOR)); } // frames per tile
 
 function nearestActiveDist() {
 	var m = Infinity;

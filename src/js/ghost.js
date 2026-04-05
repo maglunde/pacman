@@ -1,5 +1,6 @@
 import {
-	dir, GHOST_SPEED,
+	dir, GHOST_SPEED, SCARED_FLASH_THRESHOLD,
+	GHOST_REGEN_DELAY, PINKY_RELEASE_DELAY, INKY_RELEASE_DELAY, CLYDE_RELEASE_DELAY,
 	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX
 } from './constants.js';
 import { state } from './state.js';
@@ -130,7 +131,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						this.returning     = false;
 						this.exited        = false;
 						this.immune        = state.scaredTimer > 0;
-						this.releaseFrame  = state.frames + 300 / state.gameSpeed;
+						this.releaseFrame  = state.frames + GHOST_REGEN_DELAY / state.gameSpeed;
 						this.returnPath    = null;
 						this.returnPathIdx = 0;
 						this.bounceDir     = dir.up;
@@ -221,7 +222,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			if (this.returning) {
 				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
 			} else if (this.pendingReturn || (state.scaredTimer > 0 && this.exited && !this.immune)) {
-				var white = state.scaredTimer <= 200 && Math.floor(state.frames / 8) % 2 === 1;
+				var white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {
 				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
@@ -238,19 +239,19 @@ export function initGhosts() {
 			return { col: state.pacman.col, row: state.pacman.row };
 		}, '#ff0000'),
 
-		makeGhost(13, 14, s_pinky, 300, function() {
+		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
 			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
 		}, '#ffb8ff'),
 
-		makeGhost(14, 14, s_inky, 600, function() {
+		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
 			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
 			var blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
 		}, '#00ffff'),
 
-		makeGhost(15, 14, s_clyde, 900, function() {
+		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
 			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
 			         + Math.abs(state.pacman.row - state.ghosts[3].row);
 			return dist > 8

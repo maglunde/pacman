@@ -1,4 +1,4 @@
-import { TILE, SPEED_MIN, SPEED_MAX, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
+import { TILE, SPEED_MIN, SPEED_MAX, LIFE_ICON_SPACING, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
 import { state } from './state.js';
 
 // ── Utility ───────────────────────────────────────────────────────────────────
@@ -72,6 +72,37 @@ export function togglePath(key) {
 	}
 }
 
+// ── Slider shared helpers ─────────────────────────────────────────────────────
+
+function sliderMouseDown(e, iconBoundsKey, trackBoundsKey, draggingKey, onIconClick, setFromX) {
+	if (state.gameState === 'menu') return;
+	var p  = canvasPt(e);
+	var ib = state[iconBoundsKey];
+	if (ib && p.x >= ib.x && p.x <= ib.x + ib.w && p.y >= ib.y && p.y <= ib.y + ib.h) {
+		onIconClick(); return;
+	}
+	var tb = state[trackBoundsKey];
+	if (tb && p.x >= tb.x - 10 && p.x <= tb.x + tb.w + 10 && Math.abs(p.y - tb.y) < 16) {
+		state[draggingKey] = true;
+		setFromX(p.x);
+	}
+}
+
+function drawSliderTrack(ctx, trackX, trackY, trackW, fillW, color, markerRatio) {
+	ctx.fillStyle = '#444444';
+	ctx.fillRect(trackX, trackY - 2, trackW, 4);
+	ctx.fillStyle = color;
+	ctx.fillRect(trackX, trackY - 2, fillW, 4);
+	if (markerRatio !== undefined) {
+		ctx.fillStyle = '#888888';
+		ctx.fillRect(trackX + markerRatio * trackW - 1, trackY - 5, 2, 10);
+	}
+	ctx.beginPath();
+	ctx.arc(trackX + fillW, trackY, 6, 0, Math.PI * 2);
+	ctx.fillStyle = color;
+	ctx.fill();
+}
+
 // ── Volume slider ─────────────────────────────────────────────────────────────
 
 function setVolumeFromX(cx) {
@@ -81,17 +112,9 @@ function setVolumeFromX(cx) {
 }
 
 export function onVolMouseDown(e) {
-	if (state.gameState === 'menu') return;
-	var p = canvasPt(e);
-	var ib = state.volIconBounds;
-	if (ib && p.x >= ib.x && p.x <= ib.x + ib.w && p.y >= ib.y && p.y <= ib.y + ib.h) {
-		state.muted = !state.muted; saveVolume(); return;
-	}
-	var tb = state.volTrackBounds;
-	if (tb && p.x >= tb.x - 10 && p.x <= tb.x + tb.w + 10 && Math.abs(p.y - tb.y) < 16) {
-		state.draggingVolume = true;
-		setVolumeFromX(p.x);
-	}
+	sliderMouseDown(e, 'volIconBounds', 'volTrackBounds', 'draggingVolume',
+		function() { state.muted = !state.muted; saveVolume(); },
+		setVolumeFromX);
 }
 export function onVolMouseMove(e) {
 	if (!state.draggingVolume) return;
@@ -111,17 +134,9 @@ function setSpeedFromX(cx) {
 }
 
 export function onSpeedMouseDown(e) {
-	if (state.gameState === 'menu') return;
-	var p = canvasPt(e);
-	var ib = state.speedIconBounds;
-	if (ib && p.x >= ib.x && p.x <= ib.x + ib.w && p.y >= ib.y && p.y <= ib.y + ib.h) {
-		state.gameSpeed = 1.0; saveSpeed(); return;
-	}
-	var tb = state.speedTrackBounds;
-	if (tb && p.x >= tb.x - 10 && p.x <= tb.x + tb.w + 10 && Math.abs(p.y - tb.y) < 16) {
-		state.draggingSpeed = true;
-		setSpeedFromX(p.x);
-	}
+	sliderMouseDown(e, 'speedIconBounds', 'speedTrackBounds', 'draggingSpeed',
+		function() { state.gameSpeed = 1.0; saveSpeed(); },
+		setSpeedFromX);
 }
 export function onSpeedMouseMove(e) {
 	if (!state.draggingSpeed) return;
@@ -148,23 +163,11 @@ function drawSpeedSlider(mapX, mapW, lifeY) {
 	ctx.textAlign = 'right';
 	ctx.fillText(label, iconX, iconY);
 
-	ctx.fillStyle = '#444444';
-	ctx.fillRect(trackX, trackY - 2, trackW, 4);
-
 	var oneRatio  = (1.0 - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
 	var thisRatio = (state.gameSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
 	var fillW     = thisRatio * trackW;
-	ctx.fillStyle = state.gameSpeed < 1.0 ? '#00ccff' : state.gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
-	ctx.fillRect(trackX, trackY - 2, fillW, 4);
-
-	ctx.fillStyle = '#888888';
-	ctx.fillRect(trackX + oneRatio * trackW - 1, trackY - 5, 2, 10);
-
-	var thumbX = trackX + fillW;
-	ctx.beginPath();
-	ctx.arc(thumbX, trackY, 6, 0, Math.PI * 2);
-	ctx.fillStyle = state.gameSpeed < 1.0 ? '#00ccff' : state.gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
-	ctx.fill();
+	var speedColor = state.gameSpeed < 1.0 ? '#00ccff' : state.gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
+	drawSliderTrack(ctx, trackX, trackY, trackW, fillW, speedColor, oneRatio);
 }
 
 // ── Volume slider drawing ─────────────────────────────────────────────────────
@@ -188,18 +191,8 @@ function drawVolumeSlider(mapX, mapW, lifeY) {
 	ctx.textAlign = 'left';
 	ctx.fillText(icon, iconX, iconY);
 
-	ctx.fillStyle = '#444444';
-	ctx.fillRect(trackX, trackY - 2, trackW, 4);
-
 	var fillW = state.muted ? 0 : state.volume * trackW;
-	ctx.fillStyle = '#ffff00';
-	ctx.fillRect(trackX, trackY - 2, fillW, 4);
-
-	var thumbX = trackX + (state.muted ? 0 : fillW);
-	ctx.beginPath();
-	ctx.arc(thumbX, trackY, 6, 0, Math.PI * 2);
-	ctx.fillStyle = '#ffff00';
-	ctx.fill();
+	drawSliderTrack(ctx, trackX, trackY, trackW, fillW, '#ffff00');
 }
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
@@ -246,7 +239,7 @@ export function drawHUD() {
 	ctx.fillText('LIVES:', mapX, lifeY);
 	for (var i = 0; i < state.lives; i++) {
 		ctx.beginPath();
-		ctx.arc(mapX + 100 + i * 28, lifeY - 6, 9, 0.25 * Math.PI, 1.75 * Math.PI);
+		ctx.arc(mapX + 100 + i * LIFE_ICON_SPACING, lifeY - 6, 9, 0.25 * Math.PI, 1.75 * Math.PI);
 		ctx.lineTo(mapX + 100 + i * 28, lifeY - 6);
 		ctx.fillStyle = '#ffff00';
 		ctx.fill();

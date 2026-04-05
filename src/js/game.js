@@ -1,6 +1,10 @@
 import '../sass/style.scss';
 import { initSprites, s_map } from './sprite.js';
-import { TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
+import {
+	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
+	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
+	CHERRY_DOT_THRESHOLD, CHERRY_DURATION
+} from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
 import { initDots, initBigDots, drawDots } from './dots.js';
@@ -69,10 +73,10 @@ function loseLife() {
 			localStorage.setItem('pacman-hi', state.highScore);
 		}
 		state.gameState  = 'gameover';
-		state.stateTimer = 180;
+		state.stateTimer = RESULT_STATE_FRAMES;
 	} else {
 		state.gameState  = 'dead';
-		state.stateTimer = 120;
+		state.stateTimer = DEAD_STATE_FRAMES;
 	}
 }
 
@@ -138,8 +142,8 @@ function update() {
 			addPopup('100', state.cherry.col, state.cherry.row);
 			state.cherry = null;
 		}
-	} else if (state.dotsEaten === 70 && state.level <= 5) {
-		state.cherry = { col: 13, row: 17, timer: 600 };
+	} else if (state.dotsEaten === CHERRY_DOT_THRESHOLD && state.level <= 5) {
+		state.cherry = { col: 13, row: 17, timer: CHERRY_DURATION };
 	}
 
 	if (state.aiMode) aiDecide();
@@ -158,7 +162,7 @@ function update() {
 			addPopup(pts.toString(), g.col, g.row);
 			g.pendingReturn             = true;
 			g.immune                    = true;
-			state.ghostEatenFreezeTimer = 120;
+			state.ghostEatenFreezeTimer = GHOST_EATEN_FREEZE_FRAMES;
 		} else {
 			loseLife();
 		}
@@ -171,7 +175,7 @@ function update() {
 			if (state.dots[r][c] === 1) remaining++;
 	if (remaining === 0) {
 		state.gameState  = 'win';
-		state.stateTimer = 180;
+		state.stateTimer = RESULT_STATE_FRAMES;
 	}
 }
 
@@ -355,7 +359,7 @@ function render() {
 
 function keydown(e) {
 	initAudio();
-	if (e.which === 27) { // Escape
+	if (e.key === 'Escape') {
 		setPathPanelVisible(false);
 		newGame();
 		state.gameState    = 'menu';
@@ -364,11 +368,10 @@ function keydown(e) {
 	}
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'personality') {
-			switch (e.which) {
-				case 37: state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length; break;
-				case 39: state.aiPersonalityIdx = (state.aiPersonalityIdx + 1) % AI_PERSONALITY_KEYS.length; break;
-				case 27: state.menuSubState = 'main'; break;
-				case 13:
+			switch (e.key) {
+				case 'ArrowLeft':  state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length; break;
+				case 'ArrowRight': state.aiPersonalityIdx = (state.aiPersonalityIdx + 1) % AI_PERSONALITY_KEYS.length; break;
+				case 'Enter':
 					state.aiMode       = true;
 					state.menuSubState = 'main';
 					newGame();
@@ -376,10 +379,10 @@ function keydown(e) {
 					break;
 			}
 		} else {
-			switch (e.which) {
-				case 38: state.menuSelected = 0; break;
-				case 40: state.menuSelected = 1; break;
-				case 13:
+			switch (e.key) {
+				case 'ArrowUp':   state.menuSelected = 0; break;
+				case 'ArrowDown': state.menuSelected = 1; break;
+				case 'Enter':
 					if (state.menuSelected === 1) {
 						state.menuSubState = 'personality';
 					} else {
@@ -392,26 +395,26 @@ function keydown(e) {
 		}
 		return;
 	}
-	if (e.which === 77) { state.muted = !state.muted; saveVolume(); return; } // M
-	if (e.which === 81) { state.showInfoPanel = !state.showInfoPanel; return; } // Q
-	if (e.which === 188) { state.gameSpeed = Math.max(SPEED_MIN, Math.round((state.gameSpeed - 0.25) * 100) / 100); saveSpeed(); return; } // ,
-	if (e.which === 190) { state.gameSpeed = Math.min(SPEED_MAX, Math.round((state.gameSpeed + 0.25) * 100) / 100); saveSpeed(); return; } // .
-	if (e.which === 90) { togglePath('blinky'); return; } // Z
-	if (e.which === 88) { togglePath('pinky');  return; } // X
-	if (e.which === 67) { togglePath('inky');   return; } // C
-	if (e.which === 86) { togglePath('clyde');  return; } // V
-	if (e.which === 66) { togglePath('pacman'); return; } // B
-	if (e.which === 80 && (state.gameState === 'playing' || state.paused)) { // P
+	if (e.code === 'KeyM') { state.muted = !state.muted; saveVolume(); return; }
+	if (e.code === 'KeyQ') { state.showInfoPanel = !state.showInfoPanel; return; }
+	if (e.code === 'Comma')  { state.gameSpeed = Math.max(SPEED_MIN, Math.round((state.gameSpeed - 0.25) * 100) / 100); saveSpeed(); return; }
+	if (e.code === 'Period') { state.gameSpeed = Math.min(SPEED_MAX, Math.round((state.gameSpeed + 0.25) * 100) / 100); saveSpeed(); return; }
+	if (e.code === 'KeyZ') { togglePath('blinky'); return; }
+	if (e.code === 'KeyX') { togglePath('pinky');  return; }
+	if (e.code === 'KeyC') { togglePath('inky');   return; }
+	if (e.code === 'KeyV') { togglePath('clyde');  return; }
+	if (e.code === 'KeyB') { togglePath('pacman'); return; }
+	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
 		state.paused = !state.paused; return;
 	}
 	if (!state.aiMode) {
-		var arrowKey = e.which >= 37 && e.which <= 40;
+		var arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
 		if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
-		switch (e.which) {
-			case 37: state.pacman.nextDir = dir.left;  break;
-			case 38: state.pacman.nextDir = dir.up;    break;
-			case 39: state.pacman.nextDir = dir.right; break;
-			case 40: state.pacman.nextDir = dir.down;  break;
+		switch (e.key) {
+			case 'ArrowLeft':  state.pacman.nextDir = dir.left;  break;
+			case 'ArrowUp':    state.pacman.nextDir = dir.up;    break;
+			case 'ArrowRight': state.pacman.nextDir = dir.right; break;
+			case 'ArrowDown':  state.pacman.nextDir = dir.down;  break;
 		}
 	}
 }

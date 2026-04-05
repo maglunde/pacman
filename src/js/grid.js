@@ -1,5 +1,5 @@
 import {
-	TILE,
+	TILE, WALL_BRIGHTNESS_THRESHOLD,
 	dir,
 	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX,
 	GHOST_HOUSE_COL_MIN, GHOST_HOUSE_COL_MAX,
@@ -64,7 +64,7 @@ export function inGhostHouse(col, row) {
 function isWall(mx, my) {
 	if (mx < 0 || my < 0 || mx >= s_map.w || my >= s_map.h) return true;
 	var idx = (Math.floor(my) * s_map.w + Math.floor(mx)) * 4;
-	return (state.mapPixels[idx] + state.mapPixels[idx+1] + state.mapPixels[idx+2]) > 80;
+	return (state.mapPixels[idx] + state.mapPixels[idx+1] + state.mapPixels[idx+2]) > WALL_BRIGHTNESS_THRESHOLD;
 }
 
 export function isGridWall(col, row) {

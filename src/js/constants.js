@@ -1,10 +1,33 @@
-export var TILE           = 16;
-export var SPEED          = 0.8;
-export var GHOST_SPEED    = 0.68;
-export var SCARED_DURATION = 1000;
-export var WAKA_DURATION  = 0.155;
-export var SPEED_MIN      = 0.25;
-export var SPEED_MAX      = 8.0;
+export var TILE                    = 16;
+export var SPEED                   = 0.8;
+export var PACMAN_DOT_SPEED_FACTOR = 0.9;  // Pac-Man slows on dot tiles
+export var GHOST_SPEED             = 0.68;
+export var SCARED_DURATION         = 1000;
+export var SCARED_FLASH_THRESHOLD  = 200;  // Frames left when scared ghost starts flashing
+export var WAKA_DURATION           = 0.155;
+export var SPEED_MIN               = 0.25;
+export var SPEED_MAX               = 8.0;
+
+// State-machine durations (frames)
+export var DEAD_STATE_FRAMES        = 120;
+export var RESULT_STATE_FRAMES      = 180; // Win + gameover hold
+export var GHOST_EATEN_FREEZE_FRAMES = 120;
+export var GHOST_REGEN_DELAY        = 300; // Frames in house before re-release after returning
+
+// Ghost initial release delays (frames)
+export var PINKY_RELEASE_DELAY  = 300;
+export var INKY_RELEASE_DELAY   = 600;
+export var CLYDE_RELEASE_DELAY  = 900;
+
+// Cherry
+export var CHERRY_DOT_THRESHOLD = 70;   // Dots eaten before cherry appears
+export var CHERRY_DURATION      = 600;  // Frames cherry stays on board
+
+// HUD
+export var LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD
+
+// Wall detection
+export var WALL_BRIGHTNESS_THRESHOLD = 80; // Pixel brightness sum above which a pixel is a wall
 
 export var dir = { none: -1, left: 0, up: 1, right: 2, down: 3 };
 
