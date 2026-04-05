@@ -50,7 +50,6 @@ function startReady() {
 	state.scatterTimer          = SCATTER_CHASE_PHASES[0];
 	state.gameState             = 'ready';
 	state.paused                = false;
-	playBeginning();
 }
 
 export function newGame() {
@@ -61,6 +60,7 @@ export function newGame() {
 	initBigDots();
 	shuffleBFSDirs();
 	startReady();
+	playBeginning();
 }
 
 function nextLevel() {
@@ -68,6 +68,7 @@ function nextLevel() {
 	initDots();
 	initBigDots();
 	startReady();
+	playBeginning();
 }
 
 function loseLife() {
