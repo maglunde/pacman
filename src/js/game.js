@@ -3,7 +3,7 @@ import { initSprites, s_map, s_pacman, s_cherry, s_strawberry, s_orange } from '
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
-	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, SCATTER_CHASE_PHASES
+	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, SCATTER_CHASE_PHASES
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -179,6 +179,7 @@ function update() {
 			addScore(state.cherry.points);
 			addPopup(String(state.cherry.points), state.cherry.col, state.cherry.row);
 			state.cherry = null;
+			state.dotsEaten++;
 			playEatFruit();
 		}
 	} else if ((state.dotsEaten+1) % CHERRY_DOT_THRESHOLD === 0) {
@@ -412,9 +413,12 @@ function render() {
 
 	// Fruit
 	if (state.cherry) {
-		var fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
-		var fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
-		state.cherry.sprite().draw(ctx, fx, fy, TILE * 2, TILE * 2);
+		var cherryVisible = state.cherry.timer > CHERRY_FLASH_THRESHOLD || Math.floor(state.frames / 8) % 2 === 0;
+		if (cherryVisible) {
+			var fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
+			var fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
+			state.cherry.sprite().draw(ctx, fx, fy, TILE * 2, TILE * 2);
+		}
 	}
 
 	// Score popups
