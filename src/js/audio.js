@@ -19,7 +19,12 @@ export function initAudio() {
 		fetch(file.url)
 			.then(r => r.arrayBuffer())
 			.then(ab => state.audioCtx.decodeAudioData(ab))
-			.then(buf => { state.audioBuffers[file.key] = buf; })
+			.then(buf => {
+				state.audioBuffers[file.key] = buf;
+				if (file.key === 'beginning' && state.pendingBeginning) {
+					playBeginning();
+				}
+			})
 			.catch(err => console.error('Failed to load audio:', file.url, err));
 	});
 }
@@ -50,6 +55,9 @@ export function playWaka() {
 }
 
 export function playBeginning() {
+	if (state.audioBuffers['beginning']) {
+		state.pendingBeginning = false;
+	}
 	playBuffer('beginning', 0.5);
 }
 

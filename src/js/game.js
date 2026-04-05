@@ -60,7 +60,6 @@ export function newGame() {
 	initBigDots();
 	shuffleBFSDirs();
 	startReady();
-	playBeginning();
 }
 
 function nextLevel() {
@@ -68,7 +67,6 @@ function nextLevel() {
 	initDots();
 	initBigDots();
 	startReady();
-	playBeginning();
 }
 
 function loseLife() {
@@ -446,6 +444,8 @@ function keydown(e) {
 					state.menuSubState = 'main';
 					newGame();
 					setPathPanelVisible(true);
+					state.pendingBeginning = true;
+					playBeginning();
 					break;
 			}
 		} else {
@@ -459,6 +459,8 @@ function keydown(e) {
 						state.aiMode = false;
 						newGame();
 						setPathPanelVisible(false);
+						state.pendingBeginning = true;
+						playBeginning();
 					}
 					break;
 			}
