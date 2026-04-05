@@ -7,7 +7,9 @@ s_inky,		// blue
 s_clyde,	// yellow
 s_scaredGhost,
 s_eyes,
-s_fruit,
+s_orange,
+s_strawberry,
+s_cherry,
 s_dot,
 s_bigDot
 
@@ -81,6 +83,9 @@ export function initSprites(img){
 	];
 	s_dot    = new Sprite(img, 575, 151,  6,  6);
 	s_bigDot = new Sprite(img, 587, 147, 18, 18);
+	s_orange = new Sprite(img, 475, 213, 30, 30);
+	s_strawberry = new Sprite(img, 506, 213, 30, 30);
+	s_cherry = new Sprite(img, 540, 213, 30, 30);
 	s_scaredGhost = [
 		new Sprite(img, 533, 139, 30, 30), // blue
 		new Sprite(img, 499, 139, 30, 30)  // white (blinking)

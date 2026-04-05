@@ -20,8 +20,8 @@ export var INKY_RELEASE_DELAY   = 600;
 export var CLYDE_RELEASE_DELAY  = 900;
 
 // Cherry
-export var CHERRY_DOT_THRESHOLD = 70;   // Dots eaten before cherry appears
-export var CHERRY_DURATION      = 800;  // Frames cherry stays on board
+export var CHERRY_DOT_THRESHOLD = 100;   // Dots eaten before cherry appears
+export var CHERRY_DURATION      = 1000;  // Frames cherry stays on board
 
 // HUD
 export var LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD
@@ -42,8 +42,8 @@ export var DOOR_COL_MAX = 15;
 export var BIG_DOT_POSITIONS = [
 	{ col: 1,  row: 3  },
 	{ col: 26, row: 3  },
-	{ col: 1,  row: 26 },
-	{ col: 26, row: 26 }
+	{ col: 1,  row: 23 },
+	{ col: 26, row: 23 }
 ];
 
 // Scatter/chase cycle: alternating durations in frames (even idx = scatter, odd = chase).

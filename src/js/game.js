@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_cherry, s_strawberry, s_orange } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -162,13 +162,19 @@ function update() {
 		if (state.cherry.timer <= 0) {
 			state.cherry = null;
 		} else if (state.cherry.col === state.pacman.col && state.cherry.row === state.pacman.row) {
-			addScore(100);
-			addPopup('100', state.cherry.col, state.cherry.row);
+			addScore(state.cherry.points);
+			addPopup(String(state.cherry.points), state.cherry.col, state.cherry.row);
 			state.cherry = null;
 			playEatFruit();
 		}
-	} else if (state.dotsEaten === CHERRY_DOT_THRESHOLD && state.level <= 5) {
-		state.cherry = { col: 13, row: 17, timer: CHERRY_DURATION };
+	} else if (state.dotsEaten % CHERRY_DOT_THRESHOLD === CHERRY_DOT_THRESHOLD-1) {
+		var fruits = [
+			{ sprite: function() { return s_cherry; },     points: 100 },
+			{ sprite: function() { return s_strawberry; }, points: 300 },
+			{ sprite: function() { return s_orange; },     points: 500 }
+		];
+		var picked = fruits[Math.floor(Math.random() * fruits.length)];
+		state.cherry = { col: 13, row: 17, timer: CHERRY_DURATION, sprite: picked.sprite, points: picked.points };
 	}
 
 	if (state.aiMode) aiDecide();
@@ -389,18 +395,11 @@ function render() {
 	state.ghosts.forEach(function(g) { g.draw(); });
 	state.pacman.draw();
 
-	// Cherry
+	// Fruit
 	if (state.cherry) {
-		var cx = state.mapOffX + state.cherry.col * TILE + TILE / 2;
-		var cy = state.mapOffY + state.cherry.row * TILE + TILE / 2;
-		ctx.fillStyle = '#cc0000';
-		ctx.beginPath(); ctx.arc(cx - 4, cy + 2, 5, 0, Math.PI * 2); ctx.fill();
-		ctx.beginPath(); ctx.arc(cx + 4, cy + 2, 5, 0, Math.PI * 2); ctx.fill();
-		ctx.strokeStyle = '#228822'; ctx.lineWidth = 1.5;
-		ctx.beginPath();
-		ctx.moveTo(cx - 4, cy - 3);
-		ctx.quadraticCurveTo(cx, cy - 10, cx + 4, cy - 3);
-		ctx.stroke();
+		var fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
+		var fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
+		state.cherry.sprite().draw(ctx, fx, fy, TILE * 2, TILE * 2);
 	}
 
 	// Score popups
