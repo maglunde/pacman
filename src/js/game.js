@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -265,16 +265,19 @@ function renderMenu() {
 	ctx.fillStyle = '#000';
 	ctx.fillRect(0, 0, state.width / 2, state.height / 2);
 
+
 	var cx       = state.mapOffX + state.GRID_COLS * TILE / 2;
 	var top      = state.mapOffY;
 	var mapH     = state.GRID_ROWS * TILE;
 	var mapBot   = top + mapH;
 
 	// ── Title ──────────────────────────────────────────────────────────────────
-	ctx.fillStyle = '#ffffff';
-	ctx.font      = 'bold 34px monospace';
-	ctx.textAlign = 'center';
-	ctx.fillText('PAC-MAN', cx, top + 42);
+	var desiredW = s_title.w *0.8;  // 212
+	var desiredH = s_title.h *0.8;  //  49
+	s_title.draw(ctx, cx - desiredW / 2, top + 4, desiredW, desiredH);
+	var offX = 0;
+	var offY = 50;
+	ctx.translate(offX, offY);
 
 	if (state.menuSubState === 'personality') {
 		// ── Personality sub-screen ──────────────────────────────────────────────
@@ -306,7 +309,7 @@ function renderMenu() {
 	} else {
 		// ── Character / Nickname table ──────────────────────────────────────────
 		ctx.fillStyle = '#ffffff';
-		ctx.font      = 'bold 10px monospace';
+		ctx.font      = 'bold 16px monospace';
 		ctx.textAlign = 'center';
 		ctx.fillText('CHARACTER / NICKNAME', cx, top + 68);
 
@@ -332,7 +335,7 @@ function renderMenu() {
 			gd.sprites[3].draw(ctx, cx - 108, gy - 13, 26, 26);
 			// Full name
 			ctx.fillStyle = gd.color;
-			ctx.font      = 'bold 10px monospace';
+			ctx.font      = 'bold 14px monospace';
 			ctx.textAlign = 'left';
 			ctx.fillText('- ' + gd.name, cx - 76, gy + 2);
 			// Nickname
@@ -347,6 +350,8 @@ function renderMenu() {
 		ctx.stroke();
 
 		// ── Menu options ──────────────────────────────────────────────────────
+		ctx.translate(0, 10);
+
 		var optY0 = top + 244;
 		var optY1 = top + 268;
 		var opts  = ['PLAY YOURSELF', 'LET AI PLAY'];
@@ -360,7 +365,7 @@ function renderMenu() {
 			} else {
 				ctx.fillStyle = '#888888';
 			}
-			ctx.font      = 'bold 10px monospace';
+			ctx.font      = 'bold 13px monospace';
 			ctx.textAlign = 'center';
 			ctx.fillText(opts[i], cx, optYs[i]);
 		}
@@ -388,7 +393,7 @@ function renderMenu() {
 		var boardW    = state.GRID_COLS * TILE;
 		var boardX    = state.mapOffX;
 		var gSpacing  = 42;
-		var ghostGap  = 150;  // gap between Pac-Man and first ghost
+		var ghostGap  = 100;  // gap between Pac-Man and first ghost
 		var trainTail = ghostGap + 3 * gSpacing;   // distance from Pac-Man to last ghost
 		var phase0Dur = Math.round((boardW + trainTail + 50) / 2 + 180);  // frames to clear full train
 		var phase1Dur = Math.round((boardW + trainTail + 50) / 2 + 360);  // frames to clear full train
@@ -879,7 +884,7 @@ export function main() {
 	state.canvas.addEventListener('mouseup',   function()  {                     onVolMouseUp();      onSpeedMouseUp();    });
 
 	state.img     = new Image();
-	state.img.src = 'res/sheet.png';
+	state.img.src = 'res/sheet-2.png';
 	state.img.onload = function() {
 		initSprites(state.img);
 		initWallData();

@@ -11,8 +11,8 @@ s_orange,
 s_strawberry,
 s_cherry,
 s_dot,
-s_bigDot
-
+s_bigDot,
+s_title
 ;
 
 export function Sprite(img,x,y,w,h){
@@ -95,5 +95,6 @@ export function initSprites(img){
 		new Sprite(img, 499, 41, 30, 30),
 		new Sprite(img, 533, 41, 30, 30),
 		new Sprite(img, 567, 41, 30, 30)
-	];
+	]
+	s_title = new Sprite(img, 0, 508, 425, 99);
 }
