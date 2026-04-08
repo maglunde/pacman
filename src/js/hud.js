@@ -214,14 +214,6 @@ export function drawHUD() {
 	ctx.fillStyle = COLORS.pacman;
 	ctx.fillText(state.level, mapX + mapW, mapY - 8);
 
-	if (state.aiMode) {
-		var pLabel = AI_PERSONALITIES[AI_PERSONALITY_KEYS[state.aiPersonalityIdx]].label;
-		ctx.fillStyle = COLORS.cyan;
-		ctx.textAlign = 'center';
-		ctx.font = "12px 'Press Start 2P', monospace";
-		ctx.fillText('🤖 AI: ' + pLabel, mapX + mapW / 2, mapY - 48);
-	}
-
 	var lifeY = mapY + state.GRID_ROWS * TILE * sx + 24;
 	ctx.fillStyle = COLORS.pacman;
 	ctx.textAlign = 'left';
@@ -233,6 +225,14 @@ export function drawHUD() {
 		ctx.lineTo(mapX + 100 + i * 28, lifeY - 6);
 		ctx.fillStyle = COLORS.pacman;
 		ctx.fill();
+	}
+
+	if (state.aiMode) {
+		var pLabel = AI_PERSONALITIES[AI_PERSONALITY_KEYS[state.aiPersonalityIdx]].label;
+		ctx.fillStyle = COLORS.cyan;
+		ctx.textAlign = 'center';
+		ctx.font = "12px 'Press Start 2P', monospace";
+		ctx.fillText('\uD83E\uDD16 AI: ' + pLabel, mapX + mapW / 2, lifeY);
 	}
 
 	if (state.showInfoPanel) drawInfoPanel(mapX, mapY);
