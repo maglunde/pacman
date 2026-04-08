@@ -31,7 +31,7 @@ Sprite.prototype.draw = function(ctx, x, y, w, h) {
 
 
 export function initSprites(img){
-	s_map = new Sprite(img, 0, 0, 450, 503);
+	s_map = new Sprite(img, 0, 4, 450, 496);
 	s_pacman = {
 		left:	[
 					new Sprite(img,465,317,28,28),  // facing left, big mouth
