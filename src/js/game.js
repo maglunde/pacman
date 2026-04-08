@@ -332,10 +332,25 @@ function renderMenu() {
 
 		drawSettingsContent(ctx, cx, top + 120, state.settingsRow);
 
+		// BACK button
+		var backActive = state.settingsRow === 3;
+		if (backActive && Math.floor(state.frames / 60) % 2 === 0) {
+			ctx.fillStyle = COLORS.pacman;
+		} else {
+			ctx.fillStyle = backActive ? COLORS.pacman : '#555555';
+		}
+		if (backActive) {
+			ctx.fillRect(cx - 40, top + 192, 80, 16);
+			ctx.fillStyle = COLORS.black;
+		}
+		ctx.font      = "8px 'Press Start 2P', monospace";
+		ctx.textAlign = 'center';
+		ctx.fillText('BACK', cx, top + 204);
+
 		ctx.fillStyle = '#555';
 		ctx.font      = "7px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('\u2190 \u2192 adjust  \u2022  \u2191 \u2193 select  \u2022  Esc back', cx, top + 210);
+		ctx.fillText('\u2190 \u2192 adjust  \u2022  \u2191 \u2193 select  \u2022  Enter/Esc back', cx, top + 226);
 
 	} else if (state.menuSubState === 'personality') {
 		// ── Personality sub-screen ──────────────────────────────────────────────
@@ -808,10 +823,11 @@ function keydown(e) {
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'settings') {
 			switch (e.key) {
-				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 2) % 3; break;
-				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 3; break;
-				case 'ArrowLeft':  adjustSetting(state.settingsRow, -1); break;
-				case 'ArrowRight': adjustSetting(state.settingsRow, +1); break;
+				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 3) % 4; break;
+				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 4; break;
+				case 'ArrowLeft':  if (state.settingsRow < 3) adjustSetting(state.settingsRow, -1); break;
+				case 'ArrowRight': if (state.settingsRow < 3) adjustSetting(state.settingsRow, +1); break;
+				case 'Enter':      if (state.settingsRow === 3) { state.menuSubState = 'main'; state.settingsRow = 0; } break;
 			}
 		} else if (state.menuSubState === 'personality') {
 			switch (e.key) {
