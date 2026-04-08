@@ -532,19 +532,20 @@ function keydown(e) {
 	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
 		state.paused = !state.paused; return;
 	}
-	// Ghost selection / takeover (AI mode only; remove state.aiMode check to enable in manual mode too)
-	if (state.aiMode && e.code === 'Tab' && (state.gameState === 'playing' || state.gameState === 'ready')) {
+	// Ghost selection: Tab cycles through ghosts in both modes
+	if (e.code === 'Tab' && (state.gameState === 'playing' || state.gameState === 'ready')) {
 		e.preventDefault();
-		if (state.controlledGhostIdx >= 0) state.controlledGhostIdx = -1; // release before cycling
+		if (state.controlledGhostIdx >= 0) state.controlledGhostIdx = -1; // release AI-mode control before cycling
 		// Cycle: -1 → 0 → 1 → 2 → 3 → -1
 		state.selectedGhostIdx = (state.selectedGhostIdx + 2) % 5 - 1;
 		return;
 	}
+	// AI mode: Enter takes/releases explicit control of selected ghost
 	if (state.aiMode && e.key === 'Enter' && state.gameState === 'playing' && state.selectedGhostIdx >= 0) {
 		state.controlledGhostIdx = state.controlledGhostIdx === state.selectedGhostIdx ? -1 : state.selectedGhostIdx;
 		return;
 	}
-	// Arrow keys: steer controlled ghost (AI mode) or pacman (manual mode)
+	// Arrow keys: steer pacman (manual mode), or AI-mode controlled ghost
 	var arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
 	if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
 	if (state.aiMode && state.controlledGhostIdx >= 0) {
@@ -560,6 +561,17 @@ function keydown(e) {
 			case 'ArrowUp':    state.pacman.nextDir = dir.up;    break;
 			case 'ArrowRight': state.pacman.nextDir = dir.right; break;
 			case 'ArrowDown':  state.pacman.nextDir = dir.down;  break;
+		}
+	}
+	// Manual mode: WASD steers selected ghost as player 2 (no Enter needed — select with Tab and steer immediately)
+	if (!state.aiMode && state.selectedGhostIdx >= 0) {
+		var wasd = e.code === 'KeyA' || e.code === 'KeyW' || e.code === 'KeyD' || e.code === 'KeyS';
+		if (wasd && state.gameState === 'ready') state.gameState = 'playing';
+		switch (e.code) {
+			case 'KeyA': state.ghosts[state.selectedGhostIdx].nextDir = dir.left;  break;
+			case 'KeyW': state.ghosts[state.selectedGhostIdx].nextDir = dir.up;    break;
+			case 'KeyD': state.ghosts[state.selectedGhostIdx].nextDir = dir.right; break;
+			case 'KeyS': state.ghosts[state.selectedGhostIdx].nextDir = dir.down;  break;
 		}
 	}
 }

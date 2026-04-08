@@ -176,8 +176,9 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 					var dirs = [dir.up, dir.left, dir.down, dir.right];
 					var best = dir.none;
 
-					// Player-controlled ghost (AI mode only for now; easy to extend by removing aiMode check)
-					var playerControlled = state.aiMode && state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
+					// Player-controlled: AI mode uses controlledGhostIdx (Enter), manual uses selectedGhostIdx (WASD)
+					var playerControlled = (state.aiMode && state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this)
+					                    || (!state.aiMode && state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this);
 
 					if (playerControlled) {
 						// Try queued direction first (allow reversing — player intent)
@@ -256,21 +257,20 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			} else {
 				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
 			}
-			// Highlight ring for ghost selection/control (AI mode only for now)
-			if (state.aiMode) {
-				var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
-				var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
-				if (isSelected || isControlled) {
-					var pulse = 0.55 + 0.45 * Math.sin(state.frames * 0.18);
-					ctx.save();
-					ctx.strokeStyle = isControlled ? '#00ff88' : '#ffff00';
-					ctx.globalAlpha = isControlled ? 1.0 : pulse;
-					ctx.lineWidth   = 2;
-					ctx.beginPath();
-					ctx.arc(this.x + 15, this.y + 15, 16, 0, Math.PI * 2);
-					ctx.stroke();
-					ctx.restore();
-				}
+			// Highlight ring: yellow pulsing = selected (manual: WASD active; AI: pending Enter)
+			//                 green solid    = AI-mode explicit control (after Enter)
+			var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
+			var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
+			if (isSelected || isControlled) {
+				var pulse = 0.55 + 0.45 * Math.sin(state.frames * 0.18);
+				ctx.save();
+				ctx.strokeStyle = isControlled ? '#00ff88' : '#ffff00';
+				ctx.globalAlpha = isControlled ? 1.0 : pulse;
+				ctx.lineWidth   = 2;
+				ctx.beginPath();
+				ctx.arc(this.x + 15, this.y + 15, 16, 0, Math.PI * 2);
+				ctx.stroke();
+				ctx.restore();
 			}
 		}
 	};
