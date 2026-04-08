@@ -359,7 +359,9 @@ function renderMenu() {
 		for (var i = 0; i < opts.length; i++) {
 			var active = state.menuSelected === i;
 			if (active) {
-				ctx.fillStyle = '#ffff00';
+				if (Math.floor(state.frames / 60) % 2 === 0) {
+					ctx.fillStyle = '#ffff00';
+				}
 				ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
 				ctx.fillStyle = '#000000';
 			} else {
@@ -370,19 +372,16 @@ function renderMenu() {
 			ctx.fillText(opts[i], cx, optYs[i]);
 		}
 
-		// Blinking prompt
-		if (Math.floor(state.frames / 28) % 2 === 0) {
-			ctx.fillStyle = '#ffffff';
-			ctx.font      = 'bold 10px monospace';
-			ctx.textAlign = 'center';
-			ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 294);
-		}
+		ctx.fillStyle = '#ffffff';
+		ctx.font      = 'bold 10px monospace';
+		ctx.textAlign = 'center';
+		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 294);
 
 		if (state.highScore > 0) {
 			ctx.fillStyle = '#555555';
-			ctx.font      = '9px monospace';
+			ctx.font      = '12px monospace';
 			ctx.textAlign = 'center';
-			ctx.fillText('HI-SCORE: ' + state.highScore, cx, top + 310);
+			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 310);
 		}
 	}
 
