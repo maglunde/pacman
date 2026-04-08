@@ -21,16 +21,6 @@ export function saveSpeed() {
 	localStorage.setItem('pacman-speed', state.gameSpeed);
 }
 
-// ── Canvas coordinate helper ──────────────────────────────────────────────────
-
-function canvasPt(e) {
-	var r = state.canvas.getBoundingClientRect();
-	return {
-		x: (e.clientX - r.left) * (state.canvas.width  / r.width),
-		y: (e.clientY - r.top)  * (state.canvas.height / r.height)
-	};
-}
-
 // ── Ghost path toggle panel ───────────────────────────────────────────────────
 
 var PATH_KEYS = ['pacman', 'blinky', 'pinky', 'inky', 'clyde'];
@@ -245,9 +235,6 @@ export function drawHUD() {
 		ctx.fill();
 	}
 
-	drawSpeedSlider(mapX, mapW, lifeY);
-	drawVolumeSlider(mapX, mapW, lifeY);
-	drawIndicatorPicker(mapX, mapW, lifeY);
 	if (state.showInfoPanel) drawInfoPanel(mapX, mapY);
 }
 
@@ -333,15 +320,17 @@ function drawInfoPanel(mapX, mapY) {
 	ctx.fillText('TASTER', x, y); y += lh + 4;
 
 	var shortcuts = [
-		{ key: '← → ↑ ↓', desc: 'Beveg'       },
+		{ key: '← → ↑ ↓', desc: 'Move'         },
 		{ key: 'P',        desc: 'Pause'        },
-		{ key: 'M',        desc: 'Lyd av/på'    },
-		{ key: ', / .',    desc: 'Fart −/+'     },
-		{ key: 'Z X C V',  desc: 'Ghost-sti'    },
-		{ key: 'B',        desc: 'Pac-sti (AI)' },
-		{ key: 'I',        desc: 'Indikator-stil' },
-		{ key: 'Q',        desc: 'Skjul/vis info' },
-		{ key: 'Esc',      desc: 'Meny'         },
+		{ key: 'M',        desc: 'Mute'         },
+		{ key: '- / =',    desc: 'Volume -/+'   },
+		{ key: ', / .',    desc: 'Speed -/+'    },
+		{ key: 'O',        desc: 'Settings'     },
+		{ key: 'Z X C V',  desc: 'Ghost path'   },
+		{ key: 'B',        desc: 'Pac path (AI)'},
+		{ key: 'I',        desc: 'Indicator'    },
+		{ key: 'Q',        desc: 'Info panel'   },
+		{ key: 'Esc',      desc: 'Menu'         },
 	];
 	shortcuts.forEach(function(s) {
 		ctx.font      = "12px 'Press Start 2P', monospace";
