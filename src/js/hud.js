@@ -1,4 +1,4 @@
-import { TILE, SPEED_MIN, SPEED_MAX, LIFE_ICON_SPACING, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
+import { TILE, SPEED_MIN, SPEED_MAX, LIFE_ICON_SPACING, AI_PERSONALITIES, AI_PERSONALITY_KEYS, COLORS } from './constants.js';
 import { state } from './state.js';
 
 // ── Utility ───────────────────────────────────────────────────────────────────
@@ -39,11 +39,11 @@ export function initPathPanel() {
 	state.pathPanel = document.createElement('div');
 	state.pathPanel.id = 'path-panel';
 	var entries = [
-		{ key: 'pacman', label: 'Pac-Man', color: '#ffff00' },
-		{ key: 'blinky', label: 'Blinky',  color: '#ff0000' },
-		{ key: 'pinky',  label: 'Pinky',   color: '#ffb8ff' },
-		{ key: 'inky',   label: 'Inky',    color: '#00ffff' },
-		{ key: 'clyde',  label: 'Clyde',   color: '#ffb851' },
+		{ key: 'pacman', label: 'Pac-Man', color: COLORS.pacman },
+		{ key: 'blinky', label: 'Blinky',  color: COLORS.blinky },
+		{ key: 'pinky',  label: 'Pinky',   color: COLORS.pinky },
+		{ key: 'inky',   label: 'Inky',    color: COLORS.inky },
+		{ key: 'clyde',  label: 'Clyde',   color: COLORS.clyde },
 	];
 	entries.forEach(function(e) {
 		var lbl = document.createElement('label');
@@ -89,12 +89,12 @@ function sliderMouseDown(e, iconBoundsKey, trackBoundsKey, draggingKey, onIconCl
 }
 
 function drawSliderTrack(ctx, trackX, trackY, trackW, fillW, color, markerRatio) {
-	ctx.fillStyle = '#444444';
+	ctx.fillStyle = COLORS.darkGray;
 	ctx.fillRect(trackX, trackY - 2, trackW, 4);
 	ctx.fillStyle = color;
 	ctx.fillRect(trackX, trackY - 2, fillW, 4);
 	if (markerRatio !== undefined) {
-		ctx.fillStyle = '#888888';
+		ctx.fillStyle = COLORS.gray;
 		ctx.fillRect(trackX + markerRatio * trackW - 1, trackY - 5, 2, 10);
 	}
 	ctx.beginPath();
@@ -159,14 +159,14 @@ function drawSpeedSlider(mapX, mapW, lifeY) {
 
 	var label = state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7';
 	ctx.font      = "12px 'Press Start 2P', monospace";
-	ctx.fillStyle = state.gameSpeed === 1.0 ? '#888888' : '#ffff00';
+	ctx.fillStyle = state.gameSpeed === 1.0 ? COLORS.gray : COLORS.pacman;
 	ctx.textAlign = 'right';
 	ctx.fillText(label, iconX, iconY);
 
 	var oneRatio  = (1.0 - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
 	var thisRatio = (state.gameSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
 	var fillW     = thisRatio * trackW;
-	var speedColor = state.gameSpeed < 1.0 ? '#00ccff' : state.gameSpeed > 1.0 ? '#ff8800' : '#ffff00';
+	var speedColor = state.gameSpeed < 1.0 ? COLORS.cyan : state.gameSpeed > 1.0 ? COLORS.orange : COLORS.pacman;
 	drawSliderTrack(ctx, trackX, trackY, trackW, fillW, speedColor, oneRatio);
 }
 
@@ -192,7 +192,7 @@ function drawVolumeSlider(mapX, mapW, lifeY) {
 	ctx.fillText(icon, iconX, iconY);
 
 	var fillW = state.muted ? 0 : state.volume * trackW;
-	drawSliderTrack(ctx, trackX, trackY, trackW, fillW, '#ffff00');
+	drawSliderTrack(ctx, trackX, trackY, trackW, fillW, COLORS.pacman);
 }
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
@@ -207,33 +207,33 @@ export function drawHUD() {
 	ctx.textAlign = 'left';
 	ctx.font = "18px 'Press Start 2P', monospace";
 
-	ctx.fillStyle = '#ffffff';
+	ctx.fillStyle = COLORS.white;
 	ctx.fillText('SCORE', mapX, mapY - 28);
-	ctx.fillStyle = '#ffff00';
+	ctx.fillStyle = COLORS.pacman;
 	ctx.fillText(state.score, mapX, mapY - 8);
 
-	ctx.fillStyle = '#ffffff';
+	ctx.fillStyle = COLORS.white;
 	ctx.textAlign = 'center';
 	ctx.fillText('HIGH-SCORE', mapX + mapW / 2, mapY - 28);
-	ctx.fillStyle = '#ffff00';
+	ctx.fillStyle = COLORS.pacman;
 	ctx.fillText(Math.max(state.score, state.highScore), mapX + mapW / 2, mapY - 8);
 
-	ctx.fillStyle = '#ffffff';
+	ctx.fillStyle = COLORS.white;
 	ctx.textAlign = 'right';
 	ctx.fillText('LEVEL', mapX + mapW, mapY - 28);
-	ctx.fillStyle = '#ffff00';
+	ctx.fillStyle = COLORS.pacman;
 	ctx.fillText(state.level, mapX + mapW, mapY - 8);
 
 	if (state.aiMode) {
 		var pLabel = AI_PERSONALITIES[AI_PERSONALITY_KEYS[state.aiPersonalityIdx]].label;
-		ctx.fillStyle = '#00ccff';
+		ctx.fillStyle = COLORS.cyan;
 		ctx.textAlign = 'center';
 		ctx.font = "12px 'Press Start 2P', monospace";
 		ctx.fillText('🤖 AI: ' + pLabel, mapX + mapW / 2, mapY - 48);
 	}
 
 	var lifeY = mapY + state.GRID_ROWS * TILE * sx + 24;
-	ctx.fillStyle = '#ffff00';
+	ctx.fillStyle = COLORS.pacman;
 	ctx.textAlign = 'left';
 	ctx.font = "12px 'Press Start 2P', monospace";
 	ctx.fillText('LIVES:', mapX, lifeY);
@@ -241,7 +241,7 @@ export function drawHUD() {
 		ctx.beginPath();
 		ctx.arc(mapX + 100 + i * LIFE_ICON_SPACING, lifeY - 6, 9, 0.25 * Math.PI, 1.75 * Math.PI);
 		ctx.lineTo(mapX + 100 + i * 28, lifeY - 6);
-		ctx.fillStyle = '#ffff00';
+		ctx.fillStyle = COLORS.pacman;
 		ctx.fill();
 	}
 
@@ -270,12 +270,12 @@ function drawIndicatorPicker(mapX, mapW, lifeY) {
 	for (var i = 0; i < INDICATOR_LABELS.length; i++) {
 		var bx = startX + i * (itemW + gap);
 		var active = state.ghostIndicatorStyle === i;
-		ctx.fillStyle = active ? '#111111' : 'rgba(0,0,0,0)';
+		ctx.fillStyle = active ? COLORS.black : 'rgba(0,0,0,0)';
 		if (active) ctx.fillRect(bx, y - 13, itemW, 17);
-		ctx.strokeStyle = active ? '#ffff00' : '#555555';
+		ctx.strokeStyle = active ? COLORS.pacman : COLORS.darkGray;
 		ctx.lineWidth   = 1;
 		ctx.strokeRect(bx, y - 13, itemW, 17);
-		ctx.fillStyle = active ? '#ffff00' : '#666666';
+		ctx.fillStyle = active ? COLORS.pacman : COLORS.gray;
 		ctx.fillText(INDICATOR_LABELS[i], bx + itemW / 2, y);
 		state.indicatorStyleBounds.push({ x: bx, y: y - 13, w: itemW, h: 17, idx: i });
 	}
@@ -307,21 +307,21 @@ function drawInfoPanel(mapX, mapY) {
 	ctx.textAlign = 'right';
 
 	ctx.font      = "13px 'Press Start 2P', monospace";
-	ctx.fillStyle = '#aaaaaa';
+	ctx.fillStyle = COLORS.lightGray;
 	ctx.fillText('GHOSTS', x, y); y += lh + 4;
 
 	var ghostInfo = [
-		{ color: '#ff0000', name: 'Blinky', lines: ['Jager Pac-Man', 'direkte til målet.'] },
-		{ color: '#ffb8ff', name: 'Pinky',  lines: ['Sikter 4 ruter', 'foran Pac-Man.'] },
-		{ color: '#00ffff', name: 'Inky',   lines: ['Bruker Blinky og', '2 ruter foran', 'for å flankere.'] },
-		{ color: '#ffb851', name: 'Clyde',  lines: ['Jager når langt unna,', 'flykter til hjørnet', 'når nær (<8 ruter).'] },
+		{ color: COLORS.blinky, name: 'Blinky', lines: ['Jager Pac-Man', 'direkte til målet.'] },
+		{ color: COLORS.pinky,  name: 'Pinky',  lines: ['Sikter 4 ruter', 'foran Pac-Man.'] },
+		{ color: COLORS.inky,   name: 'Inky',   lines: ['Bruker Blinky og', '2 ruter foran', 'for å flankere.'] },
+		{ color: COLORS.clyde,  name: 'Clyde',  lines: ['Jager når langt unna,', 'flykter til hjørnet', 'når nær (<8 ruter).'] },
 	];
 	ghostInfo.forEach(function(g) {
 		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.fillStyle = g.color;
 		ctx.fillText(g.name, x, y); y += lh - 4;
 		ctx.font      = "13px 'Press Start 2P', monospace";
-		ctx.fillStyle = '#888888';
+		ctx.fillStyle = COLORS.gray;
 		g.lines.forEach(function(line) { ctx.fillText(line, x, y); y += lh - 4; });
 		y += 8;
 	});
@@ -329,7 +329,7 @@ function drawInfoPanel(mapX, mapY) {
 	y += 8;
 
 	ctx.font      = "13px 'Press Start 2P', monospace";
-	ctx.fillStyle = '#aaaaaa';
+	ctx.fillStyle = COLORS.lightGray;
 	ctx.fillText('TASTER', x, y); y += lh + 4;
 
 	var shortcuts = [
@@ -345,10 +345,10 @@ function drawInfoPanel(mapX, mapY) {
 	];
 	shortcuts.forEach(function(s) {
 		ctx.font      = "12px 'Press Start 2P', monospace";
-		ctx.fillStyle = '#ffff00';
+		ctx.fillStyle = COLORS.pacman;
 		ctx.fillText(s.key, x, y); y += lh - 4;
 		ctx.font      = "13px 'Press Start 2P', monospace";
-		ctx.fillStyle = '#888888';
+		ctx.fillStyle = COLORS.gray;
 		ctx.fillText(s.desc, x, y); y += lh;
 	});
 }

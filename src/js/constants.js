@@ -58,3 +58,29 @@ export var AI_PERSONALITIES = {
 	greedy:     { fleeAt: 3, look: 12, trapDepth: 10, pelletCluster: 5, safetyMargin: 1, huntScared: true,  label: 'Greedy'     },
 };
 export var AI_PERSONALITY_KEYS = ['coward', 'balanced', 'aggressive', 'greedy'];
+
+export var COLORS = {
+    pacman: '#ffff00',
+    blinky: '#ff0000',
+    pinky:  '#ffb8ff',
+    inky:   '#00ffff',
+    clyde:  '#ffb851',
+    scared: '#2121ff', // Original Pac-Man blue
+    white:  '#ffffff',
+    black:  '#000000',
+    gray:   '#888888',
+    darkGray: '#333333',
+    lightGray: '#aaaaaa',
+    wall:   '#2121ff',
+    target: '#00ff88',
+    cyan:   '#00ccff',
+    orange: '#ff8800',
+    overlay: 'rgba(0, 0, 0, 0.6)',
+    dim:     'rgba(0, 0, 0, 0.5)',
+    panel:   'rgba(0, 0, 0, 0.75)',
+    path: {
+        pacman: 'rgba(255,255,0,0.5)',
+        ghost:  'rgba(255,255,255,0.45)',
+        target: 'rgba(0, 255, 136, 0.5)'
+    }
+};

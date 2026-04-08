@@ -1,7 +1,7 @@
 import {
 	dir, GHOST_SPEED, SCARED_FLASH_THRESHOLD,
 	GHOST_REGEN_DELAY, PINKY_RELEASE_DELAY, INKY_RELEASE_DELAY, CLYDE_RELEASE_DELAY,
-	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX
+	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX, COLORS
 } from './constants.js';
 import { state } from './state.js';
 import {
@@ -85,7 +85,7 @@ export function ghostLookahead(g, steps) {
 export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathColor, scatterTarget) {
 	return {
 		startCol: startCol, startRow: startRow,
-		pathColor: pathColor || '#ffffff',
+		pathColor: pathColor || COLORS.white,
 		col: startCol, row: startRow,
 		dir: dir.up, moving: false, returning: false,
 		x: 0, y: 0, targetX: 0, targetY: 0,
@@ -263,7 +263,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
 			var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
 			if (isSelected || isControlled) {
-				var selColor = isControlled ? '#00ff88' : '#ffff00';
+				var selColor = isControlled ? COLORS.target : COLORS.pacman;
 				var cx = this.x + 15, cy = this.y + 15;
 				ctx.save();
 
@@ -278,7 +278,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 				} else if (state.ghostIndicatorStyle === 1) {
 					// ── B: pulsing/marching dashed square ─────────────────────
-					ctx.strokeStyle = '#ffffff';
+					ctx.strokeStyle = COLORS.white;
 					ctx.lineWidth = 2;
 					ctx.setLineDash([4, 4]);
 					if (isControlled) {
@@ -307,7 +307,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 				} else if (state.ghostIndicatorStyle === 3) {
 					// ── D: radial glow ────────────────────────────────────────
 					var glowAlpha = 0.35 + 0.25 * Math.sin(state.frames * 0.12);
-					var rgb = isControlled ? '0,255,136' : '255,220,0';
+					var rgb = isControlled ? '0,255,136' : '255,255,0';
 					var grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 20);
 					grd.addColorStop(0, 'rgba(' + rgb + ',' + glowAlpha + ')');
 					grd.addColorStop(1, 'rgba(' + rgb + ',0)');
@@ -340,19 +340,19 @@ export function initGhosts() {
 	state.ghosts = [
 		makeGhost(12, 14, s_blinky, 0, function() {
 			return { col: state.pacman.col, row: state.pacman.row };
-		}, '#ff0000', corners[(0 + shift) % 4]),           // Blinky
+		}, COLORS.blinky, corners[(0 + shift) % 4]),           // Blinky
 
 		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
 			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
-		}, '#ffb8ff', corners[(1 + shift) % 4]),            // Pinky
+		}, COLORS.pinky, corners[(1 + shift) % 4]),            // Pinky
 
 		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
 			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
 			var blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
-		}, '#00ffff', corners[(2 + shift) % 4]),           // Inky
+		}, COLORS.inky, corners[(2 + shift) % 4]),           // Inky
 
 		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
 			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
@@ -360,7 +360,7 @@ export function initGhosts() {
 			return dist > 8
 				? { col: state.pacman.col, row: state.pacman.row }
 				: { col: 0,               row: state.GRID_ROWS - 1 };
-		}, '#ffb851', corners[(3 + shift) % 4])             // Clyde
+		}, COLORS.clyde, corners[(3 + shift) % 4])             // Clyde
 	];
 	state.ghosts.forEach(function(g) { g.init(); });
 }

@@ -3,7 +3,8 @@ import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_sca
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
-	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, SCATTER_CHASE_PHASES
+	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, SCATTER_CHASE_PHASES,
+	COLORS
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -262,7 +263,7 @@ function renderMenu() {
 	ctx.scale(2, 2);
 
 	// Full black background
-	ctx.fillStyle = '#000';
+	ctx.fillStyle = COLORS.black;
 	ctx.fillRect(0, 0, state.width / 2, state.height / 2);
 
 
@@ -289,42 +290,42 @@ function renderMenu() {
 			aggressive: 'Actively hunts ghosts',
 			greedy:     'Maximizes score, takes risks',
 		};
-		ctx.fillStyle = '#aaaaaa';
+		ctx.fillStyle = COLORS.lightGray;
 		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('CHOOSE AI STYLE', cx, top + 80);
 
-		ctx.fillStyle = '#ffff00';
+		ctx.fillStyle = COLORS.pacman;
 		ctx.font      = "14px 'Press Start 2P', monospace";
 		ctx.fillText('◄  ' + pCfg.label.toUpperCase() + '  ►', cx, top + 115);
 
-		ctx.fillStyle = '#888888';
+		ctx.fillStyle = COLORS.gray;
 		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.fillText(descs[pKey], cx, top + 136);
 
-		ctx.fillStyle = '#555';
+		ctx.fillStyle = COLORS.darkGray;
 		ctx.font      = "8px 'Press Start 2P', monospace";
 		ctx.fillText('Enter to start • Esc back', cx, top + 162);
 
 	} else {
 		// ── Character / Nickname table ──────────────────────────────────────────
-		ctx.fillStyle = '#ffffff';
+		ctx.fillStyle = COLORS.white;
 		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('CHARACTER / NICKNAME', cx, top + 68);
 
 		// Horizontal rule
-		ctx.strokeStyle = '#333333';
+		ctx.strokeStyle = COLORS.darkGray;
 		ctx.lineWidth   = 1;
 		ctx.beginPath();
 		ctx.moveTo(cx - 110, top + 74); ctx.lineTo(cx + 110, top + 74);
 		ctx.stroke();
 
 		var ghostData = [
-			{ sprites: s_blinky, color: '#ff0000', name: 'SHADOW',  nick: '"BLINKY"' },
-			{ sprites: s_pinky,  color: '#ffb8ff', name: 'SPEEDY',  nick: '"PINKY"'  },
-			{ sprites: s_inky,   color: '#00ffff', name: 'BASHFUL', nick: '"INKY"'   },
-			{ sprites: s_clyde,  color: '#ffb851', name: 'POKEY',   nick: '"CLYDE"'  },
+			{ sprites: s_blinky, color: COLORS.blinky, name: 'SHADOW',  nick: '"BLINKY"' },
+			{ sprites: s_pinky,  color: COLORS.pinky,  name: 'SPEEDY',  nick: '"PINKY"'  },
+			{ sprites: s_inky,   color: COLORS.inky,   name: 'BASHFUL', nick: '"INKY"'   },
+			{ sprites: s_clyde,  color: COLORS.clyde,  name: 'POKEY',   nick: '"CLYDE"'  },
 		];
 		var rowH    = 30;
 		var rowBase = top + 100;
@@ -343,7 +344,7 @@ function renderMenu() {
 		}
 
 		// Horizontal rule
-		ctx.strokeStyle = '#333333';
+		ctx.strokeStyle = COLORS.darkGray;
 		ctx.lineWidth   = 1;
 		ctx.beginPath();
 		ctx.moveTo(cx - 110, top + 224); ctx.lineTo(cx + 110, top + 224);
@@ -360,25 +361,25 @@ function renderMenu() {
 			var active = state.menuSelected === i;
 			if (active) {
 				if (Math.floor(state.frames / 60) % 2 === 0) {
-					ctx.fillStyle = '#ffff00';
+					ctx.fillStyle = COLORS.pacman;
 				}
 				ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
-				ctx.fillStyle = '#000000';
+				ctx.fillStyle = COLORS.black;
 			} else {
-				ctx.fillStyle = '#888888';
+				ctx.fillStyle = COLORS.gray;
 			}
 			ctx.font      = "10px 'Press Start 2P', monospace";
 			ctx.textAlign = 'center';
 			ctx.fillText(opts[i], cx, optYs[i]);
 		}
 
-		ctx.fillStyle = '#ffffff';
+		ctx.fillStyle = COLORS.white;
 		ctx.font      = "8px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 290);
 
 		if (state.highScore > 0) {
-			ctx.fillStyle = '#555555';
+			ctx.fillStyle = COLORS.darkGray;
 			ctx.font      = "10px 'Press Start 2P', monospace";
 			ctx.textAlign = 'center';
 			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 310);
@@ -434,7 +435,7 @@ function renderMenu() {
 function render() {
 	var ctx = state.ctx;
 	ctx.clearRect(0, 0, state.width, state.height);
-	ctx.fillStyle = '#000';
+	ctx.fillStyle = COLORS.black;
 	ctx.fillRect(0, 0, state.width, state.height);
 
 	if (state.gameState === 'menu') { renderMenu(); return; }
@@ -458,7 +459,7 @@ function render() {
 	// 1. Collect Pac-Man path
 	if (state.aiMode && state.showPaths.pacman && state.aiPath.length > 0) {
 		const pPath = [{ col: state.pacman.col, row: state.pacman.row }].concat(state.aiPath);
-		allPaths.push({ id: 'pacman', color: 'rgba(255,255,0,0.5)', points: pPath, index: 0 });
+		allPaths.push({ id: 'pacman', color: COLORS.path.pacman, points: pPath, index: 0 });
 	}
 
 	// 2. Collect Ghost paths
@@ -560,9 +561,9 @@ function render() {
 		ctx.fillText('press any arrow to start', mx, my + 64);
 	}
 	if (state.paused && !state.escapeMenuActive) {
-		ctx.fillStyle = 'rgba(0,0,0,0.5)';
+		ctx.fillStyle = COLORS.dim;
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
-		ctx.fillStyle = '#ffffff';
+		ctx.fillStyle = COLORS.white;
 		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('PAUSED', mx, my);
@@ -575,14 +576,14 @@ function render() {
 		// Box
 		var bw = 120, bh = 80;
 		var bx = mx - bw / 2, by = my - bh / 2;
-		ctx.fillStyle   = '#111111';
+		ctx.fillStyle   = COLORS.black;
 		ctx.fillRect(bx, by, bw, bh);
-		ctx.strokeStyle = '#444444';
+		ctx.strokeStyle = COLORS.darkGray;
 		ctx.lineWidth   = 1;
 		ctx.strokeRect(bx, by, bw, bh);
 
 		ctx.textAlign = 'center';
-		ctx.fillStyle = '#aaaaaa';
+		ctx.fillStyle = COLORS.lightGray;
 		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.fillText('PAUSE', mx, by + 16);
 
@@ -592,19 +593,19 @@ function render() {
 		for (var ei = 0; ei < opts.length; ei++) {
 			var ey = by + 34 + ei * 26;
 			var active = state.escapeMenuSelected === ei;
-			ctx.fillStyle = active ? '#ffff00' : '#333333';
+			ctx.fillStyle = active ? COLORS.pacman : COLORS.darkGray;
 			ctx.fillRect(bx + 12, ey - 13, bw - 24, 18);
-			ctx.fillStyle = active ? '#000000' : '#888888';
+			ctx.fillStyle = active ? COLORS.black : COLORS.gray;
 			ctx.font      = active ? "12px 'Press Start 2P', monospace" : "12px 'Press Start 2P', monospace";
 			ctx.fillText(opts[ei], mx, ey);
 			state.escapeMenuBounds.push({ x: bx + 12, y: ey - 13, w: bw - 24, h: 18, idx: ei });
 		}
 	}
 	if (state.gameState === 'gameover') {
-		ctx.fillStyle = 'rgba(0,0,0,0.6)';
+		ctx.fillStyle = COLORS.overlay;
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 		s_gameover.draw(ctx, mx - s_gameover.w / 2, my - s_gameover.h / 2 - 10);
-		ctx.fillStyle = '#ffff00';
+		ctx.fillStyle = COLORS.pacman;
 		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('Score: ' + state.score, mx, my + 16);
@@ -615,9 +616,10 @@ function render() {
 		}
 	}
 	if (state.gameState === 'win') {
-		ctx.fillStyle = 'rgba(0,0,0,0.5)';
+		ctx.fillStyle = COLORS.dim;
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
-		ctx.fillStyle = '#00ff88';
+		ctx.fillStyle = COLORS.target;
+
 		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('LEVEL ' + state.level + ' COMPLETE!', mx, my);
