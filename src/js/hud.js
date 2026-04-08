@@ -214,7 +214,7 @@ export function drawHUD() {
 
 	ctx.fillStyle = '#ffffff';
 	ctx.textAlign = 'center';
-	ctx.fillText('HI-SCORE', mapX + mapW / 2, mapY - 28);
+	ctx.fillText('HIGH-SCORE', mapX + mapW / 2, mapY - 28);
 	ctx.fillStyle = '#ffff00';
 	ctx.fillText(Math.max(state.score, state.highScore), mapX + mapW / 2, mapY - 8);
 
@@ -247,7 +247,53 @@ export function drawHUD() {
 
 	drawSpeedSlider(mapX, mapW, lifeY);
 	drawVolumeSlider(mapX, mapW, lifeY);
+	drawIndicatorPicker(mapX, mapW, lifeY);
 	if (state.showInfoPanel) drawInfoPanel(mapX, mapY);
+}
+
+// ── Ghost indicator style picker ──────────────────────────────────────────────
+
+var INDICATOR_LABELS = ['PEIL', 'FIRKANT', 'HJØRNER', 'GLØD'];
+
+function drawIndicatorPicker(mapX, mapW, lifeY) {
+	var ctx   = state.ctx;
+	var y     = lifeY + 28;
+	var itemW = 64;
+	var gap   = 6;
+	var totalW = INDICATOR_LABELS.length * itemW + (INDICATOR_LABELS.length - 1) * gap;
+	var startX = mapX + mapW / 2 - totalW / 2;
+
+	ctx.font      = '11px monospace';
+	ctx.textAlign = 'center';
+
+	state.indicatorStyleBounds = [];
+	for (var i = 0; i < INDICATOR_LABELS.length; i++) {
+		var bx = startX + i * (itemW + gap);
+		var active = state.ghostIndicatorStyle === i;
+		ctx.fillStyle = active ? '#111111' : 'rgba(0,0,0,0)';
+		if (active) ctx.fillRect(bx, y - 13, itemW, 17);
+		ctx.strokeStyle = active ? '#ffff00' : '#555555';
+		ctx.lineWidth   = 1;
+		ctx.strokeRect(bx, y - 13, itemW, 17);
+		ctx.fillStyle = active ? '#ffff00' : '#666666';
+		ctx.fillText(INDICATOR_LABELS[i], bx + itemW / 2, y);
+		state.indicatorStyleBounds.push({ x: bx, y: y - 13, w: itemW, h: 17, idx: i });
+	}
+}
+
+export function onIndicatorMouseDown(e) {
+	if (state.gameState === 'menu') return;
+	var r  = state.canvas.getBoundingClientRect();
+	var px = (e.clientX - r.left) * (state.canvas.width  / r.width);
+	var py = (e.clientY - r.top)  * (state.canvas.height / r.height);
+	if (!state.indicatorStyleBounds) return;
+	for (var i = 0; i < state.indicatorStyleBounds.length; i++) {
+		var b = state.indicatorStyleBounds[i];
+		if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) {
+			state.ghostIndicatorStyle = b.idx;
+			return;
+		}
+	}
 }
 
 // ── Info panel ────────────────────────────────────────────────────────────────
@@ -293,6 +339,7 @@ function drawInfoPanel(mapX, mapY) {
 		{ key: ', / .',    desc: 'Fart −/+'     },
 		{ key: 'Z X C V',  desc: 'Ghost-sti'    },
 		{ key: 'B',        desc: 'Pac-sti (AI)' },
+		{ key: 'I',        desc: 'Indikator-stil' },
 		{ key: 'Q',        desc: 'Skjul/vis info' },
 		{ key: 'Esc',      desc: 'Meny'         },
 	];

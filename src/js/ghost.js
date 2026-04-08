@@ -257,19 +257,67 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			} else {
 				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
 			}
-			// Highlight ring: yellow pulsing = selected (manual: WASD active; AI: pending Enter)
-			//                 green solid    = AI-mode explicit control (after Enter)
+			// Selection indicator — one style per ghost so you can compare and keep your favourite.
+			// yellow = selected/active, green = AI-mode explicit control.
+			// To remove a style: delete the corresponding else-if block.
 			var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
 			var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
 			if (isSelected || isControlled) {
-				var pulse = 0.55 + 0.45 * Math.sin(state.frames * 0.18);
+				var selColor = isControlled ? '#00ff88' : '#ffff00';
+				var cx = this.x + 15, cy = this.y + 15;
 				ctx.save();
-				ctx.strokeStyle = isControlled ? '#00ff88' : '#ffff00';
-				ctx.globalAlpha = isControlled ? 1.0 : pulse;
-				ctx.lineWidth   = 2;
-				ctx.beginPath();
-				ctx.arc(this.x + 15, this.y + 15, 16, 0, Math.PI * 2);
-				ctx.stroke();
+
+				if (state.ghostIndicatorStyle === 0) {
+					// ── A: bouncing arrow above ghost ─────────────────────────
+					var bounce = Math.abs(Math.sin(state.frames * 0.15)) * 5;
+					ctx.fillStyle = selColor;
+					ctx.font = 'bold 10px monospace';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'bottom';
+					ctx.fillText('▼', cx, this.y - 2 - bounce);
+
+				} else if (state.ghostIndicatorStyle === 1) {
+					// ── B: pulsing/marching dashed square ─────────────────────
+					ctx.strokeStyle = '#ffffff';
+					ctx.lineWidth = 2;
+					ctx.setLineDash([4, 4]);
+					if (isControlled) {
+						// Controlled: dashes march clockwise
+						ctx.lineDashOffset = state.frames * 0.5;
+						ctx.strokeRect(this.x + 1, this.y + 1, 28, 28);
+					} else {
+						// Selected: square pulses larger and smaller
+						var p = 3 * Math.sin(state.frames * 0.12);
+						ctx.globalAlpha = 0.8 + 0.2 * Math.sin(state.frames * 0.12);
+						ctx.strokeRect(this.x + 1 - p, this.y + 1 - p, 28 + p * 2, 28 + p * 2);
+					}
+
+				} else if (state.ghostIndicatorStyle === 2) {
+					// ── C: corner brackets ────────────────────────────────────
+					var pad = 1, bLen = 6;
+					var x0 = this.x + pad, y0 = this.y + pad;
+					var x1 = this.x + 30 - pad, y1 = this.y + 30 - pad;
+					ctx.strokeStyle = selColor;
+					ctx.lineWidth = 2;
+					ctx.beginPath(); ctx.moveTo(x0, y0 + bLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + bLen, y0); ctx.stroke();
+					ctx.beginPath(); ctx.moveTo(x1 - bLen, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + bLen); ctx.stroke();
+					ctx.beginPath(); ctx.moveTo(x0, y1 - bLen); ctx.lineTo(x0, y1); ctx.lineTo(x0 + bLen, y1); ctx.stroke();
+					ctx.beginPath(); ctx.moveTo(x1 - bLen, y1); ctx.lineTo(x1, y1); ctx.lineTo(x1, y1 - bLen); ctx.stroke();
+
+				} else if (state.ghostIndicatorStyle === 3) {
+					// ── D: radial glow ────────────────────────────────────────
+					var glowAlpha = 0.35 + 0.25 * Math.sin(state.frames * 0.12);
+					var rgb = isControlled ? '0,255,136' : '255,220,0';
+					var grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 20);
+					grd.addColorStop(0, 'rgba(' + rgb + ',' + glowAlpha + ')');
+					grd.addColorStop(1, 'rgba(' + rgb + ',0)');
+					ctx.globalCompositeOperation = 'lighter';
+					ctx.fillStyle = grd;
+					ctx.beginPath();
+					ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+					ctx.fill();
+				}
+
 				ctx.restore();
 			}
 		}

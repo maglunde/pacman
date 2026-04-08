@@ -49,8 +49,14 @@ export var state = {
 	menuSelected: 0,
 	menuSubState: 'main', // 'main' | 'personality'
 	aiPersonalityIdx: 1,
-	selectedGhostIdx:   -1,  // ghost highlighted for takeover in AI mode (-1 = none)
-	controlledGhostIdx: -1,  // ghost currently player-controlled (-1 = AI controls all)
+	selectedGhostIdx:      -1,  // ghost highlighted for takeover in AI mode (-1 = none)
+	controlledGhostIdx:    -1,  // ghost currently player-controlled (-1 = AI controls all)
+	ghostIndicatorStyle:    0,  // 0=arrow  1=dashed-square  2=corners  3=glow
+	indicatorStyleBounds:  null, // hit-test bounds for indicator picker clicks
+	escapeMenuActive:      false,
+	escapeMenuSelected:    0,    // 0=Fortsett  1=Avslutt
+	escapeMenuBounds:      null, // hit-test bounds for escape menu buttons
+	menuStartFrame:        -1,   // state.frames value when menu was last entered
 
 	// Audio
 	audioCtx:      null,

@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_cherry, s_strawberry, s_orange } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -19,7 +19,8 @@ import {
 	drawHUD, initPathPanel, setPathPanelVisible, togglePath, hexToRgb,
 	saveVolume, saveSpeed,
 	onVolMouseDown, onVolMouseMove, onVolMouseUp,
-	onSpeedMouseDown, onSpeedMouseMove, onSpeedMouseUp
+	onSpeedMouseDown, onSpeedMouseMove, onSpeedMouseUp,
+	onIndicatorMouseDown
 } from './hud.js';
 
 // ── Game speed ────────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ function update() {
 		return;
 	}
 	if (state.gameState === 'gameover') {
-		if ((state.stateTimer -= state.gameSpeed) <= 0) state.gameState = 'menu';
+		if ((state.stateTimer -= state.gameSpeed) <= 0) { state.gameState = 'menu'; state.menuStartFrame = state.frames; }
 		return;
 	}
 	if (state.gameState === 'win') {
@@ -256,61 +257,173 @@ function update() {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 function renderMenu() {
-	var ctx = state.ctx;
+	var ctx  = state.ctx;
 	ctx.save();
 	ctx.scale(2, 2);
-	s_map.draw(ctx, state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
-	ctx.fillStyle = 'rgba(0,0,0,0.72)';
-	ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 
-	var cx = state.mapOffX + state.GRID_COLS * TILE / 2;
-	var cy = state.mapOffY + state.GRID_ROWS * TILE / 2;
+	// Full black background
+	ctx.fillStyle = '#000';
+	ctx.fillRect(0, 0, state.width / 2, state.height / 2);
 
-	ctx.fillStyle = '#ffff00';
-	ctx.font      = 'bold 20px monospace';
+	var cx       = state.mapOffX + state.GRID_COLS * TILE / 2;
+	var top      = state.mapOffY;
+	var mapH     = state.GRID_ROWS * TILE;
+	var mapBot   = top + mapH;
+
+	// ── Title ──────────────────────────────────────────────────────────────────
+	ctx.fillStyle = '#ffffff';
+	ctx.font      = 'bold 34px monospace';
 	ctx.textAlign = 'center';
-	ctx.fillText('PAC-MAN', cx, cy - 60);
+	ctx.fillText('PAC-MAN', cx, top + 42);
 
 	if (state.menuSubState === 'personality') {
-		ctx.fillStyle = '#aaaaaa';
-		ctx.font      = '12px monospace';
-		ctx.fillText('Choose AI style:', cx, cy - 20);
-
+		// ── Personality sub-screen ──────────────────────────────────────────────
 		var pKey = AI_PERSONALITY_KEYS[state.aiPersonalityIdx];
 		var pCfg = AI_PERSONALITIES[pKey];
-		ctx.fillStyle = '#ffff00';
-		ctx.font      = 'bold 16px monospace';
-		ctx.fillText('◄  ' + pCfg.label + '  ►', cx, cy + 10);
-
 		var descs = {
-			coward:     'Flees early, avoids all risk',
+			coward:     'Flees early, takes no risks',
 			balanced:   'Balanced and efficient',
 			aggressive: 'Actively hunts ghosts',
 			greedy:     'Maximizes score, takes risks',
 		};
+		ctx.fillStyle = '#aaaaaa';
+		ctx.font      = 'bold 11px monospace';
+		ctx.textAlign = 'center';
+		ctx.fillText('CHOOSE AI STYLE', cx, top + 80);
+
+		ctx.fillStyle = '#ffff00';
+		ctx.font      = 'bold 14px monospace';
+		ctx.fillText('◄  ' + pCfg.label.toUpperCase() + '  ►', cx, top + 115);
+
 		ctx.fillStyle = '#888888';
 		ctx.font      = '10px monospace';
-		ctx.fillText(descs[pKey], cx, cy + 32);
+		ctx.fillText(descs[pKey], cx, top + 136);
 
 		ctx.fillStyle = '#555';
 		ctx.font      = '9px monospace';
-		ctx.fillText('← → or click  •  Enter to start  •  Esc back', cx, cy + 60);
+		ctx.fillText('← → or click  •  Enter to start  •  Esc back', cx, top + 162);
+
 	} else {
-		var opts = ['🕹  Play yourself', '🤖  Let AI play'];
+		// ── Character / Nickname table ──────────────────────────────────────────
+		ctx.fillStyle = '#ffffff';
+		ctx.font      = 'bold 10px monospace';
+		ctx.textAlign = 'center';
+		ctx.fillText('CHARACTER / NICKNAME', cx, top + 68);
+
+		// Horizontal rule
+		ctx.strokeStyle = '#333333';
+		ctx.lineWidth   = 1;
+		ctx.beginPath();
+		ctx.moveTo(cx - 110, top + 74); ctx.lineTo(cx + 110, top + 74);
+		ctx.stroke();
+
+		var ghostData = [
+			{ sprites: s_blinky, color: '#ff0000', name: 'SHADOW',  nick: '"BLINKY"' },
+			{ sprites: s_pinky,  color: '#ffb8ff', name: 'SPEEDY',  nick: '"PINKY"'  },
+			{ sprites: s_inky,   color: '#00ffff', name: 'BASHFUL', nick: '"INKY"'   },
+			{ sprites: s_clyde,  color: '#ffb851', name: 'POKEY',   nick: '"CLYDE"'  },
+		];
+		var rowH    = 30;
+		var rowBase = top + 100;
+		for (var gi = 0; gi < ghostData.length; gi++) {
+			var gd = ghostData[gi];
+			var gy = rowBase + gi * rowH;
+			// Ghost sprite facing right
+			gd.sprites[3].draw(ctx, cx - 108, gy - 13, 26, 26);
+			// Full name
+			ctx.fillStyle = gd.color;
+			ctx.font      = 'bold 10px monospace';
+			ctx.textAlign = 'left';
+			ctx.fillText('- ' + gd.name, cx - 76, gy + 2);
+			// Nickname
+			ctx.fillText(gd.nick, cx + 20, gy + 2);
+		}
+
+		// Horizontal rule
+		ctx.strokeStyle = '#333333';
+		ctx.lineWidth   = 1;
+		ctx.beginPath();
+		ctx.moveTo(cx - 110, top + 224); ctx.lineTo(cx + 110, top + 224);
+		ctx.stroke();
+
+		// ── Menu options ──────────────────────────────────────────────────────
+		var optY0 = top + 244;
+		var optY1 = top + 268;
+		var opts  = ['PLAY YOURSELF', 'LET AI PLAY'];
+		var optYs = [optY0, optY1];
 		for (var i = 0; i < opts.length; i++) {
-			ctx.fillStyle = state.menuSelected === i ? '#ffff00' : '#aaaaaa';
-			ctx.font      = state.menuSelected === i ? 'bold 13px monospace' : '13px monospace';
-			ctx.fillText(opts[i], cx, cy - 10 + i * 28);
+			var active = state.menuSelected === i;
+			if (active) {
+				ctx.fillStyle = '#ffff00';
+				ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
+				ctx.fillStyle = '#000000';
+			} else {
+				ctx.fillStyle = '#888888';
+			}
+			ctx.font      = 'bold 10px monospace';
+			ctx.textAlign = 'center';
+			ctx.fillText(opts[i], cx, optYs[i]);
 		}
+
+		// Blinking prompt
+		if (Math.floor(state.frames / 28) % 2 === 0) {
+			ctx.fillStyle = '#ffffff';
+			ctx.font      = 'bold 10px monospace';
+			ctx.textAlign = 'center';
+			ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 294);
+		}
+
 		if (state.highScore > 0) {
-			ctx.fillStyle = '#aaa';
-			ctx.font      = '10px monospace';
-			ctx.fillText('HI-SCORE: ' + state.highScore, cx, cy + 48);
+			ctx.fillStyle = '#555555';
+			ctx.font      = '9px monospace';
+			ctx.textAlign = 'center';
+			ctx.fillText('HI-SCORE: ' + state.highScore, cx, top + 310);
 		}
-		ctx.fillStyle = '#555';
-		ctx.font      = '9px monospace';
-		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, cy + 70);
 	}
+
+	// ── Bottom animation strip ─────────────────────────────────────────────────
+	var ANIM_DELAY  = 60;  // 1 second at 60fps before animation starts
+	var menuAge     = state.frames - state.menuStartFrame;
+	if (menuAge >= ANIM_DELAY) {
+		var boardW    = state.GRID_COLS * TILE;
+		var boardX    = state.mapOffX;
+		var gSpacing  = 42;
+		var ghostGap  = 150;  // gap between Pac-Man and first ghost
+		var trainTail = ghostGap + 3 * gSpacing;   // distance from Pac-Man to last ghost
+		var phase0Dur = Math.round((boardW + trainTail + 50) / 2 + 180);  // frames to clear full train
+		var phase1Dur = Math.round((boardW + trainTail + 50) / 2 + 360);  // frames to clear full train
+		var cycleLen  = phase0Dur + phase1Dur;
+		var animT     = (menuAge - ANIM_DELAY) % cycleLen;
+		var phase     = animT < phase0Dur ? 0 : 1;
+		var t         = phase === 0 ? animT : animT - phase0Dur;
+		var animX     = phase === 0 ? (boardX + boardW + 10 - t * 2) : (boardX - trainTail - 30 + t * 2);
+		var animY     = mapBot - 150;
+		var mouthF    = Math.floor(state.frames / 5) % 2;
+		var bob       = Math.floor(state.frames / 10) % 2 * 2;
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(boardX, animY - 4, boardW, 36);
+		ctx.clip();
+
+		if (phase === 0) {
+			// Pac-Man fleeing left, 4 ghosts chasing behind (to the right)
+			var ghostSprites = [s_blinky, s_pinky, s_inky, s_clyde];
+			s_pacman.left[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			for (var pi = 0; pi < 4; pi++) {
+				ghostSprites[pi][0].draw(ctx, animX + ghostGap + pi * gSpacing, animY + bob, 28, 28);
+			}
+		} else {
+			// Pac-Man chasing right, 4 scared ghosts fleeing ahead
+			s_pacman.right[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			for (var si = 0; si < 4; si++) {
+				s_scaredGhost[0].draw(ctx, animX + ghostGap + si * gSpacing, animY + bob, 28, 28);
+			}
+		}
+
+		ctx.restore();
+	}
+
 	ctx.restore();
 }
 
@@ -444,13 +557,46 @@ function render() {
 		ctx.font      = '11px monospace';
 		ctx.fillText('press any arrow to start', mx, my + 44);
 	}
-	if (state.paused) {
+	if (state.paused && !state.escapeMenuActive) {
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 		ctx.fillStyle = '#ffffff';
 		ctx.font      = 'bold 18px monospace';
 		ctx.textAlign = 'center';
 		ctx.fillText('PAUSED', mx, my);
+	}
+	if (state.escapeMenuActive) {
+		// Dim the map
+		ctx.fillStyle = 'rgba(0,0,0,0.72)';
+		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
+
+		// Box
+		var bw = 120, bh = 80;
+		var bx = mx - bw / 2, by = my - bh / 2;
+		ctx.fillStyle   = '#111111';
+		ctx.fillRect(bx, by, bw, bh);
+		ctx.strokeStyle = '#444444';
+		ctx.lineWidth   = 1;
+		ctx.strokeRect(bx, by, bw, bh);
+
+		ctx.textAlign = 'center';
+		ctx.fillStyle = '#aaaaaa';
+		ctx.font      = 'bold 11px monospace';
+		ctx.fillText('PAUSE', mx, by + 16);
+
+		// Buttons
+		var opts = ['Fortsett', 'Avslutt'];
+		state.escapeMenuBounds = [];
+		for (var ei = 0; ei < opts.length; ei++) {
+			var ey = by + 34 + ei * 26;
+			var active = state.escapeMenuSelected === ei;
+			ctx.fillStyle = active ? '#ffff00' : '#333333';
+			ctx.fillRect(bx + 12, ey - 13, bw - 24, 18);
+			ctx.fillStyle = active ? '#000000' : '#888888';
+			ctx.font      = active ? 'bold 11px monospace' : '11px monospace';
+			ctx.fillText(opts[ei], mx, ey);
+			state.escapeMenuBounds.push({ x: bx + 12, y: ey - 13, w: bw - 24, h: 18, idx: ei });
+		}
 	}
 	if (state.gameState === 'gameover') {
 		ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -481,11 +627,49 @@ function render() {
 function keydown(e) {
 	initAudio();
 	if (e.key === 'Escape') {
+		if (state.escapeMenuActive) {
+			// Close escape menu → resume
+			state.escapeMenuActive = false;
+			state.paused           = false;
+			return;
+		}
+		if (state.gameState === 'menu' && state.menuSubState === 'personality') {
+			state.menuSubState = 'main';
+			return;
+		}
+		if (state.gameState === 'playing' || state.gameState === 'ready' || state.paused) {
+			state.escapeMenuActive   = true;
+			state.escapeMenuSelected = 0;
+			state.paused             = true;
+			return;
+		}
+		// Fallback: go straight to menu (gameover/win screens)
 		setPathPanelVisible(false);
 		newGame();
-		state.gameState    = 'menu';
-		state.menuSubState = 'main';
+		state.gameState      = 'menu';
+		state.menuSubState   = 'main';
+		state.menuStartFrame = state.frames;
 		return;
+	}
+	if (state.escapeMenuActive) {
+		switch (e.key) {
+			case 'ArrowUp':   state.escapeMenuSelected = 0; return;
+			case 'ArrowDown': state.escapeMenuSelected = 1; return;
+			case 'Enter':
+				if (state.escapeMenuSelected === 0) {
+					state.escapeMenuActive = false;
+					state.paused           = false;
+				} else {
+					state.escapeMenuActive = false;
+					setPathPanelVisible(false);
+					newGame();
+					state.gameState      = 'menu';
+					state.menuSubState   = 'main';
+					state.menuStartFrame = state.frames;
+				}
+				return;
+		}
+		return; // block all other keys while escape menu is open
 	}
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'personality') {
@@ -531,6 +715,9 @@ function keydown(e) {
 	if (e.code === 'KeyB') { togglePath('pacman'); return; }
 	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
 		state.paused = !state.paused; return;
+	}
+	if (e.code === 'KeyI') {
+		state.ghostIndicatorStyle = (state.ghostIndicatorStyle + 1) % 4; return;
 	}
 	// Ghost selection: Tab cycles through ghosts in both modes
 	if (e.code === 'Tab' && (state.gameState === 'playing' || state.gameState === 'ready')) {
@@ -580,11 +767,12 @@ function keydown(e) {
 
 function run() {
 	newGame();
-	state.gameState = 'menu';
+	state.gameState    = 'menu';
+	state.menuStartFrame = 0;
 	var loop = function() {
 		if (state.gameState === 'playing' || state.gameState === 'ready' ||
 		    state.gameState === 'dead'    || state.gameState === 'gameover' ||
-		    state.gameState === 'win') {
+		    state.gameState === 'win'     || state.gameState === 'menu') {
 			update();
 		}
 		render();
@@ -605,18 +793,18 @@ function menuCanvasPt(e) {
 
 function menuHitTest(pt) {
 	// renderMenu uses ctx.scale(2,2), so divide canvas coords by 2 for drawing coords
-	var scx = pt.x / 2;
-	var scy = pt.y / 2;
-	var cx  = state.mapOffX + state.GRID_COLS * TILE / 2;
-	var cy  = state.mapOffY + state.GRID_ROWS * TILE / 2;
+	var scx  = pt.x / 2;
+	var scy  = pt.y / 2;
+	var cx   = state.mapOffX + state.GRID_COLS * TILE / 2;
+	var top  = state.mapOffY;
 	if (state.menuSubState === 'personality') {
-		if (Math.abs(scy - (cy + 10)) < 18) {
+		if (Math.abs(scy - (top + 115)) < 18) {
 			if (scx < cx) return 'prev';
 			if (scx > cx) return 'next';
 		}
 	} else {
-		if (Math.abs(scy - (cy - 10)) < 18) return 'opt0';
-		if (Math.abs(scy - (cy + 18)) < 18) return 'opt1';
+		if (scy >= top + 231 && scy <= top + 257) return 'opt0';
+		if (scy >= top + 255 && scy <= top + 281) return 'opt1';
 	}
 	return null;
 }
@@ -661,7 +849,32 @@ export function main() {
 	document.addEventListener('keydown', keydown);
 	initPathPanel();
 
-	state.canvas.addEventListener('mousedown', function(e) { onMenuMouseDown(e); onVolMouseDown(e);   onSpeedMouseDown(e); });
+	state.canvas.addEventListener('mousedown', function(e) {
+		onMenuMouseDown(e); onVolMouseDown(e); onSpeedMouseDown(e); onIndicatorMouseDown(e);
+		// Escape menu click (bounds are in scale(2,2) space → divide canvas coords by 2)
+		if (state.escapeMenuActive && state.escapeMenuBounds) {
+			var r  = state.canvas.getBoundingClientRect();
+			var px = (e.clientX - r.left) * (state.canvas.width  / r.width)  / 2;
+			var py = (e.clientY - r.top)  * (state.canvas.height / r.height) / 2;
+			for (var bi = 0; bi < state.escapeMenuBounds.length; bi++) {
+				var b = state.escapeMenuBounds[bi];
+				if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) {
+					if (b.idx === 0) {
+						state.escapeMenuActive = false;
+						state.paused           = false;
+					} else {
+						state.escapeMenuActive = false;
+						setPathPanelVisible(false);
+						newGame();
+						state.gameState      = 'menu';
+						state.menuSubState   = 'main';
+						state.menuStartFrame = state.frames;
+					}
+					break;
+				}
+			}
+		}
+	});
 	state.canvas.addEventListener('mousemove', function(e) { onMenuMouseMove(e); onVolMouseMove(e);   onSpeedMouseMove(e); });
 	state.canvas.addEventListener('mouseup',   function()  {                     onVolMouseUp();      onSpeedMouseUp();    });
 
