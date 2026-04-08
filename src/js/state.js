@@ -54,8 +54,10 @@ export var state = {
 	ghostIndicatorStyle:    0,  // 0=arrow  1=dashed-square  2=corners  3=glow
 	indicatorStyleBounds:  null, // hit-test bounds for indicator picker clicks
 	escapeMenuActive:      false,
-	escapeMenuSelected:    0,    // 0=Fortsett  1=Avslutt
-	escapeMenuBounds:      null, // hit-test bounds for escape menu buttons
+	escapeMenuSelected:    0,
+	escapeMenuBounds:      null,
+	settingsOverlayActive: false,
+	settingsRow:           0,    // 0=speed  1=volume  2=indicator
 	menuStartFrame:        -1,   // state.frames value when menu was last entered
 
 	// Audio
