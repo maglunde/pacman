@@ -106,6 +106,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			this.pendingReturn = false;
 			this.bounceDir    = dir.up;
 			this.releaseFrame = state.frames + this.releaseDelay / state.gameSpeed;
+			this.nextDir      = dir.none;
 			var p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
 			this.targetX = p.x; this.targetY = p.y;
@@ -175,7 +176,34 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 					var dirs = [dir.up, dir.left, dir.down, dir.right];
 					var best = dir.none;
 
-					if (state.scaredTimer > 0 && !this.immune) {
+					// Player-controlled ghost (AI mode only for now; easy to extend by removing aiMode check)
+					var playerControlled = state.aiMode && state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
+
+					if (playerControlled) {
+						// Try queued direction first (allow reversing — player intent)
+						if (this.nextDir !== dir.none) {
+							var ndl = delta(this.nextDir);
+							if (!isGhostWall(this.col + ndl[0], this.row + ndl[1], this.nextDir)) {
+								best = this.nextDir;
+							}
+						}
+						// Fall back: continue in current direction
+						if (best === dir.none) {
+							var cdl = delta(this.dir);
+							if (!isGhostWall(this.col + cdl[0], this.row + cdl[1], this.dir)) {
+								best = this.dir;
+							}
+						}
+						// Last resort: any valid direction
+						if (best === dir.none) {
+							for (var ai = 0; ai < dirs.length; ai++) {
+								var adl = delta(dirs[ai]);
+								if (!isGhostWall(this.col + adl[0], this.row + adl[1], dirs[ai])) {
+									best = dirs[ai]; break;
+								}
+							}
+						}
+					} else if (state.scaredTimer > 0 && !this.immune) {
 						// Scared: pick a random valid direction (prefer not to reverse)
 						var choices = dirs.filter(function(d) {
 							var dl = delta(d);
@@ -227,6 +255,22 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {
 				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
+			}
+			// Highlight ring for ghost selection/control (AI mode only for now)
+			if (state.aiMode) {
+				var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
+				var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
+				if (isSelected || isControlled) {
+					var pulse = 0.55 + 0.45 * Math.sin(state.frames * 0.18);
+					ctx.save();
+					ctx.strokeStyle = isControlled ? '#00ff88' : '#ffff00';
+					ctx.globalAlpha = isControlled ? 1.0 : pulse;
+					ctx.lineWidth   = 2;
+					ctx.beginPath();
+					ctx.arc(this.x + 15, this.y + 15, 16, 0, Math.PI * 2);
+					ctx.stroke();
+					ctx.restore();
+				}
 			}
 		}
 	};

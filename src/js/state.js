@@ -49,6 +49,8 @@ export var state = {
 	menuSelected: 0,
 	menuSubState: 'main', // 'main' | 'personality'
 	aiPersonalityIdx: 1,
+	selectedGhostIdx:   -1,  // ghost highlighted for takeover in AI mode (-1 = none)
+	controlledGhostIdx: -1,  // ghost currently player-controlled (-1 = AI controls all)
 
 	// Audio
 	audioCtx:      null,

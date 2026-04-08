@@ -60,6 +60,8 @@ function startReady() {
 	state.scatterTimer          = SCATTER_CHASE_PHASES[0];
 	state.gameState             = 'ready';
 	state.paused                = false;
+	state.selectedGhostIdx      = -1;
+	state.controlledGhostIdx    = -1;
 }
 
 export function newGame() {
@@ -530,9 +532,29 @@ function keydown(e) {
 	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
 		state.paused = !state.paused; return;
 	}
-	if (!state.aiMode) {
-		var arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
-		if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
+	// Ghost selection / takeover (AI mode only; remove state.aiMode check to enable in manual mode too)
+	if (state.aiMode && e.code === 'Tab' && (state.gameState === 'playing' || state.gameState === 'ready')) {
+		e.preventDefault();
+		if (state.controlledGhostIdx >= 0) state.controlledGhostIdx = -1; // release before cycling
+		// Cycle: -1 → 0 → 1 → 2 → 3 → -1
+		state.selectedGhostIdx = (state.selectedGhostIdx + 2) % 5 - 1;
+		return;
+	}
+	if (state.aiMode && e.key === 'Enter' && state.gameState === 'playing' && state.selectedGhostIdx >= 0) {
+		state.controlledGhostIdx = state.controlledGhostIdx === state.selectedGhostIdx ? -1 : state.selectedGhostIdx;
+		return;
+	}
+	// Arrow keys: steer controlled ghost (AI mode) or pacman (manual mode)
+	var arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
+	if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
+	if (state.aiMode && state.controlledGhostIdx >= 0) {
+		switch (e.key) {
+			case 'ArrowLeft':  state.ghosts[state.controlledGhostIdx].nextDir = dir.left;  break;
+			case 'ArrowUp':    state.ghosts[state.controlledGhostIdx].nextDir = dir.up;    break;
+			case 'ArrowRight': state.ghosts[state.controlledGhostIdx].nextDir = dir.right; break;
+			case 'ArrowDown':  state.ghosts[state.controlledGhostIdx].nextDir = dir.down;  break;
+		}
+	} else if (!state.aiMode) {
 		switch (e.key) {
 			case 'ArrowLeft':  state.pacman.nextDir = dir.left;  break;
 			case 'ArrowUp':    state.pacman.nextDir = dir.up;    break;
