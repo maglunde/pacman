@@ -158,7 +158,7 @@ function drawSpeedSlider(mapX, mapW, lifeY) {
 	state.speedIconBounds  = { x: iconX - 38, y: trackY - 14, w: 36, h: 20 };
 
 	var label = state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7';
-	ctx.font      = '13px monospace';
+	ctx.font      = "12px 'Press Start 2P', monospace";
 	ctx.fillStyle = state.gameSpeed === 1.0 ? '#888888' : '#ffff00';
 	ctx.textAlign = 'right';
 	ctx.fillText(label, iconX, iconY);
@@ -187,7 +187,7 @@ function drawVolumeSlider(mapX, mapW, lifeY) {
 		: state.volume < 0.33 ? '\uD83D\uDD08'
 		: state.volume < 0.66 ? '\uD83D\uDD09'
 		: '\uD83D\uDD0A';
-	ctx.font      = '16px sans-serif';
+	ctx.font      = "19px 'Press Start 2P', monospace";
 	ctx.textAlign = 'left';
 	ctx.fillText(icon, iconX, iconY);
 
@@ -205,7 +205,7 @@ export function drawHUD() {
 	var mapW = state.GRID_COLS * TILE * sx;
 
 	ctx.textAlign = 'left';
-	ctx.font = 'bold 22px monospace';
+	ctx.font = "18px 'Press Start 2P', monospace";
 
 	ctx.fillStyle = '#ffffff';
 	ctx.fillText('SCORE', mapX, mapY - 28);
@@ -228,14 +228,14 @@ export function drawHUD() {
 		var pLabel = AI_PERSONALITIES[AI_PERSONALITY_KEYS[state.aiPersonalityIdx]].label;
 		ctx.fillStyle = '#00ccff';
 		ctx.textAlign = 'center';
-		ctx.font = '11px monospace';
+		ctx.font = "12px 'Press Start 2P', monospace";
 		ctx.fillText('🤖 AI: ' + pLabel, mapX + mapW / 2, mapY - 48);
 	}
 
 	var lifeY = mapY + state.GRID_ROWS * TILE * sx + 24;
 	ctx.fillStyle = '#ffff00';
 	ctx.textAlign = 'left';
-	ctx.font = 'bold 18px monospace';
+	ctx.font = "12px 'Press Start 2P', monospace";
 	ctx.fillText('LIVES:', mapX, lifeY);
 	for (var i = 0; i < state.lives; i++) {
 		ctx.beginPath();
@@ -253,7 +253,7 @@ export function drawHUD() {
 
 // ── Ghost indicator style picker ──────────────────────────────────────────────
 
-var INDICATOR_LABELS = ['PEIL', 'FIRKANT', 'HJØRNER', 'GLØD'];
+var INDICATOR_LABELS = ['ARROW', 'SQUARE', 'CORNERS', 'GLOW'];
 
 function drawIndicatorPicker(mapX, mapW, lifeY) {
 	var ctx   = state.ctx;
@@ -263,7 +263,7 @@ function drawIndicatorPicker(mapX, mapW, lifeY) {
 	var totalW = INDICATOR_LABELS.length * itemW + (INDICATOR_LABELS.length - 1) * gap;
 	var startX = mapX + mapW / 2 - totalW / 2;
 
-	ctx.font      = '11px monospace';
+	ctx.font      = "12px 'Press Start 2P', monospace";
 	ctx.textAlign = 'center';
 
 	state.indicatorStyleBounds = [];
@@ -306,7 +306,7 @@ function drawInfoPanel(mapX, mapY) {
 
 	ctx.textAlign = 'right';
 
-	ctx.font      = 'bold 22px monospace';
+	ctx.font      = "13px 'Press Start 2P', monospace";
 	ctx.fillStyle = '#aaaaaa';
 	ctx.fillText('GHOSTS', x, y); y += lh + 4;
 
@@ -317,10 +317,10 @@ function drawInfoPanel(mapX, mapY) {
 		{ color: '#ffb851', name: 'Clyde',  lines: ['Jager når langt unna,', 'flykter til hjørnet', 'når nær (<8 ruter).'] },
 	];
 	ghostInfo.forEach(function(g) {
-		ctx.font      = 'bold 22px monospace';
+		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.fillStyle = g.color;
 		ctx.fillText(g.name, x, y); y += lh - 4;
-		ctx.font      = '20px monospace';
+		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.fillStyle = '#888888';
 		g.lines.forEach(function(line) { ctx.fillText(line, x, y); y += lh - 4; });
 		y += 8;
@@ -328,7 +328,7 @@ function drawInfoPanel(mapX, mapY) {
 
 	y += 8;
 
-	ctx.font      = 'bold 22px monospace';
+	ctx.font      = "13px 'Press Start 2P', monospace";
 	ctx.fillStyle = '#aaaaaa';
 	ctx.fillText('TASTER', x, y); y += lh + 4;
 
@@ -344,10 +344,10 @@ function drawInfoPanel(mapX, mapY) {
 		{ key: 'Esc',      desc: 'Meny'         },
 	];
 	shortcuts.forEach(function(s) {
-		ctx.font      = 'bold 20px monospace';
+		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.fillStyle = '#ffff00';
 		ctx.fillText(s.key, x, y); y += lh - 4;
-		ctx.font      = '20px monospace';
+		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.fillStyle = '#888888';
 		ctx.fillText(s.desc, x, y); y += lh;
 	});

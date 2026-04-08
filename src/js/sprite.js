@@ -12,7 +12,9 @@ s_strawberry,
 s_cherry,
 s_dot,
 s_bigDot,
-s_title
+s_title,
+s_ready,
+s_gameover
 ;
 
 export function Sprite(img,x,y,w,h){
@@ -95,6 +97,8 @@ export function initSprites(img){
 		new Sprite(img, 499, 41, 30, 30),
 		new Sprite(img, 533, 41, 30, 30),
 		new Sprite(img, 567, 41, 30, 30)
-	]
+	];
 	s_title = new Sprite(img, 0, 508, 425, 99);
+	s_ready = new Sprite(img, 626, 480, 96, 17);
+	s_gameover = new Sprite(img, 451, 476, 164, 25);
 }

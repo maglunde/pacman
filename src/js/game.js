@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title } from './sprite.js';
+import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -114,7 +114,7 @@ function update() {
 		return;
 	}
 	if (state.gameState === 'gameover') {
-		if ((state.stateTimer -= state.gameSpeed) <= 0) { state.gameState = 'menu'; state.menuStartFrame = state.frames; }
+		if (state.stateTimer > 0) state.stateTimer -= state.gameSpeed;
 		return;
 	}
 	if (state.gameState === 'win') {
@@ -290,26 +290,26 @@ function renderMenu() {
 			greedy:     'Maximizes score, takes risks',
 		};
 		ctx.fillStyle = '#aaaaaa';
-		ctx.font      = 'bold 11px monospace';
+		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('CHOOSE AI STYLE', cx, top + 80);
 
 		ctx.fillStyle = '#ffff00';
-		ctx.font      = 'bold 14px monospace';
+		ctx.font      = "14px 'Press Start 2P', monospace";
 		ctx.fillText('◄  ' + pCfg.label.toUpperCase() + '  ►', cx, top + 115);
 
 		ctx.fillStyle = '#888888';
-		ctx.font      = '10px monospace';
+		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.fillText(descs[pKey], cx, top + 136);
 
 		ctx.fillStyle = '#555';
-		ctx.font      = '9px monospace';
-		ctx.fillText('← → or click  •  Enter to start  •  Esc back', cx, top + 162);
+		ctx.font      = "8px 'Press Start 2P', monospace";
+		ctx.fillText('Enter to start • Esc back', cx, top + 162);
 
 	} else {
 		// ── Character / Nickname table ──────────────────────────────────────────
 		ctx.fillStyle = '#ffffff';
-		ctx.font      = 'bold 16px monospace';
+		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('CHARACTER / NICKNAME', cx, top + 68);
 
@@ -332,12 +332,12 @@ function renderMenu() {
 			var gd = ghostData[gi];
 			var gy = rowBase + gi * rowH;
 			// Ghost sprite facing right
-			gd.sprites[3].draw(ctx, cx - 108, gy - 13, 26, 26);
+			gd.sprites[3].draw(ctx, cx - 155, gy - 13, 26, 26);
 			// Full name
 			ctx.fillStyle = gd.color;
-			ctx.font      = 'bold 14px monospace';
+			ctx.font      = "11px 'Press Start 2P', monospace";
 			ctx.textAlign = 'left';
-			ctx.fillText('- ' + gd.name, cx - 76, gy + 2);
+			ctx.fillText('- ' + gd.name, cx - 116, gy + 2);
 			// Nickname
 			ctx.fillText(gd.nick, cx + 20, gy + 2);
 		}
@@ -367,19 +367,19 @@ function renderMenu() {
 			} else {
 				ctx.fillStyle = '#888888';
 			}
-			ctx.font      = 'bold 13px monospace';
+			ctx.font      = "10px 'Press Start 2P', monospace";
 			ctx.textAlign = 'center';
 			ctx.fillText(opts[i], cx, optYs[i]);
 		}
 
 		ctx.fillStyle = '#ffffff';
-		ctx.font      = 'bold 10px monospace';
+		ctx.font      = "8px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 294);
+		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, top + 290);
 
 		if (state.highScore > 0) {
 			ctx.fillStyle = '#555555';
-			ctx.font      = '12px monospace';
+			ctx.font      = "10px 'Press Start 2P', monospace";
 			ctx.textAlign = 'center';
 			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 310);
 		}
@@ -544,7 +544,7 @@ function render() {
 	// Score popups
 	state.scorePopups.forEach(function(p) {
 		ctx.fillStyle = 'rgba(0,255,200,' + (p.life / 60) + ')';
-		ctx.font      = 'bold 8px monospace';
+		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText(p.text, p.x + TILE, p.y);
 	});
@@ -553,19 +553,17 @@ function render() {
 	var mx = state.mapOffX + state.GRID_COLS * TILE / 2;
 	var my = state.mapOffY + state.GRID_ROWS * TILE / 2;
 	if (state.gameState === 'ready') {
-		ctx.fillStyle = '#ffff00';
-		ctx.font      = 'bold 14px monospace';
-		ctx.textAlign = 'center';
-		ctx.fillText('READY!', mx, my + 20);
+		s_ready.draw(ctx, mx - s_ready.w / 2, my + 33 - s_ready.h / 2);
 		ctx.fillStyle = 'rgba(255,255,255,0.9)';
-		ctx.font      = '11px monospace';
-		ctx.fillText('press any arrow to start', mx, my + 44);
+		ctx.font      = "12px 'Press Start 2P', monospace";
+		ctx.textAlign = 'center';
+		ctx.fillText('press any arrow to start', mx, my + 64);
 	}
 	if (state.paused && !state.escapeMenuActive) {
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 		ctx.fillStyle = '#ffffff';
-		ctx.font      = 'bold 18px monospace';
+		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('PAUSED', mx, my);
 	}
@@ -585,7 +583,7 @@ function render() {
 
 		ctx.textAlign = 'center';
 		ctx.fillStyle = '#aaaaaa';
-		ctx.font      = 'bold 11px monospace';
+		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.fillText('PAUSE', mx, by + 16);
 
 		// Buttons
@@ -597,7 +595,7 @@ function render() {
 			ctx.fillStyle = active ? '#ffff00' : '#333333';
 			ctx.fillRect(bx + 12, ey - 13, bw - 24, 18);
 			ctx.fillStyle = active ? '#000000' : '#888888';
-			ctx.font      = active ? 'bold 11px monospace' : '11px monospace';
+			ctx.font      = active ? "12px 'Press Start 2P', monospace" : "12px 'Press Start 2P', monospace";
 			ctx.fillText(opts[ei], mx, ey);
 			state.escapeMenuBounds.push({ x: bx + 12, y: ey - 13, w: bw - 24, h: 18, idx: ei });
 		}
@@ -605,19 +603,22 @@ function render() {
 	if (state.gameState === 'gameover') {
 		ctx.fillStyle = 'rgba(0,0,0,0.6)';
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
-		ctx.fillStyle = '#ff0000';
-		ctx.font      = 'bold 18px monospace';
-		ctx.textAlign = 'center';
-		ctx.fillText('GAME OVER', mx, my);
+		s_gameover.draw(ctx, mx - s_gameover.w / 2, my - s_gameover.h / 2 - 10);
 		ctx.fillStyle = '#ffff00';
-		ctx.font      = '10px monospace';
-		ctx.fillText('Score: ' + state.score, mx, my + 20);
+		ctx.font      = "12px 'Press Start 2P', monospace";
+		ctx.textAlign = 'center';
+		ctx.fillText('Score: ' + state.score, mx, my + 16);
+		if (state.stateTimer <= 0) {
+			ctx.fillStyle = 'rgba(255,255,255,0.85)';
+			ctx.font      = "9px 'Press Start 2P', monospace";
+			ctx.fillText('press Enter / Space to return to menu', mx, my + 34);
+		}
 	}
 	if (state.gameState === 'win') {
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 		ctx.fillStyle = '#00ff88';
-		ctx.font      = 'bold 16px monospace';
+		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('LEVEL ' + state.level + ' COMPLETE!', mx, my);
 	}
@@ -647,7 +648,7 @@ function keydown(e) {
 			state.paused             = true;
 			return;
 		}
-		// Fallback: go straight to menu (gameover/win screens)
+		// Fallback: go straight to menu (win screen)
 		setPathPanelVisible(false);
 		newGame();
 		state.gameState      = 'menu';
@@ -674,6 +675,17 @@ function keydown(e) {
 				return;
 		}
 		return; // block all other keys while escape menu is open
+	}
+	if (state.gameState === 'gameover' && state.stateTimer <= 0) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			setPathPanelVisible(false);
+			newGame();
+			state.gameState      = 'menu';
+			state.menuSubState   = 'main';
+			state.menuStartFrame = state.frames;
+			return;
+		}
+		// fall through to allow shortcuts (M, Q, speed, etc.)
 	}
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'personality') {

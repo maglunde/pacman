@@ -271,7 +271,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 					// ── A: bouncing arrow above ghost ─────────────────────────
 					var bounce = Math.abs(Math.sin(state.frames * 0.15)) * 5;
 					ctx.fillStyle = selColor;
-					ctx.font = 'bold 10px monospace';
+					ctx.font = "12px 'Press Start 2P', monospace";
 					ctx.textAlign = 'center';
 					ctx.textBaseline = 'bottom';
 					ctx.fillText('▼', cx, this.y - 2 - bounce);
