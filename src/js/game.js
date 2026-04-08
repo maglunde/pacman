@@ -67,6 +67,7 @@ export function newGame() {
 	state.lastExtraLifeScore = 0;
 	state.lives = 3;
 	state.level = 1;
+	state.dotsEaten = 0;
 	initDots();
 	initBigDots();
 	shuffleBFSDirs();
@@ -291,7 +292,7 @@ function renderMenu() {
 
 		ctx.fillStyle = '#555';
 		ctx.font      = '9px monospace';
-		ctx.fillText('← → to choose  •  Enter to start  •  Esc back', cx, cy + 60);
+		ctx.fillText('← → or click  •  Enter to start  •  Esc back', cx, cy + 60);
 	} else {
 		var opts = ['🕹  Play yourself', '🤖  Let AI play'];
 		for (var i = 0; i < opts.length; i++) {
@@ -306,7 +307,7 @@ function renderMenu() {
 		}
 		ctx.fillStyle = '#555';
 		ctx.font      = '9px monospace';
-		ctx.fillText('↑ ↓ to select  •  Enter to start', cx, cy + 70);
+		ctx.fillText('↑ ↓ or click  •  Enter to start', cx, cy + 70);
 	}
 	ctx.restore();
 }
@@ -558,6 +559,61 @@ function run() {
 	loop();
 }
 
+// ── Menu mouse support ────────────────────────────────────────────────────────
+
+function menuCanvasPt(e) {
+	var r = state.canvas.getBoundingClientRect();
+	return {
+		x: (e.clientX - r.left) * (state.canvas.width  / r.width),
+		y: (e.clientY - r.top)  * (state.canvas.height / r.height)
+	};
+}
+
+function menuHitTest(pt) {
+	// renderMenu uses ctx.scale(2,2), so divide canvas coords by 2 for drawing coords
+	var scx = pt.x / 2;
+	var scy = pt.y / 2;
+	var cx  = state.mapOffX + state.GRID_COLS * TILE / 2;
+	var cy  = state.mapOffY + state.GRID_ROWS * TILE / 2;
+	if (state.menuSubState === 'personality') {
+		if (Math.abs(scy - (cy + 10)) < 18) {
+			if (scx < cx) return 'prev';
+			if (scx > cx) return 'next';
+		}
+	} else {
+		if (Math.abs(scy - (cy - 10)) < 18) return 'opt0';
+		if (Math.abs(scy - (cy + 18)) < 18) return 'opt1';
+	}
+	return null;
+}
+
+function onMenuMouseDown(e) {
+	if (state.gameState !== 'menu') return;
+	var hit = menuHitTest(menuCanvasPt(e));
+	if (!hit) return;
+	if (state.menuSubState === 'personality') {
+		if (hit === 'prev') state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length;
+		if (hit === 'next') state.aiPersonalityIdx = (state.aiPersonalityIdx + 1) % AI_PERSONALITY_KEYS.length;
+	} else {
+		if (hit === 'opt0') {
+			state.menuSelected = 0;
+			state.aiMode = false;
+			newGame();
+			setPathPanelVisible(false);
+			state.pendingBeginning = true;
+			playBeginning();
+		} else if (hit === 'opt1') {
+			state.menuSelected = 1;
+			state.menuSubState = 'personality';
+		}
+	}
+}
+
+function onMenuMouseMove(e) {
+	if (state.gameState !== 'menu') { state.canvas.style.cursor = 'default'; return; }
+	state.canvas.style.cursor = menuHitTest(menuCanvasPt(e)) ? 'pointer' : 'default';
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 export function main() {
@@ -571,9 +627,9 @@ export function main() {
 	document.addEventListener('keydown', keydown);
 	initPathPanel();
 
-	state.canvas.addEventListener('mousedown', function(e) { onVolMouseDown(e);   onSpeedMouseDown(e); });
-	state.canvas.addEventListener('mousemove', function(e) { onVolMouseMove(e);   onSpeedMouseMove(e); });
-	state.canvas.addEventListener('mouseup',   function()  { onVolMouseUp();      onSpeedMouseUp();    });
+	state.canvas.addEventListener('mousedown', function(e) { onMenuMouseDown(e); onVolMouseDown(e);   onSpeedMouseDown(e); });
+	state.canvas.addEventListener('mousemove', function(e) { onMenuMouseMove(e); onVolMouseMove(e);   onSpeedMouseMove(e); });
+	state.canvas.addEventListener('mouseup',   function()  {                     onVolMouseUp();      onSpeedMouseUp();    });
 
 	state.img     = new Image();
 	state.img.src = 'res/sheet.png';
