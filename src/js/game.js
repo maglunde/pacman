@@ -380,54 +380,18 @@ function renderMenu() {
 		ctx.fillText('Enter to start • Esc back', cx, top + 162);
 
 	} else {
-		// ── Character / Nickname table ──────────────────────────────────────────
-		ctx.fillStyle = COLORS.white;
-		ctx.font      = "12px 'Press Start 2P', monospace";
-		ctx.textAlign = 'center';
-		ctx.fillText('CHARACTER / NICKNAME', cx, top + 68);
-
-		// Horizontal rule
-		ctx.strokeStyle = COLORS.darkGray;
-		ctx.lineWidth   = 1;
-		ctx.beginPath();
-		ctx.moveTo(cx - 110, top + 74); ctx.lineTo(cx + 110, top + 74);
-		ctx.stroke();
-
-		var ghostData = [
-			{ sprites: s_blinky, color: COLORS.blinky, name: 'SHADOW',  nick: '"BLINKY"' },
-			{ sprites: s_pinky,  color: COLORS.pinky,  name: 'SPEEDY',  nick: '"PINKY"'  },
-			{ sprites: s_inky,   color: COLORS.inky,   name: 'BASHFUL', nick: '"INKY"'   },
-			{ sprites: s_clyde,  color: COLORS.clyde,  name: 'POKEY',   nick: '"CLYDE"'  },
-		];
-		var rowH    = 30;
-		var rowBase = top + 100;
-		for (var gi = 0; gi < ghostData.length; gi++) {
-			var gd = ghostData[gi];
-			var gy = rowBase + gi * rowH;
-			// Ghost sprite facing right
-			gd.sprites[3].draw(ctx, cx - 155, gy - 13, 26, 26);
-			// Full name
-			ctx.fillStyle = gd.color;
-			ctx.font      = "11px 'Press Start 2P', monospace";
-			ctx.textAlign = 'left';
-			ctx.fillText('- ' + gd.name, cx - 116, gy + 2);
-			// Nickname
-			ctx.fillText(gd.nick, cx + 20, gy + 2);
+		// ── High score ────────────────────────────────────────────────────────
+		if (state.highScore > 0) {
+			ctx.fillStyle = COLORS.darkGray;
+			ctx.font      = "10px 'Press Start 2P', monospace";
+			ctx.textAlign = 'center';
+			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 68);
 		}
 
-		// Horizontal rule
-		ctx.strokeStyle = COLORS.darkGray;
-		ctx.lineWidth   = 1;
-		ctx.beginPath();
-		ctx.moveTo(cx - 110, top + 224); ctx.lineTo(cx + 110, top + 224);
-		ctx.stroke();
-
 		// ── Menu options ──────────────────────────────────────────────────────
-		ctx.translate(0, 10);
-
-		var optY0 = top + 234;
-		var optY1 = top + 258;
-		var optY2 = top + 282;
+		var optY0 = top + 90;
+		var optY1 = top + 114;
+		var optY2 = top + 138;
 		var opts  = ['PLAY YOURSELF', 'LET AI PLAY', 'SETTINGS'];
 		var optYs = [optY0, optY1, optY2];
 		for (var i = 0; i < opts.length; i++) {
@@ -449,13 +413,50 @@ function renderMenu() {
 		ctx.fillStyle = COLORS.white;
 		ctx.font      = "7px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('\u2191 \u2193 or click  \u2022  Enter to select', cx, top + 302);
+		ctx.fillText('\u2191 \u2193 or click  \u2022  Enter to select', cx, top + 160);
 
-		if (state.highScore > 0) {
-			ctx.fillStyle = COLORS.darkGray;
-			ctx.font      = "10px 'Press Start 2P', monospace";
-			ctx.textAlign = 'center';
-			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 318);
+		// Horizontal rule
+		ctx.strokeStyle = COLORS.darkGray;
+		ctx.lineWidth   = 1;
+		ctx.beginPath();
+		ctx.moveTo(cx - 110, top + 172); ctx.lineTo(cx + 110, top + 172);
+		ctx.stroke();
+
+		// ── Character / Nickname table ────────────────────────────────────────
+		ctx.translate(0, 20);
+
+		ctx.fillStyle = COLORS.white;
+		ctx.font      = "12px 'Press Start 2P', monospace";
+		ctx.textAlign = 'center';
+		ctx.fillText('CHARACTER / NICKNAME', cx, top + 186);
+
+		// Horizontal rule
+		ctx.strokeStyle = COLORS.darkGray;
+		ctx.lineWidth   = 1;
+		ctx.beginPath();
+		ctx.moveTo(cx - 110, top + 192); ctx.lineTo(cx + 110, top + 192);
+		ctx.stroke();
+
+		var ghostData = [
+			{ sprites: s_blinky, color: COLORS.blinky, name: 'SHADOW',  nick: '"BLINKY"' },
+			{ sprites: s_pinky,  color: COLORS.pinky,  name: 'SPEEDY',  nick: '"PINKY"'  },
+			{ sprites: s_inky,   color: COLORS.inky,   name: 'BASHFUL', nick: '"INKY"'   },
+			{ sprites: s_clyde,  color: COLORS.clyde,  name: 'POKEY',   nick: '"CLYDE"'  },
+		];
+		var rowH    = 30;
+		var rowBase = top + 214;
+		for (var gi = 0; gi < ghostData.length; gi++) {
+			var gd = ghostData[gi];
+			var gy = rowBase + gi * rowH;
+			// Ghost sprite facing right
+			gd.sprites[3].draw(ctx, cx - 130, gy - 13, 26, 26);
+			// Full name
+			ctx.fillStyle = gd.color;
+			ctx.font      = "11px 'Press Start 2P', monospace";
+			ctx.textAlign = 'left';
+			ctx.fillText('- ' + gd.name, cx - 91, gy + 2);
+			// Nickname
+			ctx.fillText(gd.nick, cx + 20, gy + 2);
 		}
 	}
 
@@ -948,9 +949,9 @@ function menuHitTest(pt) {
 			if (scx > cx) return 'next';
 		}
 	} else {
-		if (scy >= top + 221 && scy <= top + 247) return 'opt0';
-		if (scy >= top + 245 && scy <= top + 271) return 'opt1';
-		if (scy >= top + 269 && scy <= top + 295) return 'opt2';
+		if (scy >= top + 77  && scy <= top + 103) return 'opt0';
+		if (scy >= top + 101 && scy <= top + 127) return 'opt1';
+		if (scy >= top + 125 && scy <= top + 151) return 'opt2';
 	}
 	return null;
 }
