@@ -21,45 +21,37 @@ export function saveSpeed() {
 	localStorage.setItem('pacman-speed', state.gameSpeed);
 }
 
-// ── Ghost path toggle panel ───────────────────────────────────────────────────
-
-var PATH_KEYS = ['pacman', 'blinky', 'pinky', 'inky', 'clyde'];
-
-export function initPathPanel() {
-	state.pathPanel = document.createElement('div');
-	state.pathPanel.id = 'path-panel';
-	var entries = [
-		{ key: 'pacman', label: 'Pac-Man', color: COLORS.pacman },
-		{ key: 'blinky', label: 'Blinky',  color: COLORS.blinky },
-		{ key: 'pinky',  label: 'Pinky',   color: COLORS.pinky },
-		{ key: 'inky',   label: 'Inky',    color: COLORS.inky },
-		{ key: 'clyde',  label: 'Clyde',   color: COLORS.clyde },
-	];
-	entries.forEach(function(e) {
-		var lbl = document.createElement('label');
-		lbl.style.color = e.color;
-		var cb = document.createElement('input');
-		cb.type    = 'checkbox';
-		cb.checked = true;
-		cb.addEventListener('change', function() { state.showPaths[e.key] = cb.checked; });
-		lbl.appendChild(cb);
-		lbl.appendChild(document.createTextNode(e.label));
-		state.pathPanel.appendChild(lbl);
-	});
-	document.body.appendChild(state.pathPanel);
-}
-
-export function setPathPanelVisible(v) {
-	if (state.pathPanel) state.pathPanel.style.display = v ? 'block' : 'none';
-}
+// ── Ghost path toggle ─────────────────────────────────────────────────────────
 
 export function togglePath(key) {
 	state.showPaths[key] = !state.showPaths[key];
-	if (state.pathPanel) {
-		var cbs = state.pathPanel.querySelectorAll('input');
-		var idx = PATH_KEYS.indexOf(key);
-		if (idx >= 0 && cbs[idx]) cbs[idx].checked = state.showPaths[key];
-	}
+}
+
+// ── Canvas path legend ────────────────────────────────────────────────────────
+
+var PATH_LEGEND = [
+	{ key: 'pacman', label: 'Pac',    color: COLORS.pacman },
+	{ key: 'blinky', label: 'Blinky', color: COLORS.blinky },
+	{ key: 'pinky',  label: 'Pinky',  color: COLORS.pinky },
+	{ key: 'inky',   label: 'Inky',   color: COLORS.inky },
+	{ key: 'clyde',  label: 'Clyde',  color: COLORS.clyde },
+];
+
+function drawPathLegend(mapX, mapY) {
+	var ctx = state.ctx;
+	var x   = 40;
+	var y   = mapY;
+	var sq  = 12;
+	var lh  = 22;
+	ctx.font      = "10px 'Press Start 2P', monospace";
+	ctx.textAlign = 'left';
+	PATH_LEGEND.forEach(function(e, i) {
+		var active    = state.showPaths[e.key];
+		ctx.fillStyle = active ? e.color : COLORS.darkGray;
+		ctx.fillRect(x, y + i * lh - sq, sq, sq);
+		ctx.fillStyle = active ? e.color : COLORS.gray;
+		ctx.fillText(e.label, x + sq + 6, y + i * lh);
+	});
 }
 
 // ── Slider shared helpers ─────────────────────────────────────────────────────
@@ -235,6 +227,7 @@ export function drawHUD() {
 		ctx.fillText('\uD83E\uDD16 AI: ' + pLabel, mapX + mapW / 2, lifeY);
 	}
 
+	// if (state.gameState !== 'menu') drawPathLegend(mapX, mapY);
 	if (state.showInfoPanel) drawInfoPanel(mapX, mapY);
 }
 
@@ -288,56 +281,56 @@ export function onIndicatorMouseDown(e) {
 function drawInfoPanel(mapX, mapY) {
 	var ctx = state.ctx;
 	var x   = mapX - 18;
-	var lh  = 30;
+	var lh  = 18;
 	var y   = mapY;
 
 	ctx.textAlign = 'right';
+	ctx.font      = "10px 'Press Start 2P', monospace";
 
-	ctx.font      = "13px 'Press Start 2P', monospace";
 	ctx.fillStyle = COLORS.lightGray;
 	ctx.fillText('GHOSTS', x, y); y += lh + 4;
 
 	var ghostInfo = [
-		{ color: COLORS.blinky, name: 'Blinky', lines: ['Jager Pac-Man', 'direkte til målet.'] },
-		{ color: COLORS.pinky,  name: 'Pinky',  lines: ['Sikter 4 ruter', 'foran Pac-Man.'] },
-		{ color: COLORS.inky,   name: 'Inky',   lines: ['Bruker Blinky og', '2 ruter foran', 'for å flankere.'] },
-		{ color: COLORS.clyde,  name: 'Clyde',  lines: ['Jager når langt unna,', 'flykter til hjørnet', 'når nær (<8 ruter).'] },
+		{ color: COLORS.blinky, name: 'Blinky', desc: 'Chases directly' },
+		{ color: COLORS.pinky,  name: 'Pinky',  desc: 'Aims 4 ahead'   },
+		{ color: COLORS.inky,   name: 'Inky',   desc: 'Flanking attack' },
+		{ color: COLORS.clyde,  name: 'Clyde',  desc: 'Chase / retreat' },
 	];
 	ghostInfo.forEach(function(g) {
-		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.fillStyle = g.color;
-		ctx.fillText(g.name, x, y); y += lh - 4;
-		ctx.font      = "13px 'Press Start 2P', monospace";
+		ctx.fillText(g.name, x, y);
 		ctx.fillStyle = COLORS.gray;
-		g.lines.forEach(function(line) { ctx.fillText(line, x, y); y += lh - 4; });
-		y += 8;
+		ctx.textAlign = 'left';
+		ctx.fillText(g.desc, 40, y);
+		ctx.textAlign = 'right';
+		y += lh + 2;
 	});
 
 	y += 8;
 
-	ctx.font      = "13px 'Press Start 2P', monospace";
 	ctx.fillStyle = COLORS.lightGray;
 	ctx.fillText('TASTER', x, y); y += lh + 4;
 
 	var shortcuts = [
-		{ key: '← → ↑ ↓', desc: 'Move'         },
-		{ key: 'P',        desc: 'Pause'        },
-		{ key: 'M',        desc: 'Mute'         },
-		{ key: '- / =',    desc: 'Volume -/+'   },
-		{ key: ', / .',    desc: 'Speed -/+'    },
-		{ key: 'O',        desc: 'Settings'     },
-		{ key: 'Z X C V',  desc: 'Ghost path'   },
-		{ key: 'B',        desc: 'Pac path (AI)'},
-		{ key: 'I',        desc: 'Indicator'    },
-		{ key: 'Q',        desc: 'Info panel'   },
-		{ key: 'Esc',      desc: 'Menu'         },
+		{ key: '← → ↑ ↓', desc: 'Move'       },
+		{ key: 'P',        desc: 'Pause'      },
+		{ key: 'M',        desc: 'Mute'       },
+		{ key: '- / =',    desc: 'Volume'     },
+		{ key: ', / .',    desc: 'Speed'      },
+		{ key: 'O',        desc: 'Settings'   },
+		{ key: 'Z X C V',  desc: 'Ghost path' },
+		{ key: 'B',        desc: 'Pac path'   },
+		{ key: 'I',        desc: 'Indicator'  },
+		{ key: 'Q',        desc: 'Info'       },
+		{ key: 'Esc',      desc: 'Menu'       },
 	];
 	shortcuts.forEach(function(s) {
-		ctx.font      = "12px 'Press Start 2P', monospace";
 		ctx.fillStyle = COLORS.pacman;
-		ctx.fillText(s.key, x, y); y += lh - 4;
-		ctx.font      = "13px 'Press Start 2P', monospace";
+		ctx.textAlign = 'left';
+		ctx.fillText(s.key, 40, y);
 		ctx.fillStyle = COLORS.gray;
-		ctx.fillText(s.desc, x, y); y += lh;
+		ctx.textAlign = 'right';
+		ctx.fillText(s.desc, x, y);
+		y += lh;
 	});
 }

@@ -23,38 +23,3 @@ canvas {
 	z-index: 1;
 }
 
-#path-panel {
-	z-index: 100;
-}
-
-#path-panel {
-	display: none;
-	position: fixed;
-	top: 12px;
-	left: calc((100vw - min(100vw, 150vh)) / 2 + 12px);
-	background: var(--color-bg-panel, rgba(0,0,0,0.75));
-	border: 1px solid var(--color-dark-gray);
-	border-radius: 6px;
-	padding: 8px 12px;
-	font: 12px monospace;
-	color: var(--color-light-gray);
-	user-select: none;
-
-	label {
-		display: flex;
-		align-items: center;
-		gap: 7px;
-		cursor: pointer;
-		padding: 2px 0;
-
-		&:hover { color: var(--color-white); }
-
-		input[type=checkbox] {
-			width: 13px;
-			height: 13px;
-			cursor: pointer;
-			accent-color: currentColor;
-		}
-	}
-}
-
