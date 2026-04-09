@@ -87,4 +87,7 @@ export var state = {
 	speedTrackBounds: null,
 	speedIconBounds:  null,
 	draggingSpeed:    false,
+
+	// Setting toast (center-screen flash when speed/volume changes)
+	settingToast: { text: '', timer: 0 },
 };

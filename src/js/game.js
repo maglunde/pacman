@@ -29,11 +29,13 @@ function adjustSetting(row, dir) {
 	if (row === 0) {
 		state.gameSpeed = Math.max(SPEED_MIN, Math.min(SPEED_MAX, Math.round((state.gameSpeed + dir * 0.25) * 100) / 100));
 		saveSpeed();
+		state.settingToast = { text: state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7', timer: 60 };
 	} else if (row === 1) {
 		state.muted  = false;
 		state.volume = Math.max(0, Math.min(1, Math.round((state.volume + dir * 0.1) * 10) / 10));
 		saveVolume();
 		updateLoopVolume();
+		state.settingToast = { text: Math.round(state.volume * 100) + '%', timer: 60 };
 	}
 }
 
@@ -216,6 +218,9 @@ function update() {
 	// Score popups
 	state.scorePopups.forEach(function(p) { p.y -= 0.4; p.life--; });
 	state.scorePopups = state.scorePopups.filter(function(p) { return p.life > 0; });
+
+	// Setting toast
+	if (state.settingToast.timer > 0) state.settingToast.timer--;
 
 	// Cherry
 	if (state.cherry) {
@@ -717,6 +722,18 @@ function render() {
 		ctx.font      = "13px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
 		ctx.fillText('LEVEL ' + state.level + ' COMPLETE!', mx, my);
+	}
+
+	// Setting toast — centered flash when speed/volume changes
+	if (state.settingToast.timer > 0) {
+		var alpha = Math.min(1, state.settingToast.timer / 15);
+		ctx.fillStyle = 'rgba(0,0,0,' + (alpha * 0.55) + ')';
+		var tw = 110, th = 36;
+		ctx.fillRect(mx - tw / 2, my - th / 2, tw, th);
+		ctx.fillStyle = 'rgba(255,255,0,' + alpha + ')';
+		ctx.font      = "18px 'Press Start 2P', monospace";
+		ctx.textAlign = 'center';
+		ctx.fillText(state.settingToast.text, mx, my + 7);
 	}
 
 	ctx.restore();
