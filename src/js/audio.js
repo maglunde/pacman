@@ -110,6 +110,14 @@ export function stopLoopingMusic() {
 	state.activeLoopTrack = null;
 }
 
+export function pauseAudio() {
+	if (state.audioCtx && state.audioCtx.state === 'running') state.audioCtx.suspend();
+}
+
+export function resumeAudio() {
+	if (state.audioCtx && state.audioCtx.state === 'suspended') state.audioCtx.resume();
+}
+
 export function updateLoopVolume() {
 	if (!state.loopNodes) return;
 	state.loopNodes.gain.gain.value = state.muted ? 0 : state.volume;

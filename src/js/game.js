@@ -14,10 +14,10 @@ import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
 import {
 	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playExtraPac, playIntermission,
-	startFright, startEyes, stopLoopingMusic, updateLoopVolume
+	startFright, startEyes, stopLoopingMusic, updateLoopVolume, pauseAudio, resumeAudio
 } from './audio.js';
 import {
-	drawHUD, initPathPanel, setPathPanelVisible, togglePath, hexToRgb,
+	drawHUD, togglePath, hexToRgb,
 	saveVolume, saveSpeed,
 } from './hud.js';
 
@@ -34,8 +34,6 @@ function adjustSetting(row, dir) {
 		state.volume = Math.max(0, Math.min(1, Math.round((state.volume + dir * 0.1) * 10) / 10));
 		saveVolume();
 		updateLoopVolume();
-	} else if (row === 2) {
-		state.ghostIndicatorStyle = (state.ghostIndicatorStyle + dir + 4) % 4;
 	}
 }
 
@@ -45,23 +43,22 @@ function drawSettingsContent(ctx, cx, startY, selectedRow) {
 	var rows = [
 		{ label: 'SPEED',     key: ', / .',  val: function() { return state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7'; } },
 		{ label: 'VOLUME',    key: volKeys,  val: function() { return state.muted ? 'MUTED' : Math.round(state.volume * 100) + '%'; } },
-		{ label: 'INDICATOR', key: 'I',      val: function() { return INDICATOR_LABELS[state.ghostIndicatorStyle]; } },
 	];
-	var colLabel    = cx - 120;  // label: left-aligned
-	var colValueR   = cx - 20;  // value+arrows: right-aligned
-	var colShortcut = cx + 56;  // shortcut: left-aligned
+	var colLabel    = cx - 140;  // label: left-aligned
+	var colValueR   = cx - 40;  // value+arrows: right-aligned
+	var colShortcut = cx + 66;  // shortcut: left-aligned
 	var rowH = 24;
 	for (var i = 0; i < rows.length; i++) {
 		var y      = startY + i * rowH;
 		var active = selectedRow === i;
 		ctx.fillStyle = active ? '#ffff00' : '#888888';
-		ctx.font      = "8px 'Press Start 2P', monospace";
+		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'left';
 		ctx.fillText(rows[i].label, colLabel, y);
 		ctx.textAlign = 'left';
 		ctx.fillText('\u25c4 ' + rows[i].val() + ' \u25ba', colValueR, y);
 		ctx.fillStyle = active ? 'rgba(255,255,0,0.5)' : '#555555';
-		ctx.font      = "6px 'Press Start 2P', monospace";
+		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'left';
 		ctx.fillText('(' + rows[i].key + ')', colShortcut, y);
 	}
@@ -110,6 +107,8 @@ function startReady() {
 }
 
 export function newGame() {
+	stopLoopingMusic();
+	resumeAudio();
 	state.score = 0;
 	state.lastExtraLifeScore = 0;
 	state.lives = 3;
@@ -333,24 +332,24 @@ function renderMenu() {
 		drawSettingsContent(ctx, cx, top + 120, state.settingsRow);
 
 		// BACK button
-		var backActive = state.settingsRow === 3;
+		var backActive = state.settingsRow === 2;
 		if (backActive && Math.floor(state.frames / 60) % 2 === 0) {
 			ctx.fillStyle = COLORS.pacman;
 		} else {
 			ctx.fillStyle = backActive ? COLORS.pacman : '#555555';
 		}
 		if (backActive) {
-			ctx.fillRect(cx - 40, top + 192, 80, 16);
+			ctx.fillRect(cx - 40, top + 168, 80, 16);
 			ctx.fillStyle = COLORS.black;
 		}
-		ctx.font      = "8px 'Press Start 2P', monospace";
+		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('BACK', cx, top + 204);
+		ctx.fillText('BACK', cx, top + 180);
 
 		ctx.fillStyle = '#555';
 		ctx.font      = "7px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('\u2190 \u2192 adjust  \u2022  \u2191 \u2193 select  \u2022  Enter/Esc back', cx, top + 226);
+		ctx.fillText('\u2190 \u2192 adjust  \u2022  \u2191 \u2193 select  \u2022  Enter/Esc back', cx, top + 202);
 
 	} else if (state.menuSubState === 'personality') {
 		// ── Personality sub-screen ──────────────────────────────────────────────
@@ -378,6 +377,9 @@ function renderMenu() {
 		ctx.fillStyle = COLORS.darkGray;
 		ctx.font      = "8px 'Press Start 2P', monospace";
 		ctx.fillText('Enter to start • Esc back', cx, top + 162);
+		ctx.fillStyle = '#444444';
+		ctx.font      = "7px 'Press Start 2P', monospace";
+		ctx.fillText('Tab through ghosts • Enter to control', cx, top + 178);
 
 	} else {
 		// ── High score ────────────────────────────────────────────────────────
@@ -392,7 +394,7 @@ function renderMenu() {
 		var optY0 = top + 90;
 		var optY1 = top + 114;
 		var optY2 = top + 138;
-		var opts  = ['PLAY YOURSELF', 'LET AI PLAY', 'SETTINGS'];
+		var opts  = ['START GAME', 'WATCH AI PLAY', 'SETTINGS'];
 		var optYs = [optY0, optY1, optY2];
 		for (var i = 0; i < opts.length; i++) {
 			var active = state.menuSelected === i;
@@ -733,6 +735,7 @@ function keydown(e) {
 		state.settingsOverlayActive = !state.settingsOverlayActive;
 		state.paused = state.settingsOverlayActive;
 		state.settingsRow = 0;
+		if (state.paused) pauseAudio(); else resumeAudio();
 		return;
 	}
 	if (e.code === 'Minus')  { adjustSetting(1, -1); return; }
@@ -745,7 +748,9 @@ function keydown(e) {
 	if (e.code === 'KeyV') { togglePath('clyde');  return; }
 	if (e.code === 'KeyB') { togglePath('pacman'); return; }
 	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
-		state.paused = !state.paused; return;
+		state.paused = !state.paused;
+		if (state.paused) pauseAudio(); else resumeAudio();
+		return;
 	}
 	if (e.code === 'KeyI') {
 		state.ghostIndicatorStyle = (state.ghostIndicatorStyle + 1) % 4; return;
@@ -755,11 +760,13 @@ function keydown(e) {
 		if (state.settingsOverlayActive) {
 			state.settingsOverlayActive = false;
 			state.paused = false;
+			resumeAudio();
 			return;
 		}
 		if (state.escapeMenuActive) {
 			state.escapeMenuActive = false;
 			state.paused           = false;
+			resumeAudio();
 			return;
 		}
 		if (state.gameState === 'menu' && (state.menuSubState === 'personality' || state.menuSubState === 'settings')) {
@@ -770,10 +777,10 @@ function keydown(e) {
 			state.escapeMenuActive   = true;
 			state.escapeMenuSelected = 0;
 			state.paused             = true;
+			pauseAudio();
 			return;
 		}
 		// Fallback: go straight to menu (win screen)
-		setPathPanelVisible(false);
 		newGame();
 		state.gameState      = 'menu';
 		state.menuSubState   = 'main';
@@ -788,9 +795,9 @@ function keydown(e) {
 				if (state.escapeMenuSelected === 0) {
 					state.escapeMenuActive = false;
 					state.paused           = false;
+					resumeAudio();
 				} else {
 					state.escapeMenuActive = false;
-					setPathPanelVisible(false);
 					newGame();
 					state.gameState      = 'menu';
 					state.menuSubState   = 'main';
@@ -802,17 +809,16 @@ function keydown(e) {
 	}
 	if (state.settingsOverlayActive) {
 		switch (e.key) {
-			case 'ArrowUp':    state.settingsRow = (state.settingsRow + 2) % 3; return;
-			case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 3; return;
+			case 'ArrowUp':    state.settingsRow = (state.settingsRow + 1) % 2; return;
+			case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 2; return;
 			case 'ArrowLeft':  adjustSetting(state.settingsRow, -1); return;
 			case 'ArrowRight': adjustSetting(state.settingsRow, +1); return;
 		}
-		if (e.code === 'KeyO') { state.settingsOverlayActive = false; state.paused = false; return; }
+		if (e.code === 'KeyO') { state.settingsOverlayActive = false; state.paused = false; resumeAudio(); return; }
 		return; // block all other keys while settings overlay is open
 	}
 	if (state.gameState === 'gameover' && state.stateTimer <= 0) {
 		if (e.key === 'Enter' || e.key === ' ') {
-			setPathPanelVisible(false);
 			newGame();
 			state.gameState      = 'menu';
 			state.menuSubState   = 'main';
@@ -824,11 +830,11 @@ function keydown(e) {
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'settings') {
 			switch (e.key) {
-				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 3) % 4; break;
-				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 4; break;
-				case 'ArrowLeft':  if (state.settingsRow < 3) adjustSetting(state.settingsRow, -1); break;
-				case 'ArrowRight': if (state.settingsRow < 3) adjustSetting(state.settingsRow, +1); break;
-				case 'Enter':      if (state.settingsRow === 3) { state.menuSubState = 'main'; state.settingsRow = 0; } break;
+				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 2) % 3; break;
+				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 3; break;
+				case 'ArrowLeft':  if (state.settingsRow < 2) adjustSetting(state.settingsRow, -1); break;
+				case 'ArrowRight': if (state.settingsRow < 2) adjustSetting(state.settingsRow, +1); break;
+				case 'Enter':      if (state.settingsRow === 2) { state.menuSubState = 'main'; state.settingsRow = 0; } break;
 			}
 		} else if (state.menuSubState === 'personality') {
 			switch (e.key) {
@@ -838,7 +844,6 @@ function keydown(e) {
 					state.aiMode       = true;
 					state.menuSubState = 'main';
 					newGame();
-					setPathPanelVisible(true);
 					state.pendingBeginning = true;
 					playBeginning();
 					break;
@@ -856,7 +861,6 @@ function keydown(e) {
 					} else {
 						state.aiMode = false;
 						newGame();
-						setPathPanelVisible(false);
 						state.pendingBeginning = true;
 						playBeginning();
 					}
@@ -968,7 +972,6 @@ function onMenuMouseDown(e) {
 			state.menuSelected = 0;
 			state.aiMode = false;
 			newGame();
-			setPathPanelVisible(false);
 			state.pendingBeginning = true;
 			playBeginning();
 		} else if (hit === 'opt1') {
@@ -998,7 +1001,6 @@ export function main() {
 	state.canvas.height = state.height;
 	document.body.appendChild(state.canvas);
 	document.addEventListener('keydown', keydown);
-	initPathPanel();
 
 	state.canvas.addEventListener('mousedown', function(e) {
 		onMenuMouseDown(e);
@@ -1013,9 +1015,9 @@ export function main() {
 					if (b.idx === 0) {
 						state.escapeMenuActive = false;
 						state.paused           = false;
+						resumeAudio();
 					} else {
 						state.escapeMenuActive = false;
-						setPathPanelVisible(false);
 						newGame();
 						state.gameState      = 'menu';
 						state.menuSubState   = 'main';

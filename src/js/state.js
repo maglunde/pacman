@@ -78,7 +78,6 @@ export var state = {
 
 	// Debug panel
 	showPaths:     { pacman: false, blinky: false, pinky: false, inky: false, clyde: false },
-	pathPanel:     null,
 	showInfoPanel: false,
 
 	// Slider hit-test bounds (set each frame by drawHUD)
