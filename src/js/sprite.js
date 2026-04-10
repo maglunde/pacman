@@ -38,11 +38,11 @@ Sprite.prototype.draw = function(ctx, x, y, w, h) {
 
 
 
-var _pacmanImg = null;
-var _mspacImg  = null;
+let _pacmanImg = null;
+let _mspacImg  = null;
 
 export function setMapSprite(mapCfg) {
-	var img = mapCfg.spriteSheet === 'mspacman' ? _mspacImg : _pacmanImg;
+	let img = mapCfg.spriteSheet === 'mspacman' ? _mspacImg : _pacmanImg;
 	s_map = new Sprite(img, mapCfg.sprite.x, mapCfg.sprite.y, mapCfg.sprite.w, mapCfg.sprite.h, mapCfg.scale);
 }
 

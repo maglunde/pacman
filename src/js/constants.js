@@ -1,47 +1,47 @@
-export var TILE                    = 16;
-export var SPEED                   = 0.8;
-export var PACMAN_DOT_SPEED_FACTOR = 0.9;  // Pac-Man slows on dot tiles
-export var GHOST_SPEED             = 0.68;
-export var SCARED_DURATION         = 1000;
-export var SCARED_FLASH_THRESHOLD  = 200;  // Frames left when scared ghost starts flashing
-export var WAKA_DURATION           = 0.155;
-export var SPEED_MIN               = 0.25;
-export var SPEED_MAX               = 8.0;
+export const TILE                    = 16;
+export const SPEED                   = 0.8;
+export const PACMAN_DOT_SPEED_FACTOR = 0.9;  // Pac-Man slows on dot tiles
+export const GHOST_SPEED             = 0.68;
+export const SCARED_DURATION         = 1000;
+export const SCARED_FLASH_THRESHOLD  = 200;  // Frames left when scared ghost starts flashing
+export const WAKA_DURATION           = 0.155;
+export const SPEED_MIN               = 0.25;
+export const SPEED_MAX               = 8.0;
 
 // State-machine durations (frames)
-export var DEAD_STATE_FRAMES        = 120;
-export var RESULT_STATE_FRAMES      = 180; // Win + gameover hold
-export var GHOST_EATEN_FREEZE_FRAMES = 120;
-export var GHOST_REGEN_DELAY        = 300; // Frames in house before re-release after returning
+export const DEAD_STATE_FRAMES        = 120;
+export const RESULT_STATE_FRAMES      = 180; // Win + gameover hold
+export const GHOST_EATEN_FREEZE_FRAMES = 120;
+export const GHOST_REGEN_DELAY        = 300; // Frames in house before re-release after returning
 
 // Ghost initial release delays (frames)
-export var PINKY_RELEASE_DELAY  = 300;
-export var INKY_RELEASE_DELAY   = 600;
-export var CLYDE_RELEASE_DELAY  = 900;
+export const PINKY_RELEASE_DELAY  = 300;
+export const INKY_RELEASE_DELAY   = 600;
+export const CLYDE_RELEASE_DELAY  = 900;
 
-// Cherry
-export var CHERRY_DOT_THRESHOLD    = 70;   // Dots eaten before cherry appears
-export var CHERRY_DURATION         = 1000; // Frames cherry stays on board
-export var CHERRY_FLASH_THRESHOLD  = 150;  // Frames left when fruit starts flashing (~2.5s at 60fps)
-export var FRUIT_SPAWN_COL         = 13;
-export var FRUIT_SPAWN_ROW         = 17;
-export var CHERRY_POINTS           = 100;
-export var STRAWBERRY_POINTS       = 300;
-export var ORANGE_POINTS           = 500;
-export var PRETZEL_POINTS          = 700;
-export var APPLE_POINTS            = 1000;
-export var PEAR_POINTS             = 3000;
-export var BANANA_POINTS           = 5000;
+// Fruit
+export const FRUIT_DOT_THRESHOLD   = 70;   // Dots eaten before fruit appears
+export const FRUIT_DURATION        = 1000; // Frames fruit stays on board
+export const FRUIT_FLASH_THRESHOLD = 150;  // Frames left when fruit starts flashing (~2.5s at 60fps)
+export const FRUIT_SPAWN_COL       = 13;
+export const FRUIT_SPAWN_ROW       = 17;
+export const CHERRY_POINTS         = 100;
+export const STRAWBERRY_POINTS     = 300;
+export const ORANGE_POINTS         = 500;
+export const PRETZEL_POINTS        = 700;
+export const APPLE_POINTS          = 1000;
+export const PEAR_POINTS           = 3000;
+export const BANANA_POINTS         = 5000;
 
 // HUD
-export var LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD
+export const LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD
 
 // Wall detection
-export var WALL_BRIGHTNESS_THRESHOLD = 80; // Pixel brightness sum above which a pixel is a wall
+export const WALL_BRIGHTNESS_THRESHOLD = 80; // Pixel brightness sum above which a pixel is a wall
 
-export var dir = { none: -1, left: 0, up: 1, right: 2, down: 3 };
+export const dir = { none: -1, left: 0, up: 1, right: 2, down: 3 };
 
-export var MAPS = [
+export const MAPS = [
 	{
 		name:        'PAC-MAN',
 		spriteSheet: 'pacman',
@@ -123,17 +123,17 @@ export var MAPS = [
 
 // Scatter/chase cycle: alternating durations in frames (even idx = scatter, odd = chase).
 // Last entry is Infinity so the final chase phase never ends.
-export var SCATTER_CHASE_PHASES = [420, 1200, 420, 1200, 300, 1200, 300, Infinity];
+export const SCATTER_CHASE_PHASES = [420, 1200, 420, 1200, 300, 1200, 300, Infinity];
 
-export var AI_PERSONALITIES = {
+export const AI_PERSONALITIES = {
 	coward:     { fleeAt: 5, look: 20, trapDepth: 16, pelletCluster: 8, safetyMargin: 2, huntScared: false, label: 'Coward'     },
 	balanced:   { fleeAt: 3, look: 15, trapDepth: 12, pelletCluster: 6, safetyMargin: 1, huntScared: true,  label: 'Balanced'   },
 	aggressive: { fleeAt: 2, look: 10, trapDepth:  8, pelletCluster: 4, safetyMargin: 0, huntScared: true,  label: 'Aggressive' },
 	greedy:     { fleeAt: 3, look: 12, trapDepth: 10, pelletCluster: 5, safetyMargin: 1, huntScared: true,  label: 'Greedy'     },
 };
-export var AI_PERSONALITY_KEYS = ['coward', 'balanced', 'aggressive', 'greedy'];
+export const AI_PERSONALITY_KEYS = ['coward', 'balanced', 'aggressive', 'greedy'];
 
-export var COLORS = {
+export const COLORS = {
     pacman: '#ffff00',
     blinky: '#ff0000',
     pinky:  '#ffb8ff',

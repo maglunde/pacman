@@ -1,12 +1,11 @@
 import '../sass/style.scss';
-import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_pretzel, s_apple, s_pear, s_banana, s_title, s_ready, s_gameover } from './sprite.js';
+import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
-	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
-	CHERRY_POINTS, STRAWBERRY_POINTS, ORANGE_POINTS, PRETZEL_POINTS, APPLE_POINTS, PEAR_POINTS,
+	FRUIT_DOT_THRESHOLD, FRUIT_DURATION, FRUIT_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
 	SCATTER_CHASE_PHASES,
-	COLORS, MAPS, BANANA_POINTS
+	COLORS, MAPS
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -14,6 +13,7 @@ import { initDots, initBigDots, drawDots } from './dots.js';
 import { initGhosts, bfsReturnPath, ghostLookahead } from './ghost.js';
 import './pacman-entity.js';
 import { aiDecide, shuffleBFSDirs } from './ai.js';
+import { getAvailableFruits } from './fruit.js';
 import {
 	initAudio, playBeginning, playDeath, playEatFruit, playEatGhost, playExtraPac, playIntermission,
 	startFright, startEyes, stopLoopingMusic, updateLoopVolume, pauseAudio, resumeAudio
@@ -25,7 +25,7 @@ import {
 
 // ── Settings helpers ──────────────────────────────────────────────────────────
 
-var INDICATOR_LABELS = ['ARROW', 'SQUARE', 'CORNERS', 'GLOW'];
+let INDICATOR_LABELS = ['ARROW', 'SQUARE', 'CORNERS', 'GLOW'];
 
 function adjustSetting(row, dir) {
 	if (row === 0) {
@@ -42,19 +42,19 @@ function adjustSetting(row, dir) {
 }
 
 function drawSettingsContent(ctx, cx, startY, selectedRow) {
-	var isNO = (navigator.language || '').startsWith('nb') || (navigator.language || '').startsWith('nn') || (navigator.language || '').startsWith('no');
-	var volKeys = isNO ? '+ / \u00B4' : '- / =';
-	var rows = [
+	let isNO = (navigator.language || '').startsWith('nb') || (navigator.language || '').startsWith('nn') || (navigator.language || '').startsWith('no');
+	let volKeys = isNO ? '+ / \u00B4' : '- / =';
+	let rows = [
 		{ label: 'SPEED',     key: ', / .',  val: function() { return state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7'; } },
 		{ label: 'VOLUME',    key: volKeys,  val: function() { return state.muted ? 'MUTED' : Math.round(state.volume * 100) + '%'; } },
 	];
-	var colLabel    = cx - 140;  // label: left-aligned
-	var colValueR   = cx - 40;  // value+arrows: right-aligned
-	var colShortcut = cx + 66;  // shortcut: left-aligned
-	var rowH = 24;
-	for (var i = 0; i < rows.length; i++) {
-		var y      = startY + i * rowH;
-		var active = selectedRow === i;
+	let colLabel    = cx - 140;  // label: left-aligned
+	let colValueR   = cx - 40;  // value+arrows: right-aligned
+	let colShortcut = cx + 66;  // shortcut: left-aligned
+	let rowH = 24;
+	for (let i = 0; i < rows.length; i++) {
+		let y      = startY + i * rowH;
+		let active = selectedRow === i;
 		ctx.fillStyle = active ? '#ffff00' : '#888888';
 		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'left';
@@ -209,7 +209,7 @@ function update() {
 
 	// Background music manager
 	if (state.ghostEatenFreezeTimer <= 0) {
-		var anyReturning = state.ghosts.some(function(g) { return g.returning; });
+		let anyReturning = state.ghosts.some(function(g) { return g.returning; });
 		if (anyReturning) {
 			startEyes();
 		} else if (state.scaredTimer > 0) {
@@ -246,24 +246,16 @@ function update() {
 			state.cherry = null;
 			playEatFruit();
 		}
-	} else if (state.fruitDotsSinceSpawn >= CHERRY_DOT_THRESHOLD) {
-		var fruits = [
-			{ sprite: function() { return s_cherry; },     points: CHERRY_POINTS },
-			{ sprite: function() { return s_strawberry; }, points: STRAWBERRY_POINTS },
-			{ sprite: function() { return s_orange; },     points: ORANGE_POINTS },
-			{ sprite: function() { return s_pretzel; },    points: PRETZEL_POINTS },
-			{ sprite: function() { return s_apple; },      points: APPLE_POINTS },
-			{ sprite: function() { return s_pear; },       points: PEAR_POINTS },
-			{ sprite: function() { return s_banana; },     points: BANANA_POINTS }
-		];
-		var picked = fruits[Math.floor(Math.random() * fruits.length)];
+	} else if (state.fruitDotsSinceSpawn >= FRUIT_DOT_THRESHOLD) {
+		let fruits = getAvailableFruits(state.level);
+		let fruitspawn = fruits[Math.floor(Math.random() * fruits.length)];
 		state.fruitDotsSinceSpawn = 0;
 		state.cherry = {
 			col: FRUIT_SPAWN_COL,
 			row: FRUIT_SPAWN_ROW,
-			timer: CHERRY_DURATION,
-			sprite: picked.sprite,
-			points: picked.points
+			timer: FRUIT_DURATION,
+			sprite: fruitspawn.sprite,
+			points: fruitspawn.points
 		};
 	}
 
@@ -272,14 +264,14 @@ function update() {
 	state.ghosts.forEach(function(g) { g.update(levelSpeedFactor() * state.gameSpeed); });
 
 	// Ghost collision
-	for (var i = 0; i < state.ghosts.length; i++) {
-		var g = state.ghosts[i];
+	for (let i = 0; i < state.ghosts.length; i++) {
+		let g = state.ghosts[i];
 		if (!g.exited) continue;
 		if (g.returning) continue;
 
-		var dx = g.x - state.pacman.x;
-		var dy = g.y - state.pacman.y;
-		var dist = Math.sqrt(dx * dx + dy * dy);
+		let dx = g.x - state.pacman.x;
+		let dy = g.y - state.pacman.y;
+		let dist = Math.sqrt(dx * dx + dy * dy);
 
 		if (dist < 10) {
 			if (state.scaredTimer > 0 && !g.immune) {
@@ -289,7 +281,7 @@ function update() {
 				} else {
 					state.pacman.dir = dy > 0 ? dir.down : dir.up;
 				}
-				var spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+				let spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
 				switch (state.pacman.dir) {
 					case dir.left:  state.pacman.sprite = spriteSet.left;  break;
 					case dir.up:    state.pacman.sprite = spriteSet.up;    break;
@@ -298,7 +290,7 @@ function update() {
 				}
 
 				state.ghostCombo++;
-				var pts = 200 * Math.pow(2, state.ghostCombo - 1);
+				let pts = 200 * Math.pow(2, state.ghostCombo - 1);
 				addScore(pts);
 				addPopup(pts.toString(), g.col, g.row);
 				g.pendingReturn             = true;
@@ -314,9 +306,9 @@ function update() {
 	}
 
 	// Win check
-	var remaining = 0;
-	for (var r = 0; r < state.GRID_ROWS; r++)
-		for (var c = 0; c < state.GRID_COLS; c++)
+	let remaining = 0;
+	for (let r = 0; r < state.GRID_ROWS; r++)
+		for (let c = 0; c < state.GRID_COLS; c++)
 			if (state.dots[r][c] === 1) remaining++;
 	if (remaining === 0) {
 		state.gameState  = 'win';
@@ -329,7 +321,7 @@ function update() {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 function renderMenu() {
-	var ctx  = state.ctx;
+	let ctx  = state.ctx;
 	ctx.save();
 	ctx.scale(2, 2);
 
@@ -338,17 +330,17 @@ function renderMenu() {
 	ctx.fillRect(0, 0, state.width / 2, state.height / 2);
 
 
-	var cx       = state.mapOffX + state.GRID_COLS * TILE / 2;
-	var top      = state.mapOffY;
-	var mapH     = state.GRID_ROWS * TILE;
-	var mapBot   = top + mapH;
+	let cx       = state.mapOffX + state.GRID_COLS * TILE / 2;
+	let top      = state.mapOffY;
+	let mapH     = state.GRID_ROWS * TILE;
+	let mapBot   = top + mapH;
 
 	// ── Title ──────────────────────────────────────────────────────────────────
-	var desiredW = s_title.w *0.8;  // 212
-	var desiredH = s_title.h *0.8;  //  49
+	let desiredW = s_title.w *0.8;  // 212
+	let desiredH = s_title.h *0.8;  //  49
 	s_title.draw(ctx, cx - desiredW / 2, top + 4, desiredW, desiredH);
-	var offX = 0;
-	var offY = 50;
+	let offX = 0;
+	let offY = 50;
 	ctx.translate(offX, offY);
 
 	if (state.menuSubState === 'settings') {
@@ -361,7 +353,7 @@ function renderMenu() {
 		drawSettingsContent(ctx, cx, top + 120, state.settingsRow);
 
 		// BACK button
-		var backActive = state.settingsRow === 2;
+		let backActive = state.settingsRow === 2;
 		ctx.fillStyle = backActive ? COLORS.pacman : COLORS.gray;
 		if (backActive) {
 			ctx.fillStyle = COLORS.black;
@@ -379,9 +371,9 @@ function renderMenu() {
 
 	} else if (state.menuSubState === 'personality') {
 		// ── Personality sub-screen ──────────────────────────────────────────────
-		var pKey = AI_PERSONALITY_KEYS[state.aiPersonalityIdx];
-		var pCfg = AI_PERSONALITIES[pKey];
-		var descs = {
+		let pKey = AI_PERSONALITY_KEYS[state.aiPersonalityIdx];
+		let pCfg = AI_PERSONALITIES[pKey];
+		let descs = {
 			coward:     'Flees early, takes no risks',
 			balanced:   'Balanced and efficient',
 			aggressive: 'Actively hunts ghosts',
@@ -417,18 +409,18 @@ function renderMenu() {
 		}
 
 		// ── Menu options ──────────────────────────────────────────────────────
-		var optY0  = top + 84;
-		var optY1  = top + 106;
-		var optY2  = top + 125; // "STARTMAP:" label
-		var optY2b = top + 141; // map name (second line)
-		var optY3  = top + 166; // SETTINGS (shifted down for two-line map row)
-		var opts   = ['START GAME', 'WATCH AI PLAY', null, 'SETTINGS'];
-		var optYs  = [optY0, optY1, optY2, optY3];
-		for (var i = 0; i < opts.length; i++) {
-			var active = state.menuSelected === i;
+		let optY0  = top + 84;
+		let optY1  = top + 106;
+		let optY2  = top + 125; // "STARTMAP:" label
+		let optY2b = top + 141; // map name (second line)
+		let optY3  = top + 166; // SETTINGS (shifted down for two-line map row)
+		let opts   = ['START GAME', 'WATCH AI PLAY', null, 'SETTINGS'];
+		let optYs  = [optY0, optY1, optY2, optY3];
+		for (let i = 0; i < opts.length; i++) {
+			let active = state.menuSelected === i;
 			if (i === 2) {
 				// MAP selector row — two lines: label + map name
-				var mapLabel = '\u25c4 ' + MAPS[state.mapIdx].name + ' \u25ba';
+				let mapLabel = '\u25c4 ' + MAPS[state.mapIdx].name + ' \u25ba';
 				if (active) {
 					ctx.fillStyle = COLORS.black;
 					ctx.fillRect(cx - 90, optY2 - 13, 180, 33); // taller box for two lines
@@ -481,17 +473,17 @@ function renderMenu() {
 		// ctx.moveTo(cx - 110, top + 192); ctx.lineTo(cx + 110, top + 192);
 		// ctx.stroke();
 
-		var ghostData = [
+		let ghostData = [
 			{ sprites: s_blinky, color: COLORS.blinky, name: 'SHADOW',  nick: '"BLINKY"' },
 			{ sprites: s_pinky,  color: COLORS.pinky,  name: 'SPEEDY',  nick: '"PINKY"'  },
 			{ sprites: s_inky,   color: COLORS.inky,   name: 'BASHFUL', nick: '"INKY"'   },
 			{ sprites: s_clyde,  color: COLORS.clyde,  name: 'POKEY',   nick: '"CLYDE"'  },
 		];
-		var rowH    = 30;
-		var rowBase = top + 214;
-		for (var gi = 0; gi < ghostData.length; gi++) {
-			var gd = ghostData[gi];
-			var gy = rowBase + gi * rowH;
+		let rowH    = 30;
+		let rowBase = top + 214;
+		for (let gi = 0; gi < ghostData.length; gi++) {
+			let gd = ghostData[gi];
+			let gy = rowBase + gi * rowH;
 			// Ghost sprite facing right
 			gd.sprites[3].draw(ctx, cx - 130, gy - 13, 26, 26);
 			// Full name
@@ -505,42 +497,42 @@ function renderMenu() {
 	}
 
 	// ── Bottom animation strip ─────────────────────────────────────────────────
-	var ANIM_DELAY  = 60;  // 1 second at 60fps before animation starts
-	var menuAge     = state.frames - state.menuStartFrame;
+	let ANIM_DELAY  = 60;  // 1 second at 60fps before animation starts
+	let menuAge     = state.frames - state.menuStartFrame;
 	if (menuAge >= ANIM_DELAY) {
-		var boardW    = state.GRID_COLS * TILE;
-		var boardX    = state.mapOffX;
-		var gSpacing  = 42;
-		var ghostGap  = 100;  // gap between Pac-Man and first ghost
-		var trainTail = ghostGap + 3 * gSpacing;   // distance from Pac-Man to last ghost
-		var phase0Dur = Math.round((boardW + trainTail + 50) / 2 + 180);  // frames to clear full train
-		var phase1Dur = Math.round((boardW + trainTail + 50) / 2 + 360);  // frames to clear full train
-		var cycleLen  = phase0Dur + phase1Dur;
-		var animT     = (menuAge - ANIM_DELAY) % cycleLen;
-		var phase     = animT < phase0Dur ? 0 : 1;
-		var t         = phase === 0 ? animT : animT - phase0Dur;
-		var animX     = phase === 0 ? (boardX + boardW + 10 - t * 2) : (boardX - trainTail - 30 + t * 2);
-		var animY     = mapBot - 150;
-		var mouthF    = Math.floor(state.frames / 5) % 2;
-		var bob       = Math.floor(state.frames / 10) % 2 * 2;
+		let boardW    = state.GRID_COLS * TILE;
+		let boardX    = state.mapOffX;
+		let gSpacing  = 42;
+		let ghostGap  = 100;  // gap between Pac-Man and first ghost
+		let trainTail = ghostGap + 3 * gSpacing;   // distance from Pac-Man to last ghost
+		let phase0Dur = Math.round((boardW + trainTail + 50) / 2 + 180);  // frames to clear full train
+		let phase1Dur = Math.round((boardW + trainTail + 50) / 2 + 360);  // frames to clear full train
+		let cycleLen  = phase0Dur + phase1Dur;
+		let animT     = (menuAge - ANIM_DELAY) % cycleLen;
+		let phase     = animT < phase0Dur ? 0 : 1;
+		let t         = phase === 0 ? animT : animT - phase0Dur;
+		let animX     = phase === 0 ? (boardX + boardW + 10 - t * 2) : (boardX - trainTail - 30 + t * 2);
+		let animY     = mapBot - 150;
+		let mouthF    = Math.floor(state.frames / 5) % 2;
+		let bob       = Math.floor(state.frames / 10) % 2 * 2;
 
 		ctx.save();
 		ctx.beginPath();
 		ctx.rect(boardX, animY - 4, boardW, 36);
 		ctx.clip();
 
-		var playerSprite = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+		let playerSprite = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
 		if (phase === 0) {
 			// Pac-Man fleeing left, 4 ghosts chasing behind (to the right)
-			var ghostSprites = [s_blinky, s_pinky, s_inky, s_clyde];
+			let ghostSprites = [s_blinky, s_pinky, s_inky, s_clyde];
 			playerSprite.left[mouthF].draw(ctx, animX - 14, animY, 28, 28);
-			for (var pi = 0; pi < 4; pi++) {
+			for (let pi = 0; pi < 4; pi++) {
 				ghostSprites[pi][0].draw(ctx, animX + ghostGap + pi * gSpacing, animY + bob, 28, 28);
 			}
 		} else {
 			// Pac-Man chasing right, 4 scared ghosts fleeing ahead
 			playerSprite.right[mouthF].draw(ctx, animX - 14, animY, 28, 28);
-			for (var si = 0; si < 4; si++) {
+			for (let si = 0; si < 4; si++) {
 				s_scaredGhost[0].draw(ctx, animX + ghostGap + si * gSpacing, animY + bob, 28, 28);
 			}
 		}
@@ -552,7 +544,7 @@ function renderMenu() {
 }
 
 function render() {
-	var ctx = state.ctx;
+	let ctx = state.ctx;
 	ctx.clearRect(0, 0, state.width, state.height);
 	ctx.fillStyle = COLORS.black;
 	ctx.fillRect(0, 0, state.width, state.height);
@@ -653,10 +645,10 @@ function render() {
 
 	// Fruit
 	if (state.cherry) {
-		var cherryVisible = state.cherry.timer > CHERRY_FLASH_THRESHOLD || Math.floor(state.frames / 8) % 2 === 0;
+		let cherryVisible = state.cherry.timer > FRUIT_FLASH_THRESHOLD || Math.floor(state.frames / 8) % 2 === 0;
 		if (cherryVisible) {
-			var fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
-			var fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
+			let fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
+			let fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
 			state.cherry.sprite().draw(ctx, fx, fy, TILE * 2, TILE * 2);
 		}
 	}
@@ -670,8 +662,8 @@ function render() {
 	});
 
 	// State overlays
-	var mx = state.mapOffX + state.GRID_COLS * TILE / 2;
-	var my = state.mapOffY + state.GRID_ROWS * TILE / 2;
+	let mx = state.mapOffX + state.GRID_COLS * TILE / 2;
+	let my = state.mapOffY + state.GRID_ROWS * TILE / 2;
 	if (state.gameState === 'ready') {
 		s_ready.draw(ctx, mx - s_ready.w / 2, my + 33 - s_ready.h / 2);
 		ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -689,8 +681,8 @@ function render() {
 	}
 	if (state.settingsOverlayActive) {
 		ctx.fillStyle = 'rgba(0,0,0,0.85)';
-		var bw = 250, bh = 140;
-		var bx = mx - bw / 2, by = my - bh / 2;
+		let bw = 250, bh = 140;
+		let bx = mx - bw / 2, by = my - bh / 2;
 		ctx.fillRect(bx, by, bw, bh);
 		ctx.strokeStyle = '#555555';
 		ctx.lineWidth   = 1;
@@ -711,8 +703,8 @@ function render() {
 		ctx.fillRect(state.mapOffX, state.mapOffY, state.GRID_COLS * TILE, state.GRID_ROWS * TILE);
 
 		// Box
-		var bw = 120, bh = 80;
-		var bx = mx - bw / 2, by = my - bh / 2;
+		let bw = 120, bh = 80;
+		let bx = mx - bw / 2, by = my - bh / 2;
 		ctx.fillStyle   = COLORS.black;
 		ctx.fillRect(bx, by, bw, bh);
 		ctx.strokeStyle = COLORS.darkGray;
@@ -725,11 +717,11 @@ function render() {
 		ctx.fillText('PAUSE', mx, by + 16);
 
 		// Buttons
-		var opts = ['Continue', 'Quit'];
+		let opts = ['Continue', 'Quit'];
 		state.escapeMenuBounds = [];
-		for (var ei = 0; ei < opts.length; ei++) {
-			var ey = by + 34 + ei * 26;
-			var active = state.escapeMenuSelected === ei;
+		for (let ei = 0; ei < opts.length; ei++) {
+			let ey = by + 34 + ei * 26;
+			let active = state.escapeMenuSelected === ei;
 			ctx.fillStyle = active ? COLORS.pacman : COLORS.darkGray;
 			ctx.fillRect(bx + 12, ey - 13, bw - 24, 18);
 			ctx.fillStyle = active ? COLORS.black : COLORS.gray;
@@ -764,9 +756,9 @@ function render() {
 
 	// Setting toast — centered flash when speed/volume changes
 	if (state.settingToast.timer > 0) {
-		var alpha = Math.min(1, state.settingToast.timer / 15);
+		let alpha = Math.min(1, state.settingToast.timer / 15);
 		ctx.fillStyle = 'rgba(0,0,0,' + (alpha * 0.55) + ')';
-		var tw = 110, th = 36;
+		let tw = 110, th = 36;
 		ctx.fillRect(mx - tw / 2, my - th / 2, tw, th);
 		ctx.fillStyle = 'rgba(255,255,0,' + alpha + ')';
 		ctx.font      = "18px 'Press Start 2P', monospace";
@@ -952,7 +944,7 @@ function keydown(e) {
 		return;
 	}
 	// Arrow keys: steer pacman (manual mode), or AI-mode controlled ghost
-	var arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
+	let arrowKey = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown';
 	if (arrowKey && state.gameState === 'ready') state.gameState = 'playing';
 	if (state.aiMode && state.controlledGhostIdx >= 0) {
 		switch (e.key) {
@@ -971,7 +963,7 @@ function keydown(e) {
 	}
 	// Manual mode: WASD steers selected ghost as player 2 (no Enter needed — select with Tab and steer immediately)
 	if (!state.aiMode && state.selectedGhostIdx >= 0) {
-		var wasd = e.code === 'KeyA' || e.code === 'KeyW' || e.code === 'KeyD' || e.code === 'KeyS';
+		let wasd = e.code === 'KeyA' || e.code === 'KeyW' || e.code === 'KeyD' || e.code === 'KeyS';
 		if (wasd && state.gameState === 'ready') state.gameState = 'playing';
 		switch (e.code) {
 			case 'KeyA': state.ghosts[state.selectedGhostIdx].nextDir = dir.left;  break;
@@ -988,7 +980,7 @@ function run() {
 	newGame();
 	state.gameState    = 'menu';
 	state.menuStartFrame = 0;
-	var loop = function() {
+	let loop = function() {
 		if (state.gameState === 'playing' || state.gameState === 'ready' ||
 		    state.gameState === 'dead'    || state.gameState === 'gameover' ||
 		    state.gameState === 'win'     || state.gameState === 'menu') {
@@ -1003,7 +995,7 @@ function run() {
 // ── Menu mouse support ────────────────────────────────────────────────────────
 
 function menuCanvasPt(e) {
-	var r = state.canvas.getBoundingClientRect();
+	let r = state.canvas.getBoundingClientRect();
 	return {
 		x: (e.clientX - r.left) * (state.canvas.width  / r.width),
 		y: (e.clientY - r.top)  * (state.canvas.height / r.height)
@@ -1012,10 +1004,10 @@ function menuCanvasPt(e) {
 
 function menuHitTest(pt) {
 	// renderMenu uses ctx.scale(2,2), so divide canvas coords by 2 for drawing coords
-	var scx  = pt.x / 2;
-	var scy  = pt.y / 2;
-	var cx   = state.mapOffX + state.GRID_COLS * TILE / 2;
-	var top  = state.mapOffY;
+	let scx  = pt.x / 2;
+	let scy  = pt.y / 2;
+	let cx   = state.mapOffX + state.GRID_COLS * TILE / 2;
+	let top  = state.mapOffY;
 	if (state.menuSubState === 'personality') {
 		if (Math.abs(scy - (top + 115)) < 18) {
 			if (scx < cx) return 'prev';
@@ -1032,7 +1024,7 @@ function menuHitTest(pt) {
 
 function onMenuMouseDown(e) {
 	if (state.gameState !== 'menu') return;
-	var hit = menuHitTest(menuCanvasPt(e));
+	let hit = menuHitTest(menuCanvasPt(e));
 	if (!hit) return;
 	if (state.menuSubState === 'personality') {
 		if (hit === 'prev') state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length;
@@ -1050,9 +1042,9 @@ function onMenuMouseDown(e) {
 		} else if (hit === 'opt2') {
 			state.menuSelected = 2;
 			// click left/right half of the row to cycle map
-			var hitPt = menuCanvasPt(e);
-			var scxHit = hitPt.x / 2;
-			var cxHit  = state.mapOffX + state.GRID_COLS * TILE / 2;
+			let hitPt = menuCanvasPt(e);
+			let scxHit = hitPt.x / 2;
+			let cxHit  = state.mapOffX + state.GRID_COLS * TILE / 2;
 			if (scxHit < cxHit) state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
 			else                state.mapIdx = (state.mapIdx + 1) % MAPS.length;
 			state.activeMap = MAPS[state.mapIdx];
@@ -1086,11 +1078,11 @@ export function main() {
 		onMenuMouseDown(e);
 		// Escape menu click (bounds are in scale(2,2) space → divide canvas coords by 2)
 		if (state.escapeMenuActive && state.escapeMenuBounds) {
-			var r  = state.canvas.getBoundingClientRect();
-			var px = (e.clientX - r.left) * (state.canvas.width  / r.width)  / 2;
-			var py = (e.clientY - r.top)  * (state.canvas.height / r.height) / 2;
-			for (var bi = 0; bi < state.escapeMenuBounds.length; bi++) {
-				var b = state.escapeMenuBounds[bi];
+			let r  = state.canvas.getBoundingClientRect();
+			let px = (e.clientX - r.left) * (state.canvas.width  / r.width)  / 2;
+			let py = (e.clientY - r.top)  * (state.canvas.height / r.height) / 2;
+			for (let bi = 0; bi < state.escapeMenuBounds.length; bi++) {
+				let b = state.escapeMenuBounds[bi];
 				if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) {
 					if (b.idx === 0) {
 						state.escapeMenuActive = false;
@@ -1113,7 +1105,7 @@ export function main() {
 
 	function loadImage(src) {
 		return new Promise(function(resolve) {
-			var img = new Image();
+			let img = new Image();
 			img.onload = function() { resolve(img); };
 			img.src = src;
 		});

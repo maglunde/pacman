@@ -1,6 +1,6 @@
 // Single mutable game state object shared across all modules.
 // Each property is mutated in-place; never replace the object itself.
-export var state = {
+export const state = {
 	// Canvas / rendering
 	canvas:    null,
 	ctx:       null,

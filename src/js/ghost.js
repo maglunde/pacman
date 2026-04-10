@@ -23,22 +23,22 @@ function ghostSpriteIdx(d) {
 
 export function bfsReturnPath(startCol, startRow, targetCol, targetRow) {
 	if (startCol === targetCol && startRow === targetRow) return [];
-	var dirs4 = [dir.up, dir.left, dir.down, dir.right];
-	var queue   = [{ col: startCol, row: startRow, path: [] }];
-	var visited = {};
+	let dirs4 = [dir.up, dir.left, dir.down, dir.right];
+	let queue   = [{ col: startCol, row: startRow, path: [] }];
+	let visited = {};
 	visited[startRow + ',' + startCol] = true;
 	while (queue.length > 0) {
-		var cur = queue.shift();
-		for (var i = 0; i < dirs4.length; i++) {
-			var d  = dirs4[i];
-			var dl = delta(d);
-			var nc = wrapCol(cur.col + dl[0]);
-			var nr = cur.row + dl[1];
+		let cur = queue.shift();
+		for (let i = 0; i < dirs4.length; i++) {
+			let d  = dirs4[i];
+			let dl = delta(d);
+			let nc = wrapCol(cur.col + dl[0]);
+			let nr = cur.row + dl[1];
 			if (nr < 0 || nr >= state.GRID_ROWS) continue;
-			var key = nr + ',' + nc;
+			let key = nr + ',' + nc;
 			if (visited[key] || isReturningGhostWall(nc, nr)) continue;
 			visited[key] = true;
-			var newPath = cur.path.concat([{ col: nc, row: nr }]);
+			let newPath = cur.path.concat([{ col: nc, row: nr }]);
 			if (nc === targetCol && nr === targetRow) return newPath;
 			queue.push({ col: nc, row: nr, path: newPath });
 		}
@@ -50,28 +50,28 @@ export function bfsReturnPath(startCol, startRow, targetCol, targetRow) {
 
 export function ghostLookahead(g, steps) {
 	if (!g.exited || g.returning) return [];
-	var path = [];
-	var col = g.col, row = g.row, curDir = g.dir;
-	var inScatter = state.scatterPhase % 2 === 0;
-	for (var s = 0; s < steps; s++) {
-		var opp = oppositeDir(curDir);
-		var target = inScatter ? g.scatterTarget : g.getTarget();
-		var best = dir.none, bestDist = Infinity;
-		var ds = [dir.up, dir.left, dir.down, dir.right];
-		for (var i = 0; i < ds.length; i++) {
-			var d = ds[i];
+	let path = [];
+	let col = g.col, row = g.row, curDir = g.dir;
+	let inScatter = state.scatterPhase % 2 === 0;
+	for (let s = 0; s < steps; s++) {
+		let opp = oppositeDir(curDir);
+		let target = inScatter ? g.scatterTarget : g.getTarget();
+		let best = dir.none, bestDist = Infinity;
+		let ds = [dir.up, dir.left, dir.down, dir.right];
+		for (let i = 0; i < ds.length; i++) {
+			let d = ds[i];
 			if (d === opp) continue;
-			var dl = delta(d);
-			var nc = wrapCol(col + dl[0]);
-			var nr = row + dl[1];
+			let dl = delta(d);
+			let nc = wrapCol(col + dl[0]);
+			let nr = row + dl[1];
 			if (!isGhostWall(nc, nr, d)) {
-				var dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
+				let dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
 				if (dist < bestDist) { bestDist = dist; best = d; }
 			}
 		}
 		if (best === dir.none) best = opp;
 		if (best === dir.none) break;
-		var dlt = delta(best);
+		let dlt = delta(best);
 		col = wrapCol(col + dlt[0]);
 		row = row + dlt[1];
 		curDir = best;
@@ -107,7 +107,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			this.bounceDir    = dir.up;
 			this.releaseFrame = state.frames + this.releaseDelay / state.gameSpeed;
 			this.nextDir      = dir.none;
-			var p = ghostTilePixel(this.col, this.row);
+			let p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
 			this.targetX = p.x; this.targetY = p.y;
 		},
@@ -117,12 +117,12 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 			// ── Returning to house after being eaten ──────────────────────────
 			if (this.returning) {
-				var rspd = GHOST_SPEED * 3 * state.gameSpeed;
+				let rspd = GHOST_SPEED * 3 * state.gameSpeed;
 				if (!this.moving) {
 					if (this.returnPath && this.returnPathIdx < this.returnPath.length) {
-						var next = this.returnPath[this.returnPathIdx];
-						var rdc  = next.col - this.col;
-						var rdr  = next.row - this.row;
+						let next = this.returnPath[this.returnPathIdx];
+						let rdc  = next.col - this.col;
+						let rdr  = next.row - this.row;
 						// Handle wrap-around
 						if (rdc > 1) rdc = -1; else if (rdc < -1) rdc = 1;
 						this.dir = rdc > 0 ? dir.right : rdc < 0 ? dir.left : rdr > 0 ? dir.down : dir.up;
@@ -148,7 +148,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			// ── Waiting in house — bounce up and down ─────────────────────────
 			if (state.frames < this.releaseFrame) {
 				if (!this.moving) {
-					var gh = state.activeMap.ghostHouse;
+					let gh = state.activeMap.ghostHouse;
 					if (this.bounceDir === dir.up   && this.row <= gh.rowMin + 1) this.bounceDir = dir.down;
 					if (this.bounceDir === dir.down  && this.row >= gh.rowMax)    this.bounceDir = dir.up;
 					this.dir = this.bounceDir;
@@ -165,7 +165,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 				if (!this.exited) {
 					// Exit: move to col 13 then head straight up
 					if (this.col !== 13) {
-						var dc = this.col < 13 ? 1 : -1;
+						let dc = this.col < 13 ? 1 : -1;
 						this.dir = dc > 0 ? dir.right : dir.left;
 						applyMove(this, dc, 0);
 					} else {
@@ -173,33 +173,33 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						applyMove(this, 0, -1);
 					}
 				} else {
-					var opp  = oppositeDir(this.dir);
-					var dirs = [dir.up, dir.left, dir.down, dir.right];
-					var best = dir.none;
+					let opp  = oppositeDir(this.dir);
+					let dirs = [dir.up, dir.left, dir.down, dir.right];
+					let best = dir.none;
 
 					// Player-controlled: AI mode uses controlledGhostIdx (Enter), manual uses selectedGhostIdx (WASD)
-					var playerControlled = (state.aiMode && state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this)
+					let playerControlled = (state.aiMode && state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this)
 					                    || (!state.aiMode && state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this);
 
 					if (playerControlled) {
 						// Try queued direction first (allow reversing — player intent)
 						if (this.nextDir !== dir.none) {
-							var ndl = delta(this.nextDir);
+							let ndl = delta(this.nextDir);
 							if (!isGhostWall(this.col + ndl[0], this.row + ndl[1], this.nextDir)) {
 								best = this.nextDir;
 							}
 						}
 						// Fall back: continue in current direction
 						if (best === dir.none) {
-							var cdl = delta(this.dir);
+							let cdl = delta(this.dir);
 							if (!isGhostWall(this.col + cdl[0], this.row + cdl[1], this.dir)) {
 								best = this.dir;
 							}
 						}
 						// Last resort: any valid direction
 						if (best === dir.none) {
-							for (var ai = 0; ai < dirs.length; ai++) {
-								var adl = delta(dirs[ai]);
+							for (let ai = 0; ai < dirs.length; ai++) {
+								let adl = delta(dirs[ai]);
 								if (!isGhostWall(this.col + adl[0], this.row + adl[1], dirs[ai])) {
 									best = dirs[ai]; break;
 								}
@@ -207,25 +207,25 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						}
 					} else if (state.scaredTimer > 0 && !this.immune) {
 						// Scared: pick a random valid direction (prefer not to reverse)
-						var choices = dirs.filter(function(d) {
-							var dl = delta(d);
+						let choices = dirs.filter(function(d) {
+							let dl = delta(d);
 							return !isGhostWall(this.col + dl[0], this.row + dl[1], d);
 						}.bind(this));
-						var noReverse = choices.filter(function(d) { return d !== opp; });
-						var pool = noReverse.length > 0 ? noReverse : choices;
+						let noReverse = choices.filter(function(d) { return d !== opp; });
+						let pool = noReverse.length > 0 ? noReverse : choices;
 						best = pool[Math.floor(Math.random() * pool.length)];
 					} else {
 						// Chase or scatter: move toward target, no reversing
-						var inScatter = state.scatterPhase % 2 === 0;
-						var target = inScatter ? this.scatterTarget : this.getTarget();
-						var bestDist = Infinity;
-						for (var i = 0; i < dirs.length; i++) {
-							var d = dirs[i];
+						let inScatter = state.scatterPhase % 2 === 0;
+						let target = inScatter ? this.scatterTarget : this.getTarget();
+						let bestDist = Infinity;
+						for (let i = 0; i < dirs.length; i++) {
+							let d = dirs[i];
 							if (d === opp) continue;
-							var dl = delta(d);
-							var nc = this.col + dl[0], nr = this.row + dl[1];
+							let dl = delta(d);
+							let nc = this.col + dl[0], nr = this.row + dl[1];
 							if (!isGhostWall(nc, nr, d)) {
-								var dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
+								let dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
 								if (dist < bestDist) { bestDist = dist; best = d; }
 							}
 						}
@@ -234,14 +234,14 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 					if (best !== dir.none) {
 						this.dir = best;
-						var dl = delta(best);
+						let dl = delta(best);
 						applyMove(this, dl[0], dl[1]);
 					}
 				}
 			}
 
 			if (this.moving) {
-				var spd = ((state.scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
+				let spd = ((state.scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
 				if (moveTowardTarget(this, spd) && !this.exited && this.row < state.activeMap.ghostHouse.rowMin) {
 					this.exited = true;
 				}
@@ -249,11 +249,11 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 		},
 
 		draw: function() {
-			var ctx = state.ctx;
+			let ctx = state.ctx;
 			if (this.returning) {
 				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
 			} else if (this.pendingReturn || (state.scaredTimer > 0 && !this.immune)) {
-				var white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
+				let white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
 				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
 			} else {
 				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
@@ -261,16 +261,16 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			// Selection indicator — one style per ghost so you can compare and keep your favourite.
 			// yellow = selected/active, green = AI-mode explicit control.
 			// To remove a style: delete the corresponding else-if block.
-			var isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
-			var isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
+			let isSelected   = state.selectedGhostIdx >= 0 && state.ghosts[state.selectedGhostIdx] === this;
+			let isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
 			if (isSelected || isControlled) {
-				var selColor = isControlled ? COLORS.target : COLORS.pacman;
-				var cx = this.x + 15, cy = this.y + 15;
+				let selColor = isControlled ? COLORS.target : COLORS.pacman;
+				let cx = this.x + 15, cy = this.y + 15;
 				ctx.save();
 
 				if (state.ghostIndicatorStyle === 0) {
 					// ── A: bouncing arrow above ghost ─────────────────────────
-					var bounce = Math.abs(Math.sin(state.frames * 0.15)) * 5;
+					let bounce = Math.abs(Math.sin(state.frames * 0.15)) * 5;
 					ctx.fillStyle = selColor;
 					ctx.font = "12px 'Press Start 2P', monospace";
 					ctx.textAlign = 'center';
@@ -288,16 +288,16 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						ctx.strokeRect(this.x + 1, this.y + 1, 28, 28);
 					} else {
 						// Selected: square pulses larger and smaller
-						var p = 3 * Math.sin(state.frames * 0.12);
+						let p = 3 * Math.sin(state.frames * 0.12);
 						ctx.globalAlpha = 0.8 + 0.2 * Math.sin(state.frames * 0.12);
 						ctx.strokeRect(this.x + 1 - p, this.y + 1 - p, 28 + p * 2, 28 + p * 2);
 					}
 
 				} else if (state.ghostIndicatorStyle === 2) {
 					// ── C: corner brackets ────────────────────────────────────
-					var pad = 1, bLen = 6;
-					var x0 = this.x + pad, y0 = this.y + pad;
-					var x1 = this.x + 30 - pad, y1 = this.y + 30 - pad;
+					let pad = 1, bLen = 6;
+					let x0 = this.x + pad, y0 = this.y + pad;
+					let x1 = this.x + 30 - pad, y1 = this.y + 30 - pad;
 					ctx.strokeStyle = selColor;
 					ctx.lineWidth = 2;
 					ctx.beginPath(); ctx.moveTo(x0, y0 + bLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + bLen, y0); ctx.stroke();
@@ -307,9 +307,9 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 				} else if (state.ghostIndicatorStyle === 3) {
 					// ── D: radial glow ────────────────────────────────────────
-					var glowAlpha = 0.35 + 0.25 * Math.sin(state.frames * 0.12);
-					var rgb = isControlled ? '0,255,136' : '255,255,0';
-					var grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 20);
+					let glowAlpha = 0.35 + 0.25 * Math.sin(state.frames * 0.12);
+					let rgb = isControlled ? '0,255,136' : '255,255,0';
+					let grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 20);
 					grd.addColorStop(0, 'rgba(' + rgb + ',' + glowAlpha + ')');
 					grd.addColorStop(1, 'rgba(' + rgb + ',0)');
 					ctx.globalCompositeOperation = 'lighter';
@@ -328,15 +328,15 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 // ── Ghost initialisation ──────────────────────────────────────────────────────
 
 export function initGhosts() {
-	var br = state.GRID_ROWS - 1; // bottom row
-	var corners = [
+	let br = state.GRID_ROWS - 1; // bottom row
+	let corners = [
 		{ col: 25, row: 0 },  // top-right
 		{ col: 2,  row: 0 },  // top-left
 		{ col: 25, row: br }, // bottom-right
 		{ col: 2,  row: br }  // bottom-left
 	];
 	// Shift corners based on level to vary scatter paths
-	var shift = (state.level - 1) % corners.length;
+	let shift = (state.level - 1) % corners.length;
 
 	state.ghosts = [
 		makeGhost(12, 14, s_blinky, 0, function() {
@@ -344,19 +344,19 @@ export function initGhosts() {
 		}, COLORS.blinky, corners[(0 + shift) % 4]),           // Blinky
 
 		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
-			var d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+			let d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
 			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
 		}, COLORS.pinky, corners[(1 + shift) % 4]),            // Pinky
 
 		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
-			var d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
-			var pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
-			var blinky = state.ghosts[0];
+			let d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+			let pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
+			let blinky = state.ghosts[0];
 			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
 		}, COLORS.inky, corners[(2 + shift) % 4]),           // Inky
 
 		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
-			var dist = Math.abs(state.pacman.col - state.ghosts[3].col)
+			let dist = Math.abs(state.pacman.col - state.ghosts[3].col)
 			         + Math.abs(state.pacman.row - state.ghosts[3].row);
 			return dist > 8
 				? { col: state.pacman.col, row: state.pacman.row }
