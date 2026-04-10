@@ -348,14 +348,11 @@ function renderMenu() {
 
 		// BACK button
 		var backActive = state.settingsRow === 2;
-		if (backActive && Math.floor(state.frames / 60) % 2 === 0) {
-			ctx.fillStyle = COLORS.pacman;
-		} else {
-			ctx.fillStyle = backActive ? COLORS.pacman : '#555555';
-		}
+		ctx.fillStyle = backActive ? COLORS.pacman : COLORS.gray;
 		if (backActive) {
-			ctx.fillRect(cx - 40, top + 168, 80, 16);
 			ctx.fillStyle = COLORS.black;
+			ctx.fillRect(cx - 40, top + 168, 80, 16);
+			ctx.fillStyle = COLORS.pacman;
 		}
 		ctx.font      = "10px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
@@ -402,42 +399,40 @@ function renderMenu() {
 			ctx.fillStyle = COLORS.darkGray;
 			ctx.font      = "10px 'Press Start 2P', monospace";
 			ctx.textAlign = 'center';
-			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 68);
+			ctx.fillText('HIGH-SCORE: ' + state.highScore, cx, top + 55);
 		}
 
 		// ── Menu options ──────────────────────────────────────────────────────
-		var optY0 = top + 84;
-		var optY1 = top + 106;
-		var optY2 = top + 128;
-		var optY3 = top + 150;
-		var opts  = ['START GAME', 'WATCH AI PLAY', null, 'SETTINGS'];
-		var optYs = [optY0, optY1, optY2, optY3];
+		var optY0  = top + 84;
+		var optY1  = top + 106;
+		var optY2  = top + 125; // "STARTMAP:" label
+		var optY2b = top + 141; // map name (second line)
+		var optY3  = top + 166; // SETTINGS (shifted down for two-line map row)
+		var opts   = ['START GAME', 'WATCH AI PLAY', null, 'SETTINGS'];
+		var optYs  = [optY0, optY1, optY2, optY3];
 		for (var i = 0; i < opts.length; i++) {
 			var active = state.menuSelected === i;
 			if (i === 2) {
-				// MAP selector row
+				// MAP selector row — two lines: label + map name
 				var mapLabel = '\u25c4 ' + MAPS[state.mapIdx].name + ' \u25ba';
 				if (active) {
-					if (Math.floor(state.frames / 60) % 2 === 0) ctx.fillStyle = COLORS.pacman;
-					else ctx.fillStyle = COLORS.pacman;
-					ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
 					ctx.fillStyle = COLORS.black;
+					ctx.fillRect(cx - 90, optY2 - 13, 180, 33); // taller box for two lines
+					ctx.fillStyle = COLORS.pacman;
 				} else {
 					ctx.fillStyle = COLORS.gray;
 				}
 				ctx.font      = "8px 'Press Start 2P', monospace";
 				ctx.textAlign = 'center';
-				ctx.fillText('MAP:', cx - 38, optYs[i]);
-				ctx.fillText(mapLabel, cx + 28, optYs[i]);
+				ctx.fillText('STARTMAP:', cx, optY2);
+				ctx.fillText(mapLabel, cx, optY2b);
 			} else {
 				if (active) {
-					if (Math.floor(state.frames / 60) % 2 === 0) {
-						ctx.fillStyle = COLORS.pacman;
-					}
-					ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
 					ctx.fillStyle = COLORS.black;
+					ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
+					ctx.fillStyle = COLORS.pacman; // active text
 				} else {
-					ctx.fillStyle = COLORS.gray;
+					ctx.fillStyle = COLORS.gray; // inactive text
 				}
 				ctx.font      = "10px 'Press Start 2P', monospace";
 				ctx.textAlign = 'center';
@@ -445,16 +440,16 @@ function renderMenu() {
 			}
 		}
 
-		ctx.fillStyle = COLORS.white;
-		ctx.font      = "7px 'Press Start 2P', monospace";
-		ctx.textAlign = 'center';
-		ctx.fillText('\u2191 \u2193 navigate  \u2022  \u2190 \u2192 change map  \u2022  Enter select', cx, top + 165);
+		// ctx.fillStyle = COLORS.white;
+		// ctx.font      = "7px 'Press Start 2P', monospace";
+		// ctx.textAlign = 'center';
+		// ctx.fillText('\u2191 \u2193 navigate  \u2022  \u2190 \u2192 change map  \u2022  Enter select', cx, top + 181);
 
 		// Horizontal rule
 		ctx.strokeStyle = COLORS.darkGray;
 		ctx.lineWidth   = 1;
 		ctx.beginPath();
-		ctx.moveTo(cx - 110, top + 172); ctx.lineTo(cx + 110, top + 172);
+		ctx.moveTo(cx - 110, top + 180); ctx.lineTo(cx + 110, top + 180);
 		ctx.stroke();
 
 		// ── Character / Nickname table ────────────────────────────────────────
@@ -466,11 +461,11 @@ function renderMenu() {
 		ctx.fillText('CHARACTER / NICKNAME', cx, top + 186);
 
 		// Horizontal rule
-		ctx.strokeStyle = COLORS.darkGray;
-		ctx.lineWidth   = 1;
-		ctx.beginPath();
-		ctx.moveTo(cx - 110, top + 192); ctx.lineTo(cx + 110, top + 192);
-		ctx.stroke();
+		// ctx.strokeStyle = COLORS.darkGray;
+		// ctx.lineWidth   = 1;
+		// ctx.beginPath();
+		// ctx.moveTo(cx - 110, top + 192); ctx.lineTo(cx + 110, top + 192);
+		// ctx.stroke();
 
 		var ghostData = [
 			{ sprites: s_blinky, color: COLORS.blinky, name: 'SHADOW',  nick: '"BLINKY"' },
@@ -520,16 +515,17 @@ function renderMenu() {
 		ctx.rect(boardX, animY - 4, boardW, 36);
 		ctx.clip();
 
+		var playerSprite = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
 		if (phase === 0) {
 			// Pac-Man fleeing left, 4 ghosts chasing behind (to the right)
 			var ghostSprites = [s_blinky, s_pinky, s_inky, s_clyde];
-			s_pacman.left[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			playerSprite.left[mouthF].draw(ctx, animX - 14, animY, 28, 28);
 			for (var pi = 0; pi < 4; pi++) {
 				ghostSprites[pi][0].draw(ctx, animX + ghostGap + pi * gSpacing, animY + bob, 28, 28);
 			}
 		} else {
 			// Pac-Man chasing right, 4 scared ghosts fleeing ahead
-			s_pacman.right[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			playerSprite.right[mouthF].draw(ctx, animX - 14, animY, 28, 28);
 			for (var si = 0; si < 4; si++) {
 				s_scaredGhost[0].draw(ctx, animX + ghostGap + si * gSpacing, animY + bob, 28, 28);
 			}
@@ -898,12 +894,18 @@ function keydown(e) {
 				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 3) % 4; break;
 				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 4; break;
 				case 'ArrowLeft':
-					if (state.menuSelected === 2)
+					if (state.menuSelected === 2) {
 						state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
+						state.activeMap = MAPS[state.mapIdx];
+						setMapSprite(state.activeMap);
+					}
 					break;
 				case 'ArrowRight':
-					if (state.menuSelected === 2)
+					if (state.menuSelected === 2) {
 						state.mapIdx = (state.mapIdx + 1) % MAPS.length;
+						state.activeMap = MAPS[state.mapIdx];
+						setMapSprite(state.activeMap);
+					}
 					break;
 				case 'Enter':
 					if (state.menuSelected === 3) {
@@ -1008,8 +1010,8 @@ function menuHitTest(pt) {
 	} else {
 		if (scy >= top + 71  && scy <= top + 95)  return 'opt0';
 		if (scy >= top + 93  && scy <= top + 117) return 'opt1';
-		if (scy >= top + 115 && scy <= top + 139) return 'opt2';
-		if (scy >= top + 137 && scy <= top + 161) return 'opt3';
+		if (scy >= top + 117 && scy <= top + 159) return 'opt2';
+		if (scy >= top + 153 && scy <= top + 179) return 'opt3';
 	}
 	return null;
 }
@@ -1039,6 +1041,8 @@ function onMenuMouseDown(e) {
 			var cxHit  = state.mapOffX + state.GRID_COLS * TILE / 2;
 			if (scxHit < cxHit) state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
 			else                state.mapIdx = (state.mapIdx + 1) % MAPS.length;
+			state.activeMap = MAPS[state.mapIdx];
+			setMapSprite(state.activeMap);
 		} else if (hit === 'opt3') {
 			state.menuSelected = 3;
 			state.menuSubState = 'settings';
