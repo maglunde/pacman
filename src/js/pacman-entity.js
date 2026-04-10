@@ -13,8 +13,8 @@ state.pacman = {
 	x: 0, y: 0, targetX: 0, targetY: 0,
 
 	init: function() {
-		this.col     = 13;
-		this.row     = 23;
+		this.col     = state.activeMap.pacmanStart.col;
+		this.row     = state.activeMap.pacmanStart.row;
 		this.dir     = dir.none;
 		this.nextDir = dir.none;
 		this.moving  = false;

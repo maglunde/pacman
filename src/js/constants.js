@@ -32,19 +32,29 @@ export var WALL_BRIGHTNESS_THRESHOLD = 80; // Pixel brightness sum above which a
 
 export var dir = { none: -1, left: 0, up: 1, right: 2, down: 3 };
 
-export var GHOST_HOUSE_ROW_MIN = 12;
-export var GHOST_HOUSE_ROW_MAX = 15;
-export var GHOST_HOUSE_COL_MIN = 11;
-export var GHOST_HOUSE_COL_MAX = 16;
-export var DOOR_ROW     = 11;
-export var DOOR_COL_MIN = 12;
-export var DOOR_COL_MAX = 15;
-
-export var BIG_DOT_POSITIONS = [
-	{ col: 1,  row: 3  },
-	{ col: 26, row: 3  },
-	{ col: 1,  row: 23 },
-	{ col: 26, row: 23 }
+export var MAPS = [
+	{
+		name:        'PAC-MAN',
+		spriteSheet: 'pacman',
+		sprite:      { x: 0, y: 4, w: 450, h: 496 },
+		scale:       1,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN',
+		// empty board (no pre-drawn dots) — 8px/tile, scaled 2x → same 28×31 grid
+		// the dotted version (0,0,225,248) has yellow dots that trick wall detection
+		spriteSheet: 'mspacman',
+		sprite:      { x: 227, y: 0, w: 227, h: 250 },
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
 ];
 
 // Scatter/chase cycle: alternating durations in frames (even idx = scatter, odd = chase).

@@ -1,7 +1,7 @@
 import {
 	dir, GHOST_SPEED, SCARED_FLASH_THRESHOLD,
 	GHOST_REGEN_DELAY, PINKY_RELEASE_DELAY, INKY_RELEASE_DELAY, CLYDE_RELEASE_DELAY,
-	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX, COLORS
+	COLORS
 } from './constants.js';
 import { state } from './state.js';
 import {
@@ -148,8 +148,9 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			// ── Waiting in house — bounce up and down ─────────────────────────
 			if (state.frames < this.releaseFrame) {
 				if (!this.moving) {
-					if (this.bounceDir === dir.up   && this.row <= GHOST_HOUSE_ROW_MIN + 1) this.bounceDir = dir.down;
-					if (this.bounceDir === dir.down  && this.row >= GHOST_HOUSE_ROW_MAX)    this.bounceDir = dir.up;
+					var gh = state.activeMap.ghostHouse;
+					if (this.bounceDir === dir.up   && this.row <= gh.rowMin + 1) this.bounceDir = dir.down;
+					if (this.bounceDir === dir.down  && this.row >= gh.rowMax)    this.bounceDir = dir.up;
 					this.dir = this.bounceDir;
 					applyMove(this, 0, this.bounceDir === dir.up ? -1 : 1);
 				}
@@ -241,7 +242,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 			if (this.moving) {
 				var spd = ((state.scaredTimer > 0 && !this.immune) ? GHOST_SPEED * 0.5 : GHOST_SPEED) * speedFactor;
-				if (moveTowardTarget(this, spd) && !this.exited && this.row < GHOST_HOUSE_ROW_MIN) {
+				if (moveTowardTarget(this, spd) && !this.exited && this.row < state.activeMap.ghostHouse.rowMin) {
 					this.exited = true;
 				}
 			}

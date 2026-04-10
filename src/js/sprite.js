@@ -17,12 +17,13 @@ s_ready,
 s_gameover
 ;
 
-export function Sprite(img,x,y,w,h){
-	this.img= img;
-	this.x=x;
-	this.y=y;
-	this.w=w;
-	this.h=h;
+export function Sprite(img, x, y, w, h, scale) {
+	this.img   = img;
+	this.x     = x;
+	this.y     = y;
+	this.w     = w;
+	this.h     = h;
+	this.scale = scale || 1;
 }
 Sprite.prototype.draw = function(ctx, x, y, w, h) {
   ctx.drawImage(this.img, this.x, this.y, this.w, this.h,
@@ -32,7 +33,17 @@ Sprite.prototype.draw = function(ctx, x, y, w, h) {
 
 
 
-export function initSprites(img){
+var _pacmanImg = null;
+var _mspacImg  = null;
+
+export function setMapSprite(mapCfg) {
+	var img = mapCfg.spriteSheet === 'mspacman' ? _mspacImg : _pacmanImg;
+	s_map = new Sprite(img, mapCfg.sprite.x, mapCfg.sprite.y, mapCfg.sprite.w, mapCfg.sprite.h, mapCfg.scale);
+}
+
+export function initSprites(img, mspacImg) {
+	_pacmanImg = img;
+	_mspacImg  = mspacImg;
 	s_map = new Sprite(img, 0, 4, 450, 496);
 	s_pacman = {
 		left:	[

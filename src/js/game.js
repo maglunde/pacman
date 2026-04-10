@@ -1,10 +1,10 @@
 import '../sass/style.scss';
-import { initSprites, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
+import { initSprites, setMapSprite, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
 	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, SCATTER_CHASE_PHASES,
-	COLORS
+	COLORS, MAPS
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -116,6 +116,10 @@ export function newGame() {
 	state.lives = 3;
 	state.level = 1;
 	state.dotsEaten = 0;
+	state.activeMap = MAPS[state.mapIdx];
+	setMapSprite(state.activeMap);
+	initWallData();
+	buildGrid();
 	initDots();
 	initBigDots();
 	shuffleBFSDirs();
@@ -124,6 +128,11 @@ export function newGame() {
 
 function nextLevel() {
 	state.level++;
+	state.mapIdx    = (state.mapIdx + 1) % MAPS.length;
+	state.activeMap = MAPS[state.mapIdx];
+	setMapSprite(state.activeMap);
+	initWallData();
+	buildGrid();
 	initDots();
 	initBigDots();
 	startReady();
@@ -396,31 +405,49 @@ function renderMenu() {
 		}
 
 		// ── Menu options ──────────────────────────────────────────────────────
-		var optY0 = top + 90;
-		var optY1 = top + 114;
-		var optY2 = top + 138;
-		var opts  = ['START GAME', 'WATCH AI PLAY', 'SETTINGS'];
-		var optYs = [optY0, optY1, optY2];
+		var optY0 = top + 84;
+		var optY1 = top + 106;
+		var optY2 = top + 128;
+		var optY3 = top + 150;
+		var opts  = ['START GAME', 'WATCH AI PLAY', null, 'SETTINGS'];
+		var optYs = [optY0, optY1, optY2, optY3];
 		for (var i = 0; i < opts.length; i++) {
 			var active = state.menuSelected === i;
-			if (active) {
-				if (Math.floor(state.frames / 60) % 2 === 0) {
-					ctx.fillStyle = COLORS.pacman;
+			if (i === 2) {
+				// MAP selector row
+				var mapLabel = '\u25c4 ' + MAPS[state.mapIdx].name + ' \u25ba';
+				if (active) {
+					if (Math.floor(state.frames / 60) % 2 === 0) ctx.fillStyle = COLORS.pacman;
+					else ctx.fillStyle = COLORS.pacman;
+					ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
+					ctx.fillStyle = COLORS.black;
+				} else {
+					ctx.fillStyle = COLORS.gray;
 				}
-				ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
-				ctx.fillStyle = COLORS.black;
+				ctx.font      = "8px 'Press Start 2P', monospace";
+				ctx.textAlign = 'center';
+				ctx.fillText('MAP:', cx - 38, optYs[i]);
+				ctx.fillText(mapLabel, cx + 28, optYs[i]);
 			} else {
-				ctx.fillStyle = COLORS.gray;
+				if (active) {
+					if (Math.floor(state.frames / 60) % 2 === 0) {
+						ctx.fillStyle = COLORS.pacman;
+					}
+					ctx.fillRect(cx - 90, optYs[i] - 13, 180, 17);
+					ctx.fillStyle = COLORS.black;
+				} else {
+					ctx.fillStyle = COLORS.gray;
+				}
+				ctx.font      = "10px 'Press Start 2P', monospace";
+				ctx.textAlign = 'center';
+				ctx.fillText(opts[i], cx, optYs[i]);
 			}
-			ctx.font      = "10px 'Press Start 2P', monospace";
-			ctx.textAlign = 'center';
-			ctx.fillText(opts[i], cx, optYs[i]);
 		}
 
 		ctx.fillStyle = COLORS.white;
 		ctx.font      = "7px 'Press Start 2P', monospace";
 		ctx.textAlign = 'center';
-		ctx.fillText('\u2191 \u2193 or click  \u2022  Enter to select', cx, top + 160);
+		ctx.fillText('\u2191 \u2193 navigate  \u2022  \u2190 \u2192 change map  \u2022  Enter select', cx, top + 165);
 
 		// Horizontal rule
 		ctx.strokeStyle = COLORS.darkGray;
@@ -867,15 +894,23 @@ function keydown(e) {
 			}
 		} else {
 			switch (e.key) {
-				case 'ArrowUp':   state.menuSelected = (state.menuSelected + 2) % 3; break;
-				case 'ArrowDown': state.menuSelected = (state.menuSelected + 1) % 3; break;
+				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 3) % 4; break;
+				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 4; break;
+				case 'ArrowLeft':
+					if (state.menuSelected === 2)
+						state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
+					break;
+				case 'ArrowRight':
+					if (state.menuSelected === 2)
+						state.mapIdx = (state.mapIdx + 1) % MAPS.length;
+					break;
 				case 'Enter':
-					if (state.menuSelected === 2) {
+					if (state.menuSelected === 3) {
 						state.menuSubState = 'settings';
 						state.settingsRow  = 0;
 					} else if (state.menuSelected === 1) {
 						state.menuSubState = 'personality';
-					} else {
+					} else if (state.menuSelected === 0) {
 						state.aiMode = false;
 						newGame();
 						state.pendingBeginning = true;
@@ -970,9 +1005,10 @@ function menuHitTest(pt) {
 			if (scx > cx) return 'next';
 		}
 	} else {
-		if (scy >= top + 77  && scy <= top + 103) return 'opt0';
-		if (scy >= top + 101 && scy <= top + 127) return 'opt1';
-		if (scy >= top + 125 && scy <= top + 151) return 'opt2';
+		if (scy >= top + 71  && scy <= top + 95)  return 'opt0';
+		if (scy >= top + 93  && scy <= top + 117) return 'opt1';
+		if (scy >= top + 115 && scy <= top + 139) return 'opt2';
+		if (scy >= top + 137 && scy <= top + 161) return 'opt3';
 	}
 	return null;
 }
@@ -996,6 +1032,14 @@ function onMenuMouseDown(e) {
 			state.menuSubState = 'personality';
 		} else if (hit === 'opt2') {
 			state.menuSelected = 2;
+			// click left/right half of the row to cycle map
+			var hitPt = menuCanvasPt(e);
+			var scxHit = hitPt.x / 2;
+			var cxHit  = state.mapOffX + state.GRID_COLS * TILE / 2;
+			if (scxHit < cxHit) state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
+			else                state.mapIdx = (state.mapIdx + 1) % MAPS.length;
+		} else if (hit === 'opt3') {
+			state.menuSelected = 3;
 			state.menuSubState = 'settings';
 			state.settingsRow  = 0;
 		}
@@ -1048,14 +1092,23 @@ export function main() {
 	state.canvas.addEventListener('mousemove', function(e) { onMenuMouseMove(e); });
 	state.canvas.addEventListener('mouseup',   function()  {});
 
-	state.img     = new Image();
-	state.img.src = 'res/sheet-2.png';
-	state.img.onload = function() {
-		initSprites(state.img);
+	function loadImage(src) {
+		return new Promise(function(resolve) {
+			var img = new Image();
+			img.onload = function() { resolve(img); };
+			img.src = src;
+		});
+	}
+
+	Promise.all([loadImage('res/sheet-2.png'), loadImage('res/mspacmansheet.png')]).then(function(imgs) {
+		state.img     = imgs[0];
+		state.mspacImg = imgs[1];
+		state.activeMap = MAPS[state.mapIdx];
+		initSprites(state.img, state.mspacImg);
 		initWallData();
 		buildGrid();
 		initDots();
 		initBigDots();
 		run();
-	};
+	});
 }

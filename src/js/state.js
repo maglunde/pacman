@@ -7,9 +7,16 @@ export var state = {
 	width:     0,
 	height:    0,
 	img:       null,
+	mspacImg:  null,
 	mapPixels: null,
 	mapOffX:   0,
 	mapOffY:   0,
+	mapScaledW: 0,
+	mapScaledH: 0,
+
+	// Active map config (set from MAPS[mapIdx] before any init functions run)
+	mapIdx:    0,
+	activeMap: null,
 
 	// Grid dimensions (set after sprite sheet is loaded)
 	GRID_COLS: 0,

@@ -1,9 +1,6 @@
 import {
 	TILE, WALL_BRIGHTNESS_THRESHOLD,
 	dir,
-	GHOST_HOUSE_ROW_MIN, GHOST_HOUSE_ROW_MAX,
-	GHOST_HOUSE_COL_MIN, GHOST_HOUSE_COL_MAX,
-	DOOR_ROW, DOOR_COL_MIN, DOOR_COL_MAX
 } from './constants.js';
 import { state } from './state.js';
 import { s_map } from './sprite.js';
@@ -50,20 +47,22 @@ export function ghostTilePixel(col, row) {
 
 export function isDoor(col, row) {
 	col = wrapCol(col);
-	return row === DOOR_ROW && col >= DOOR_COL_MIN && col <= DOOR_COL_MAX;
+	var d = state.activeMap.door;
+	return row === d.row && col >= d.colMin && col <= d.colMax;
 }
 
 export function inGhostHouse(col, row) {
 	col = wrapCol(col);
-	return row >= GHOST_HOUSE_ROW_MIN && row <= GHOST_HOUSE_ROW_MAX
-		&& col >= GHOST_HOUSE_COL_MIN && col <= GHOST_HOUSE_COL_MAX;
+	var h = state.activeMap.ghostHouse;
+	return row >= h.rowMin && row <= h.rowMax
+		&& col >= h.colMin && col <= h.colMax;
 }
 
 // ── Wall queries ──────────────────────────────────────────────────────────────
 
 function isWall(mx, my) {
-	if (mx < 0 || my < 0 || mx >= s_map.w || my >= s_map.h) return true;
-	var idx = (Math.floor(my) * s_map.w + Math.floor(mx)) * 4;
+	if (mx < 0 || my < 0 || mx >= state.mapScaledW || my >= state.mapScaledH) return true;
+	var idx = (Math.floor(my) * state.mapScaledW + Math.floor(mx)) * 4;
 	return (state.mapPixels[idx] + state.mapPixels[idx+1] + state.mapPixels[idx+2]) > WALL_BRIGHTNESS_THRESHOLD;
 }
 
@@ -125,18 +124,22 @@ export function applyMove(entity, dc, dr) {
 // ── Initialization ────────────────────────────────────────────────────────────
 
 export function initWallData() {
-	state.GRID_COLS = Math.floor(s_map.w / TILE);
-	state.GRID_ROWS = Math.floor(s_map.h / TILE);
+	var scaledW = s_map.w * s_map.scale;
+	var scaledH = s_map.h * s_map.scale;
+	state.mapScaledW = scaledW;
+	state.mapScaledH = scaledH;
+	state.GRID_COLS  = Math.floor(scaledW / TILE);
+	state.GRID_ROWS  = Math.floor(scaledH / TILE);
 	var mapDrawW = state.GRID_COLS * TILE;
 	var mapDrawH = state.GRID_ROWS * TILE;
 	state.mapOffX = state.width  / 4 - mapDrawW / 2;
 	state.mapOffY = state.height / 4 - mapDrawH / 2;
 	var offscreen = document.createElement('canvas');
-	offscreen.width  = s_map.w;
-	offscreen.height = s_map.h;
+	offscreen.width  = scaledW;
+	offscreen.height = scaledH;
 	var offCtx = offscreen.getContext('2d');
-	offCtx.drawImage(state.img, s_map.x, s_map.y, s_map.w, s_map.h, 0, 0, s_map.w, s_map.h);
-	state.mapPixels = offCtx.getImageData(0, 0, s_map.w, s_map.h).data;
+	offCtx.drawImage(s_map.img, s_map.x, s_map.y, s_map.w, s_map.h, 0, 0, scaledW, scaledH);
+	state.mapPixels = offCtx.getImageData(0, 0, scaledW, scaledH).data;
 }
 
 export function buildGrid() {
