@@ -1,5 +1,5 @@
 import '../sass/style.scss';
-import { initSprites, setMapSprite, s_map, s_pacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
+import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
@@ -275,11 +275,12 @@ function update() {
 				} else {
 					state.pacman.dir = dy > 0 ? dir.down : dir.up;
 				}
+				var spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
 				switch (state.pacman.dir) {
-					case dir.left:  state.pacman.sprite = s_pacman.left;  break;
-					case dir.up:    state.pacman.sprite = s_pacman.up;    break;
-					case dir.right: state.pacman.sprite = s_pacman.right; break;
-					case dir.down:  state.pacman.sprite = s_pacman.down;  break;
+					case dir.left:  state.pacman.sprite = spriteSet.left;  break;
+					case dir.up:    state.pacman.sprite = spriteSet.up;    break;
+					case dir.right: state.pacman.sprite = spriteSet.right; break;
+					case dir.down:  state.pacman.sprite = spriteSet.down;  break;
 				}
 
 				state.ghostCombo++;

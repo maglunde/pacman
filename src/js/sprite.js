@@ -1,6 +1,7 @@
 export let
 s_map,
 s_pacman,
+s_mspacman,
 s_blinky,	// red
 s_pinky,	// pink
 s_inky,		// blue
@@ -67,6 +68,28 @@ export function initSprites(img, mspacImg) {
 					new Sprite(img,527,349,28,28), 	// down small
 					new Sprite(img,527,380,28,28) 	// down big
 				]
+	};
+	s_mspacman = {
+		right: [
+			new Sprite(_mspacImg, 457, 1,  14, 14), // big mouth
+			new Sprite(_mspacImg, 473, 1,  14, 14), // small mouth
+		],
+		left: [
+			new Sprite(_mspacImg, 457, 17, 14, 14),
+			new Sprite(_mspacImg, 473, 17, 14, 14),
+		],
+		round: [
+			new Sprite(_mspacImg, 489, 1,  14, 14),
+			new Sprite(_mspacImg, 489, 1,  14, 14),
+		],
+		up: [
+			new Sprite(_mspacImg, 457, 33, 14, 14),
+			new Sprite(_mspacImg, 473, 33, 14, 14),
+		],
+		down: [
+			new Sprite(_mspacImg, 457, 49, 14, 14),
+			new Sprite(_mspacImg, 473, 49, 14, 14),
+		],
 	};
 	s_blinky = [   // red, y=107
 		new Sprite(img, 465, 107, 30, 30), // left
