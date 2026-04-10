@@ -48,7 +48,62 @@ export var MAPS = [
 		// empty board (no pre-drawn dots) — 8px/tile, scaled 2x → same 28×31 grid
 		// the dotted version (0,0,225,248) has yellow dots that trick wall detection
 		spriteSheet: 'mspacman',
-		sprite:      { x: 227, y: 0, w: 227, h: 250 },
+		sprite:      { x: 228, y: 0, w: 225, h: 248 },
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN 2',
+		// empty board at y=247 — 8px/tile, scaled 2x → same 28×31 grid
+		spriteSheet: 'mspacman',
+		sprite:      { x: 228, y: 248, w: 224, h: 248},
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:4 }, { col:26,row:4 }, { col:1,row:26 }, { col:26,row:26 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN 3',
+		// empty board at y=496 — 8px/tile, scaled 2x → same 28×31 grid
+		spriteSheet: 'mspacman',
+		sprite:      { x: 228, y: 496, w: 225, h: 248 },
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:20 }, { col:26,row:20 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN 4',
+		// empty board at y=4744 — 8px/tile, scaled 2x → same 28×31 grid
+		spriteSheet: 'mspacman',
+		sprite:      { x: 228, y: 744, w: 225, h: 248 },
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN 5',
+		// empty board at y=992 — 8px/tile, scaled 2x → same 28×31 grid
+		spriteSheet: 'mspacman',
+		sprite:      { x: 228, y: 992, w: 225, h: 248 },
+		scale:       2,
+		pacmanStart: { col: 13, row: 23 },
+		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
+		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
+		door:        { row:11, colMin:12, colMax:15 },
+	},
+	{
+		name:        'MS PAC-MAN 6',
+		// empty board at y=1240 — 8px/tile, scaled 2x → same 28×31 grid
+		spriteSheet: 'mspacman',
+		sprite:      { x: 228, y: 1240, w: 225, h: 248 },
 		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
