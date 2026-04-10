@@ -32,6 +32,7 @@ npm run preview  # preview the dist/ build
 - **Tile-based movement**: entities move tile-by-tile. Pixel interpolation happens inside `moveTowardTarget()` in `grid.js`. Post-arrival logic (dot eating, collision checks) belongs in the caller after the return value signals arrival.
 - **Single BFS entry point**: all AI pathfinding goes through `pacmanBFS(goalFn, opts)` in `ai.js`. There is no second BFS implementation.
 - **Constants over magic numbers**: all tunable values (speeds, timers, grid bounds, AI thresholds) live in `constants.js`. Game logic files must never contain bare numeric literals that represent configuration.
+- **Per-map configuration via `MAPS`**: all layout data specific to a map (sprite coordinates, scale, ghost house, door, big dot positions, Pac-Man start) lives in the `MAPS` array in `constants.js`. No map-specific coordinates belong anywhere else. `state.activeMap` always points to the current map's config entry.
 
 ---
 
@@ -57,10 +58,10 @@ All source lives under `src/`:
 | Path | What lives here |
 |---|---|
 | `src/js/main.js` | Entry point — calls `main()` from `game.js` |
-| `src/js/constants.js` | All named constants. Add new values here first. |
+| `src/js/constants.js` | All named constants and the `MAPS` array. Add new values here first. |
 | `src/js/state.js` | Single mutable `state` object. All runtime game state. |
 | `src/js/grid.js` | Wall queries, coordinate helpers (`wrapCol`, `tilePixel`, `ghostTilePixel`), movement primitives (`applyMove`, `moveTowardTarget`) |
-| `src/js/sprite.js` | Sprite sheet parsing and `Sprite.draw()`. Read-only after `initSprites()`. |
+| `src/js/sprite.js` | Sprite sheet parsing and `Sprite.draw()`. `initSprites(pacmanImg, mspacImg)` takes both sheets. `setMapSprite(mapCfg)` swaps `s_map` when changing maps. |
 | `src/js/pacman-entity.js` | Sets `state.pacman`. Entity has `init()`, `update()`, `draw()`. |
 | `src/js/ghost.js` | Ghost factory (`makeGhost`), `initGhosts()`, `bfsReturnPath()`, `ghostLookahead()` |
 | `src/js/ai.js` | AI decision loop (`aiDecide()`), single BFS entry point `pacmanBFS(goalFn, opts)` |
@@ -80,6 +81,9 @@ All source lives under `src/`:
 - `state.scaredTimer` — frames remaining; > 0 means ghosts are scared
 - `state.gameSpeed` — speed multiplier (0.25–8.0, default 1.0)
 - `state.frames` — global frame counter (never reset)
+- `state.mapIdx` — index into `MAPS`; set by menu selection and incremented by `nextLevel`
+- `state.activeMap` — reference to `MAPS[state.mapIdx]`; must be set before calling `initWallData`, `buildGrid`, `initDots`, `initBigDots`, or any entity `init()`
+- `state.mapScaledW / state.mapScaledH` — pixel dimensions of the wall-detection canvas (sprite dimensions × `scale`); used by `isWall()`
 
 **`dir` enum** (constants.js): `dir.none = -1`, `dir.left = 0`, `dir.up = 1`, `dir.right = 2`, `dir.down = 3`
 
@@ -148,6 +152,7 @@ All source lives under `src/`:
 - Run `npm run build` after every non-trivial change to catch bundler/import errors early.
 - If adding a tunable value, add it to `constants.js` first, then reference it.
 - If extending BFS behaviour, use `opts.blockFn` or `opts.threatMap` — do not duplicate the BFS loop.
+- When adding a new map: add an entry to `MAPS` in `constants.js`. Use the **empty** (no pre-drawn dots) board sprite for both display and wall detection — sprites with pre-drawn dots have bright yellow pixels that are misdetected as walls. If the sprite sheet uses smaller tiles, set `scale: 2` (or the appropriate factor) so the offscreen wall-detection canvas renders at 16 px/tile.
 
 **Debugging approach:**
 1. Check `state` fields first — most bugs are incorrect state transitions.
