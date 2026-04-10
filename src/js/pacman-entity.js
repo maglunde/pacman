@@ -53,6 +53,7 @@ state.pacman = {
 				if (state.dots[this.row][this.col] === 1) {
 					state.dots[this.row][this.col] = 0;
 					state.dotsEaten++;
+					if (!state.cherry) state.fruitDotsSinceSpawn++;
 					addScore(10);
 					playWaka();
 				}

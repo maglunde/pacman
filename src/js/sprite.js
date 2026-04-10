@@ -11,6 +11,10 @@ s_eyes,
 s_orange,
 s_strawberry,
 s_cherry,
+s_pretzel,
+s_apple,
+s_pear,
+s_banana,
 s_dot,
 s_bigDot,
 s_title,
@@ -119,9 +123,13 @@ export function initSprites(img, mspacImg) {
 	];
 	s_dot    = new Sprite(img, 575, 151,  6,  6);
 	s_bigDot = new Sprite(img, 587, 147, 18, 18);
-	s_orange = new Sprite(img, 475, 213, 30, 30);
-	s_strawberry = new Sprite(img, 506, 213, 30, 30);
-	s_cherry = new Sprite(img, 540, 213, 30, 30);
+	s_cherry = new Sprite(_mspacImg, 504, 0, 16, 16);
+	s_strawberry = new Sprite(_mspacImg, 520, 0, 16, 16);
+	s_orange = new Sprite(_mspacImg, 536, 0, 16, 16);
+	s_pretzel = new Sprite(_mspacImg, 552, 0, 16, 16);
+	s_apple = new Sprite(_mspacImg, 568, 0, 16, 16);
+	s_pear = new Sprite(_mspacImg, 584, 0, 16, 16);
+	s_banana = new Sprite(_mspacImg, 600, 0, 16, 16);
 	s_scaredGhost = [
 		new Sprite(img, 533, 139, 30, 30), // blue
 		new Sprite(img, 499, 139, 30, 30)  // white (blinking)

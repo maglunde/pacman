@@ -20,9 +20,18 @@ export var INKY_RELEASE_DELAY   = 600;
 export var CLYDE_RELEASE_DELAY  = 900;
 
 // Cherry
-export var CHERRY_DOT_THRESHOLD    = 130;   // Dots eaten before cherry appears
-export var CHERRY_DURATION         = 1000;  // Frames cherry stays on board
+export var CHERRY_DOT_THRESHOLD    = 70;   // Dots eaten before cherry appears
+export var CHERRY_DURATION         = 1000; // Frames cherry stays on board
 export var CHERRY_FLASH_THRESHOLD  = 150;  // Frames left when fruit starts flashing (~2.5s at 60fps)
+export var FRUIT_SPAWN_COL         = 13;
+export var FRUIT_SPAWN_ROW         = 17;
+export var CHERRY_POINTS           = 100;
+export var STRAWBERRY_POINTS       = 300;
+export var ORANGE_POINTS           = 500;
+export var PRETZEL_POINTS          = 700;
+export var APPLE_POINTS            = 1000;
+export var PEAR_POINTS             = 3000;
+export var BANANA_POINTS           = 5000;
 
 // HUD
 export var LIFE_ICON_SPACING = 28; // Pixels between life icons in HUD

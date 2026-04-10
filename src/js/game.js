@@ -1,10 +1,12 @@
 import '../sass/style.scss';
-import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_title, s_ready, s_gameover } from './sprite.js';
+import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_cherry, s_strawberry, s_orange, s_pretzel, s_apple, s_pear, s_banana, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
-	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, SCATTER_CHASE_PHASES,
-	COLORS, MAPS
+	CHERRY_DOT_THRESHOLD, CHERRY_DURATION, CHERRY_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
+	CHERRY_POINTS, STRAWBERRY_POINTS, ORANGE_POINTS, PRETZEL_POINTS, APPLE_POINTS, PEAR_POINTS,
+	SCATTER_CHASE_PHASES,
+	COLORS, MAPS, BANANA_POINTS
 } from './constants.js';
 import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
@@ -116,6 +118,7 @@ export function newGame() {
 	state.lives = 3;
 	state.level = 1;
 	state.dotsEaten = 0;
+	state.fruitDotsSinceSpawn = 0;
 	state.activeMap = MAPS[state.mapIdx];
 	setMapSprite(state.activeMap);
 	initWallData();
@@ -129,6 +132,7 @@ export function newGame() {
 function nextLevel() {
 	state.level++;
 	state.mapIdx    = (state.mapIdx + 1) % MAPS.length;
+	state.fruitDotsSinceSpawn = 0;
 	state.activeMap = MAPS[state.mapIdx];
 	setMapSprite(state.activeMap);
 	initWallData();
@@ -240,17 +244,27 @@ function update() {
 			addScore(state.cherry.points);
 			addPopup(String(state.cherry.points), state.cherry.col, state.cherry.row);
 			state.cherry = null;
-			state.dotsEaten++;
 			playEatFruit();
 		}
-	} else if ((state.dotsEaten+1) % CHERRY_DOT_THRESHOLD === 0) {
+	} else if (state.fruitDotsSinceSpawn >= CHERRY_DOT_THRESHOLD) {
 		var fruits = [
-			{ sprite: function() { return s_cherry; },     points: 100 },
-			{ sprite: function() { return s_strawberry; }, points: 300 },
-			{ sprite: function() { return s_orange; },     points: 500 }
+			{ sprite: function() { return s_cherry; },     points: CHERRY_POINTS },
+			{ sprite: function() { return s_strawberry; }, points: STRAWBERRY_POINTS },
+			{ sprite: function() { return s_orange; },     points: ORANGE_POINTS },
+			{ sprite: function() { return s_pretzel; },    points: PRETZEL_POINTS },
+			{ sprite: function() { return s_apple; },      points: APPLE_POINTS },
+			{ sprite: function() { return s_pear; },       points: PEAR_POINTS },
+			{ sprite: function() { return s_banana; },     points: BANANA_POINTS }
 		];
 		var picked = fruits[Math.floor(Math.random() * fruits.length)];
-		state.cherry = { col: 13, row: 17, timer: CHERRY_DURATION, sprite: picked.sprite, points: picked.points };
+		state.fruitDotsSinceSpawn = 0;
+		state.cherry = {
+			col: FRUIT_SPAWN_COL,
+			row: FRUIT_SPAWN_ROW,
+			timer: CHERRY_DURATION,
+			sprite: picked.sprite,
+			points: picked.points
+		};
 	}
 
 	if (state.aiMode) aiDecide();

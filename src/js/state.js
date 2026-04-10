@@ -24,9 +24,10 @@ export var state = {
 	grid:      null,
 
 	// Dots
-	dots:      null,
-	bigDots:   null,
-	dotsEaten: 0,
+	dots:                null,
+	bigDots:             null,
+	dotsEaten:           0,
+	fruitDotsSinceSpawn: 0,
 
 	// Entities
 	pacman: null,
