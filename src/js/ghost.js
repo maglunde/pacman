@@ -6,9 +6,10 @@ import {
 import { state } from './state.js';
 import {
 	delta, oppositeDir, applyMove, moveTowardTarget,
-	ghostTilePixel, isGhostWall, isReturningGhostWall, wrapCol
+	ghostTilePixel, inGhostHouse, isDoor, isGhostWall, isReturningGhostWall, wrapCol
 } from './grid.js';
 import { s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_eyes } from './sprite.js';
+import { TILE } from './constants.js';
 
 // ── Sprite helpers ────────────────────────────────────────────────────────────
 
@@ -82,29 +83,35 @@ export function ghostLookahead(g, steps) {
 
 // ── Ghost factory ─────────────────────────────────────────────────────────────
 
-export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, pathColor, scatterTarget) {
+export function makeGhost(config) {
 	return {
-		startCol: startCol, startRow: startRow,
-		pathColor: pathColor || COLORS.white,
-		col: startCol, row: startRow,
+		spawnCol: config.spawnCol,
+		spawnRow: config.spawnRow,
+		homeCol: config.homeCol,
+		homeRow: config.homeRow,
+		pathColor: config.pathColor || COLORS.white,
+		col: config.spawnCol, row: config.spawnRow,
 		dir: dir.up, moving: false, returning: false,
 		x: 0, y: 0, targetX: 0, targetY: 0,
-		sprites: sprites,
-		releaseDelay: releaseDelay,
-		releaseFrame: releaseDelay,
-		getTarget: getTarget,
-		scatterTarget: scatterTarget || { col: 0, row: 0 },
+		sprites: config.sprites,
+		tilePixelFn: ghostTilePixel,
+		releaseDelay: config.releaseDelay,
+		releaseFrame: config.releaseDelay,
+		getTarget: config.getTarget,
+		scatterTarget: config.scatterTarget || { col: 0, row: 0 },
+		spawnExited: config.spawnExited || false,
+		houseBounceDir: config.houseBounceDir || dir.up,
 
 		init: function() {
-			this.col          = this.startCol;
-			this.row          = this.startRow;
+			this.col          = this.spawnCol;
+			this.row          = this.spawnRow;
 			this.dir          = dir.up;
 			this.moving       = false;
-			this.exited       = false;
+			this.exited       = this.spawnExited;
 			this.immune       = false;
 			this.returning    = false;
 			this.pendingReturn = false;
-			this.bounceDir    = dir.up;
+			this.bounceDir    = this.houseBounceDir;
 			this.releaseFrame = state.frames + this.releaseDelay / state.gameSpeed;
 			this.nextDir      = dir.none;
 			let p = ghostTilePixel(this.col, this.row);
@@ -136,7 +143,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 						this.releaseFrame  = state.frames + GHOST_REGEN_DELAY / state.gameSpeed;
 						this.returnPath    = null;
 						this.returnPathIdx = 0;
-						this.bounceDir     = dir.up;
+						this.bounceDir     = this.houseBounceDir;
 					}
 				}
 				if (this.moving) {
@@ -163,9 +170,9 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			// ── Normal movement (exit routine + chase/scatter) ────────────────
 			if (!this.moving) {
 				if (!this.exited) {
-					// Exit: move to col 13 then head straight up
-					if (this.col !== 13) {
-						let dc = this.col < 13 ? 1 : -1;
+					// Exit: move to the door column, then head straight up.
+					if (this.col !== state.activeMap.ghostExitCol) {
+						let dc = this.col < state.activeMap.ghostExitCol ? 1 : -1;
 						this.dir = dc > 0 ? dir.right : dir.left;
 						applyMove(this, dc, 0);
 					} else {
@@ -250,13 +257,18 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 
 		draw: function() {
 			let ctx = state.ctx;
+			let drawX = this.x;
+			let drawY = this.y;
+			if (!this.exited && (inGhostHouse(this.col, this.row) || isDoor(this.col, this.row))) {
+				drawX += TILE / 2;
+			}
 			if (this.returning) {
-				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y, 30, 30);
+				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY, 30, 30);
 			} else if (this.pendingReturn || (state.scaredTimer > 0 && !this.immune)) {
 				let white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
-				s_scaredGhost[white ? 1 : 0].draw(ctx, this.x, this.y);
+				s_scaredGhost[white ? 1 : 0].draw(ctx, drawX, drawY);
 			} else {
-				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, this.x, this.y);
+				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY);
 			}
 			// Selection indicator — one style per ghost so you can compare and keep your favourite.
 			// yellow = selected/active, green = AI-mode explicit control.
@@ -265,7 +277,7 @@ export function makeGhost(startCol, startRow, sprites, releaseDelay, getTarget, 
 			let isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
 			if (isSelected || isControlled) {
 				let selColor = isControlled ? COLORS.target : COLORS.pacman;
-				let cx = this.x + 15, cy = this.y + 15;
+				let cx = drawX + 15, cy = drawY + 15;
 				ctx.save();
 
 				if (state.ghostIndicatorStyle === 0) {
@@ -337,31 +349,80 @@ export function initGhosts() {
 	];
 	// Shift corners based on level to vary scatter paths
 	let shift = (state.level - 1) % corners.length;
+	let ghostStarts = state.activeMap.ghostStarts;
 
 	state.ghosts = [
-		makeGhost(12, 14, s_blinky, 0, function() {
-			return { col: state.pacman.col, row: state.pacman.row };
-		}, COLORS.blinky, corners[(0 + shift) % 4]),           // Blinky
+		makeGhost({
+			spawnCol:      ghostStarts.blinky.spawn.col,
+			spawnRow:      ghostStarts.blinky.spawn.row,
+			homeCol:       ghostStarts.blinky.home.col,
+			homeRow:       ghostStarts.blinky.home.row,
+			sprites:       s_blinky,
+			releaseDelay:  0,
+			getTarget:     function() {
+				return { col: state.pacman.col, row: state.pacman.row };
+			},
+			pathColor:     COLORS.blinky,
+			scatterTarget: corners[(0 + shift) % 4],
+			houseBounceDir: ghostStarts.blinky.bounceDir,
+			spawnExited:   ghostStarts.blinky.spawnExited
+		}), // Blinky
 
-		makeGhost(13, 14, s_pinky, PINKY_RELEASE_DELAY, function() {
-			let d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
-			return { col: state.pacman.col + d[0]*4, row: state.pacman.row + d[1]*4 };
-		}, COLORS.pinky, corners[(1 + shift) % 4]),            // Pinky
+		makeGhost({
+			spawnCol:      ghostStarts.pinky.spawn.col,
+			spawnRow:      ghostStarts.pinky.spawn.row,
+			homeCol:       ghostStarts.pinky.home.col,
+			homeRow:       ghostStarts.pinky.home.row,
+			sprites:       s_pinky,
+			releaseDelay:  PINKY_RELEASE_DELAY,
+			getTarget:     function() {
+				let d = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+				return { col: state.pacman.col + d[0] * 4, row: state.pacman.row + d[1] * 4 };
+			},
+			pathColor:     COLORS.pinky,
+			scatterTarget: corners[(1 + shift) % 4],
+			houseBounceDir: ghostStarts.pinky.bounceDir,
+			spawnExited:   ghostStarts.pinky.spawnExited
+		}), // Pinky
 
-		makeGhost(14, 14, s_inky, INKY_RELEASE_DELAY, function() {
-			let d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
-			let pivot  = { col: state.pacman.col + d[0]*2, row: state.pacman.row + d[1]*2 };
-			let blinky = state.ghosts[0];
-			return { col: pivot.col*2 - blinky.col, row: pivot.row*2 - blinky.row };
-		}, COLORS.inky, corners[(2 + shift) % 4]),           // Inky
+		makeGhost({
+			spawnCol:      ghostStarts.inky.spawn.col,
+			spawnRow:      ghostStarts.inky.spawn.row,
+			homeCol:       ghostStarts.inky.home.col,
+			homeRow:       ghostStarts.inky.home.row,
+			sprites:       s_inky,
+			releaseDelay:  INKY_RELEASE_DELAY,
+			getTarget:     function() {
+				let d      = delta(state.pacman.dir !== dir.none ? state.pacman.dir : dir.up);
+				let pivot  = { col: state.pacman.col + d[0] * 2, row: state.pacman.row + d[1] * 2 };
+				let blinky = state.ghosts[0];
+				return { col: pivot.col * 2 - blinky.col, row: pivot.row * 2 - blinky.row };
+			},
+			pathColor:     COLORS.inky,
+			scatterTarget: corners[(2 + shift) % 4],
+			houseBounceDir: ghostStarts.inky.bounceDir,
+			spawnExited:   ghostStarts.inky.spawnExited
+		}), // Inky
 
-		makeGhost(15, 14, s_clyde, CLYDE_RELEASE_DELAY, function() {
-			let dist = Math.abs(state.pacman.col - state.ghosts[3].col)
-			         + Math.abs(state.pacman.row - state.ghosts[3].row);
-			return dist > 8
-				? { col: state.pacman.col, row: state.pacman.row }
-				: { col: 0,               row: state.GRID_ROWS - 1 };
-		}, COLORS.clyde, corners[(3 + shift) % 4])             // Clyde
+		makeGhost({
+			spawnCol:      ghostStarts.clyde.spawn.col,
+			spawnRow:      ghostStarts.clyde.spawn.row,
+			homeCol:       ghostStarts.clyde.home.col,
+			homeRow:       ghostStarts.clyde.home.row,
+			sprites:       s_clyde,
+			releaseDelay:  CLYDE_RELEASE_DELAY,
+			getTarget:     function() {
+				let dist = Math.abs(state.pacman.col - state.ghosts[3].col)
+				         + Math.abs(state.pacman.row - state.ghosts[3].row);
+				return dist > 8
+					? { col: state.pacman.col, row: state.pacman.row }
+					: { col: 0,               row: state.GRID_ROWS - 1 };
+			},
+			pathColor:     COLORS.clyde,
+			scatterTarget: corners[(3 + shift) % 4],
+			houseBounceDir: ghostStarts.clyde.bounceDir,
+			spawnExited:   ghostStarts.clyde.spawnExited
+		}) // Clyde
 	];
 	state.ghosts.forEach(function(g) { g.init(); });
 }

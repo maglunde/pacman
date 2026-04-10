@@ -41,6 +41,36 @@ export const WALL_BRIGHTNESS_THRESHOLD = 80; // Pixel brightness sum above which
 
 export const dir = { none: -1, left: 0, up: 1, right: 2, down: 3 };
 
+const DEFAULT_GHOST_LAYOUT = {
+	ghostExitCol: 13,
+	ghostStarts: {
+		blinky: {
+			spawn:      { col: 13, row: 11 },
+			home:       { col: 13, row: 14 },
+			bounceDir:  dir.up,
+			spawnExited: true
+		},
+		pinky: {
+			spawn:      { col: 13, row: 14 },
+			home:       { col: 13, row: 14 },
+			bounceDir:  dir.down,
+			spawnExited: false
+		},
+		inky: {
+			spawn:      { col: 11, row: 14 },
+			home:       { col: 11, row: 14 },
+			bounceDir:  dir.up,
+			spawnExited: false
+		},
+		clyde: {
+			spawn:      { col: 15, row: 14 },
+			home:       { col: 15, row: 14 },
+			bounceDir:  dir.up,
+			spawnExited: false
+		}
+	}
+};
+
 export const MAPS = [
 	{
 		name:        'PAC-MAN',
@@ -51,6 +81,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN',
@@ -63,6 +94,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN 2',
@@ -74,6 +106,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:4 }, { col:26,row:4 }, { col:1,row:26 }, { col:26,row:26 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN 3',
@@ -85,6 +118,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:20 }, { col:26,row:20 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN 4',
@@ -96,6 +130,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN 5',
@@ -107,6 +142,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 	{
 		name:        'MS PAC-MAN 6',
@@ -118,6 +154,7 @@ export const MAPS = [
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
 		door:        { row:11, colMin:12, colMax:15 },
+		...DEFAULT_GHOST_LAYOUT,
 	},
 ];
 

@@ -94,8 +94,8 @@ export function isReturningGhostWall(col, row) {
 // Move entity one frame toward its targetX/targetY at the given speed.
 // Sets entity.moving = false and returns true when it arrives.
 export function moveTowardTarget(entity, spd) {
-	let dx = entity.targetX - entity.x;
-	let dy = entity.targetY - entity.y;
+	let dx = Math.floor(entity.targetX - entity.x);
+	let dy = Math.floor(entity.targetY - entity.y);
 	if (Math.abs(dx) <= spd && Math.abs(dy) <= spd) {
 		entity.x      = entity.targetX;
 		entity.y      = entity.targetY;
@@ -108,14 +108,15 @@ export function moveTowardTarget(entity, spd) {
 }
 
 export function applyMove(entity, dc, dr) {
+	let pixelFn = entity.tilePixelFn || tilePixel;
 	entity.col += dc;
 	entity.row += dr;
 	if (entity.col < 0 || entity.col >= state.GRID_COLS) {
-		entity.x   = dc < 0 ? tilePixel(state.GRID_COLS, entity.row).x
-		                     : tilePixel(-1, entity.row).x;
+		entity.x   = dc < 0 ? pixelFn(state.GRID_COLS, entity.row).x
+		                     : pixelFn(-1, entity.row).x;
 		entity.col = wrapCol(entity.col);
 	}
-	let p = tilePixel(entity.col, entity.row);
+	let p = pixelFn(entity.col, entity.row);
 	entity.targetX = p.x;
 	entity.targetY = p.y;
 	entity.moving  = true;

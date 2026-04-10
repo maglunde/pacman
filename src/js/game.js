@@ -189,7 +189,7 @@ function update() {
 				if (g.pendingReturn) {
 					g.pendingReturn    = false;
 					g.returning        = true;
-					g.returnPath       = bfsReturnPath(g.col, g.row, g.startCol, g.startRow);
+					g.returnPath       = bfsReturnPath(g.col, g.row, g.homeCol, g.homeRow);
 					g.returnPathIdx    = 0;
 				}
 			});
