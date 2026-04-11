@@ -17,6 +17,7 @@ export const state = {
 	// Active map config (set from MAPS[mapIdx] before any init functions run)
 	mapIdx:    0,
 	activeMap: null,
+	playerSpriteSheet: null,
 
 	// Grid dimensions (set after sprite sheet is loaded)
 	GRID_COLS: 0,

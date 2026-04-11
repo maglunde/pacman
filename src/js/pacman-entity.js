@@ -1,8 +1,8 @@
-import { TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, SCARED_DURATION, dir } from './constants.js';
+import { TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, SCARED_DURATION, PACMAN_DRAW_SIZE, dir } from './constants.js';
 import { state } from './state.js';
 import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
-import { s_pacman, s_mspacman } from './sprite.js';
+import { getPacmanSpriteSet } from './sprite.js';
 import { addScore } from './game.js';
 
 state.pacman = {
@@ -18,7 +18,7 @@ state.pacman = {
 		this.dir     = dir.none;
 		this.nextDir = dir.none;
 		this.moving  = false;
-		let spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+		let spriteSet = getPacmanSpriteSet(state.playerSpriteSheet);
 		this.sprite  = spriteSet.round;
 		let p = tilePixel(this.col, this.row);
 		this.x       = p.x + 9;
@@ -71,7 +71,7 @@ state.pacman = {
 			}
 		}
 
-		let spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+		let spriteSet = getPacmanSpriteSet(state.playerSpriteSheet);
 		switch (this.dir) {
 			case dir.left:  this.sprite = spriteSet.left;  break;
 			case dir.up:    this.sprite = spriteSet.up;    break;
@@ -88,11 +88,10 @@ state.pacman = {
 		let mapW  = state.GRID_COLS * TILE;
 		let relX  = this.x - state.mapOffX;
 		let spr   = this.sprite[state.frame % 2];
-		let scale = state.activeMap.scale;
-		let drawW = spr.w * scale;
-		let drawH = spr.h * scale;
+		let drawW = PACMAN_DRAW_SIZE;
+		let drawH = PACMAN_DRAW_SIZE;
 		spr.draw(ctx, this.x, this.y, drawW, drawH);
-		if (relX < 28)        spr.draw(ctx, this.x + mapW, this.y, drawW, drawH);
-		if (relX > mapW - 28) spr.draw(ctx, this.x - mapW, this.y, drawW, drawH);
+		if (relX < PACMAN_DRAW_SIZE)               spr.draw(ctx, this.x + mapW, this.y, drawW, drawH);
+		if (relX > mapW - PACMAN_DRAW_SIZE) spr.draw(ctx, this.x - mapW, this.y, drawW, drawH);
 	}
 };

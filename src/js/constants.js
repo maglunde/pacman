@@ -1,6 +1,13 @@
 export const TILE                    = 16;
+export const BOARD_TILE_ROWS         = 31;
 export const SPEED                   = 0.8;
 export const PACMAN_DOT_SPEED_FACTOR = 0.9;  // Pac-Man slows on dot tiles
+export const PACMAN_DRAW_SIZE        = 28;
+export const GHOST_DRAW_SIZE         = 30;
+export const FRUIT_DRAW_SIZE         = 30;
+export const DOT_DRAW_SIZE           = 6;
+export const BIG_DOT_DRAW_SIZE       = 18;
+export const LIFE_ICON_SIZE          = 18;
 export const GHOST_SPEED             = 0.68;
 export const SCARED_DURATION         = 1000;
 export const SCARED_FLASH_THRESHOLD  = 200;  // Frames left when scared ghost starts flashing
@@ -76,7 +83,6 @@ export const MAPS = [
 		name:        'PAC-MAN',
 		spriteSheet: 'pacman',
 		sprite:      { x: 0, y: 4, w: 450, h: 496 },
-		scale:       1,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -89,7 +95,6 @@ export const MAPS = [
 		// the dotted version (0,0,225,248) has yellow dots that trick wall detection
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 0, w: 225, h: 248 },
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -101,7 +106,6 @@ export const MAPS = [
 		// empty board at y=247 — 8px/tile, scaled 2x → same 28×31 grid
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 248, w: 224, h: 248},
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:4 }, { col:26,row:4 }, { col:1,row:26 }, { col:26,row:26 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -113,7 +117,6 @@ export const MAPS = [
 		// empty board at y=496 — 8px/tile, scaled 2x → same 28×31 grid
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 496, w: 225, h: 248 },
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:20 }, { col:26,row:20 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -125,7 +128,6 @@ export const MAPS = [
 		// empty board at y=4744 — 8px/tile, scaled 2x → same 28×31 grid
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 744, w: 225, h: 248 },
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -137,7 +139,6 @@ export const MAPS = [
 		// empty board at y=992 — 8px/tile, scaled 2x → same 28×31 grid
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 992, w: 225, h: 248 },
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:23 }, { col:26,row:23 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },
@@ -149,7 +150,6 @@ export const MAPS = [
 		// empty board at y=1240 — 8px/tile, scaled 2x → same 28×31 grid
 		spriteSheet: 'mspacman',
 		sprite:      { x: 228, y: 1240, w: 225, h: 248 },
-		scale:       2,
 		pacmanStart: { col: 13, row: 23 },
 		bigDots:     [{ col:1,row:3 }, { col:26,row:3 }, { col:1,row:27 }, { col:26,row:27 }],
 		ghostHouse:  { rowMin:12, rowMax:15, colMin:11, colMax:16 },

@@ -1,4 +1,4 @@
-import { TILE } from './constants.js';
+import { TILE, DOT_DRAW_SIZE, BIG_DOT_DRAW_SIZE } from './constants.js';
 import { state } from './state.js';
 import { s_dot, s_bigDot } from './sprite.js';
 
@@ -57,9 +57,9 @@ export function drawDots() {
 	for (let row = 0; row < state.GRID_ROWS; row++) {
 		for (let col = 0; col < state.GRID_COLS; col++) {
 			if (state.dots[row][col] === 1) {
-				let x = mapOffX + col * TILE + TILE / 2 - 3;
-				let y = mapOffY + row * TILE + TILE / 2 - 3;
-				s_dot.draw(ctx, x, y);
+				let x = mapOffX + col * TILE + TILE / 2 - DOT_DRAW_SIZE / 2;
+				let y = mapOffY + row * TILE + TILE / 2 - DOT_DRAW_SIZE / 2;
+				s_dot.draw(ctx, x, y, DOT_DRAW_SIZE, DOT_DRAW_SIZE);
 			}
 		}
 	}
@@ -73,9 +73,9 @@ export function drawDots() {
 		for (let i = 0; i < state.bigDots.length; i++) {
 			let bd = state.bigDots[i];
 			if (!bd.eaten) {
-				let x = mapOffX + bd.col * TILE + TILE / 2 - 9;
-				let y = mapOffY + bd.row * TILE + TILE / 2 - 9;
-				s_bigDot.draw(ctx, x, y);
+				let x = mapOffX + bd.col * TILE + TILE / 2 - BIG_DOT_DRAW_SIZE / 2;
+				let y = mapOffY + bd.row * TILE + TILE / 2 - BIG_DOT_DRAW_SIZE / 2;
+				s_bigDot.draw(ctx, x, y, BIG_DOT_DRAW_SIZE, BIG_DOT_DRAW_SIZE);
 			}
 		}
 	}

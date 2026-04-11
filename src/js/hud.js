@@ -1,7 +1,7 @@
-import {TILE, SPEED_MIN, SPEED_MAX, LIFE_ICON_SPACING, AI_PERSONALITIES, AI_PERSONALITY_KEYS, COLORS, FRUIT_DOT_THRESHOLD} from './constants.js';
+import {TILE, LIFE_ICON_SIZE, FRUIT_DRAW_SIZE, AI_PERSONALITIES, AI_PERSONALITY_KEYS, COLORS, FRUIT_DOT_THRESHOLD} from './constants.js';
 import { state } from './state.js';
 import { getAvailableFruits } from './fruit.js';
-import {s_pacman} from './sprite.js';
+import { getPacmanSpriteSet } from './sprite.js';
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
 
@@ -56,8 +56,9 @@ function drawLives(mapX, lifeY) {
 	ctx.fillStyle = COLORS.white;
 	ctx.font = FONT_HUD;
 	ctx.fillText('LIVES:', mapX, lifeY);
+	let playerSprite = getPacmanSpriteSet(state.playerSpriteSheet);
 	for (let i = 0; i < state.lives; i++) {
-		s_pacman.right[0].draw(ctx, mapX + 120 + 25 * i, lifeY - 18, 18, 18);
+		playerSprite.right[0].draw(ctx, mapX + 120 + 25 * i, lifeY - LIFE_ICON_SIZE, LIFE_ICON_SIZE, LIFE_ICON_SIZE);
 	}
 }
 
@@ -73,7 +74,7 @@ function drawAIPersonality(ctx, mapX, mapW, lifeY) {
 function drawAvailableFruits(mapX, mapW, boardBottomY) {
 	const ctx = state.ctx;
 	const fruits = getAvailableFruits(state.level);
-	const iconSize = TILE * 2;
+	const iconSize = FRUIT_DRAW_SIZE;
 	const gap = 6;
 	const totalWidth = fruits.length * iconSize + Math.max(0, fruits.length - 1) * gap;
 	const x = mapX + mapW - totalWidth;

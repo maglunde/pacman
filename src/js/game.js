@@ -1,10 +1,10 @@
 import '../sass/style.scss';
-import { initSprites, setMapSprite, s_map, s_pacman, s_mspacman, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_title, s_ready, s_gameover } from './sprite.js';
+import { initSprites, setMapSprite, getPacmanSpriteSet, s_map, s_blinky, s_pinky, s_inky, s_clyde, s_scaredGhost, s_title, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE, SPEED_MIN, SPEED_MAX, dir, AI_PERSONALITIES, AI_PERSONALITY_KEYS,
 	DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, GHOST_EATEN_FREEZE_FRAMES,
 	FRUIT_DOT_THRESHOLD, FRUIT_DURATION, FRUIT_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
-	SCATTER_CHASE_PHASES,
+	SCATTER_CHASE_PHASES, PACMAN_DRAW_SIZE, GHOST_DRAW_SIZE, FRUIT_DRAW_SIZE,
 	COLORS, MAPS
 } from './constants.js';
 import { state } from './state.js';
@@ -120,6 +120,7 @@ export function newGame() {
 	state.dotsEaten = 0;
 	state.fruitDotsSinceSpawn = 0;
 	state.activeMap = MAPS[state.mapIdx];
+	state.playerSpriteSheet = state.activeMap.spriteSheet;
 	setMapSprite(state.activeMap);
 	initWallData();
 	buildGrid();
@@ -134,6 +135,7 @@ function nextLevel() {
 	state.mapIdx    = (state.mapIdx + 1) % MAPS.length;
 	state.fruitDotsSinceSpawn = 0;
 	state.activeMap = MAPS[state.mapIdx];
+	state.playerSpriteSheet = state.activeMap.spriteSheet;
 	setMapSprite(state.activeMap);
 	initWallData();
 	buildGrid();
@@ -281,7 +283,7 @@ function update() {
 				} else {
 					state.pacman.dir = dy > 0 ? dir.down : dir.up;
 				}
-				let spriteSet = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+				let spriteSet = getPacmanSpriteSet(state.playerSpriteSheet);
 				switch (state.pacman.dir) {
 					case dir.left:  state.pacman.sprite = spriteSet.left;  break;
 					case dir.up:    state.pacman.sprite = spriteSet.up;    break;
@@ -521,19 +523,19 @@ function renderMenu() {
 		ctx.rect(boardX, animY - 4, boardW, 36);
 		ctx.clip();
 
-		let playerSprite = state.activeMap.spriteSheet === 'mspacman' ? s_mspacman : s_pacman;
+		let playerSprite = getPacmanSpriteSet(state.playerSpriteSheet);
 		if (phase === 0) {
 			// Pac-Man fleeing left, 4 ghosts chasing behind (to the right)
 			let ghostSprites = [s_blinky, s_pinky, s_inky, s_clyde];
-			playerSprite.left[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			playerSprite.left[mouthF].draw(ctx, animX - PACMAN_DRAW_SIZE / 2, animY, PACMAN_DRAW_SIZE, PACMAN_DRAW_SIZE);
 			for (let pi = 0; pi < 4; pi++) {
-				ghostSprites[pi][0].draw(ctx, animX + ghostGap + pi * gSpacing, animY + bob, 28, 28);
+				ghostSprites[pi][0].draw(ctx, animX + ghostGap + pi * gSpacing, animY + bob, GHOST_DRAW_SIZE, GHOST_DRAW_SIZE);
 			}
 		} else {
 			// Pac-Man chasing right, 4 scared ghosts fleeing ahead
-			playerSprite.right[mouthF].draw(ctx, animX - 14, animY, 28, 28);
+			playerSprite.right[mouthF].draw(ctx, animX - PACMAN_DRAW_SIZE / 2, animY, PACMAN_DRAW_SIZE, PACMAN_DRAW_SIZE);
 			for (let si = 0; si < 4; si++) {
-				s_scaredGhost[0].draw(ctx, animX + ghostGap + si * gSpacing, animY + bob, 28, 28);
+				s_scaredGhost[0].draw(ctx, animX + ghostGap + si * gSpacing, animY + bob, GHOST_DRAW_SIZE, GHOST_DRAW_SIZE);
 			}
 		}
 
@@ -649,7 +651,7 @@ function render() {
 		if (cherryVisible) {
 			let fx = state.mapOffX + state.cherry.col * TILE - TILE / 2;
 			let fy = state.mapOffY + state.cherry.row * TILE - TILE / 2;
-			state.cherry.sprite().draw(ctx, fx, fy, TILE * 2, TILE * 2);
+			state.cherry.sprite().draw(ctx, fx, fy, FRUIT_DRAW_SIZE, FRUIT_DRAW_SIZE);
 		}
 	}
 
@@ -903,6 +905,7 @@ function keydown(e) {
 					if (state.menuSelected === 2) {
 						state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
 						state.activeMap = MAPS[state.mapIdx];
+						state.playerSpriteSheet = state.activeMap.spriteSheet;
 						setMapSprite(state.activeMap);
 					}
 					break;
@@ -910,6 +913,7 @@ function keydown(e) {
 					if (state.menuSelected === 2) {
 						state.mapIdx = (state.mapIdx + 1) % MAPS.length;
 						state.activeMap = MAPS[state.mapIdx];
+						state.playerSpriteSheet = state.activeMap.spriteSheet;
 						setMapSprite(state.activeMap);
 					}
 					break;
@@ -1048,6 +1052,7 @@ function onMenuMouseDown(e) {
 			if (scxHit < cxHit) state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
 			else                state.mapIdx = (state.mapIdx + 1) % MAPS.length;
 			state.activeMap = MAPS[state.mapIdx];
+			state.playerSpriteSheet = state.activeMap.spriteSheet;
 			setMapSprite(state.activeMap);
 		} else if (hit === 'opt3') {
 			state.menuSelected = 3;

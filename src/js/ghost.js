@@ -1,7 +1,7 @@
 import {
 	dir, GHOST_SPEED, SCARED_FLASH_THRESHOLD,
 	GHOST_REGEN_DELAY, PINKY_RELEASE_DELAY, INKY_RELEASE_DELAY, CLYDE_RELEASE_DELAY,
-	COLORS
+	COLORS, GHOST_DRAW_SIZE
 } from './constants.js';
 import { state } from './state.js';
 import {
@@ -263,12 +263,12 @@ export function makeGhost(config) {
 				drawX += TILE / 2;
 			}
 			if (this.returning) {
-				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY, 30, 30);
+				s_eyes[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY, GHOST_DRAW_SIZE, GHOST_DRAW_SIZE);
 			} else if (this.pendingReturn || (state.scaredTimer > 0 && !this.immune)) {
 				let white = state.scaredTimer <= SCARED_FLASH_THRESHOLD && Math.floor(state.frames / 8) % 2 === 1;
-				s_scaredGhost[white ? 1 : 0].draw(ctx, drawX, drawY);
+				s_scaredGhost[white ? 1 : 0].draw(ctx, drawX, drawY, GHOST_DRAW_SIZE, GHOST_DRAW_SIZE);
 			} else {
-				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY);
+				this.sprites[ghostSpriteIdx(this.dir)].draw(ctx, drawX, drawY, GHOST_DRAW_SIZE, GHOST_DRAW_SIZE);
 			}
 			// Selection indicator — one style per ghost so you can compare and keep your favourite.
 			// yellow = selected/active, green = AI-mode explicit control.
@@ -277,7 +277,7 @@ export function makeGhost(config) {
 			let isControlled = state.controlledGhostIdx >= 0 && state.ghosts[state.controlledGhostIdx] === this;
 			if (isSelected || isControlled) {
 				let selColor = isControlled ? COLORS.target : COLORS.pacman;
-				let cx = drawX + 15, cy = drawY + 15;
+				let cx = drawX + GHOST_DRAW_SIZE / 2, cy = drawY + GHOST_DRAW_SIZE / 2;
 				ctx.save();
 
 				if (state.ghostIndicatorStyle === 0) {
@@ -297,19 +297,19 @@ export function makeGhost(config) {
 					if (isControlled) {
 						// Controlled: dashes march clockwise
 						ctx.lineDashOffset = state.frames * 0.5;
-						ctx.strokeRect(this.x + 1, this.y + 1, 28, 28);
+						ctx.strokeRect(this.x + 1, this.y + 1, GHOST_DRAW_SIZE - 2, GHOST_DRAW_SIZE - 2);
 					} else {
 						// Selected: square pulses larger and smaller
 						let p = 3 * Math.sin(state.frames * 0.12);
 						ctx.globalAlpha = 0.8 + 0.2 * Math.sin(state.frames * 0.12);
-						ctx.strokeRect(this.x + 1 - p, this.y + 1 - p, 28 + p * 2, 28 + p * 2);
+						ctx.strokeRect(this.x + 1 - p, this.y + 1 - p, GHOST_DRAW_SIZE - 2 + p * 2, GHOST_DRAW_SIZE - 2 + p * 2);
 					}
 
 				} else if (state.ghostIndicatorStyle === 2) {
 					// ── C: corner brackets ────────────────────────────────────
 					let pad = 1, bLen = 6;
 					let x0 = this.x + pad, y0 = this.y + pad;
-					let x1 = this.x + 30 - pad, y1 = this.y + 30 - pad;
+					let x1 = this.x + GHOST_DRAW_SIZE - pad, y1 = this.y + GHOST_DRAW_SIZE - pad;
 					ctx.strokeStyle = selColor;
 					ctx.lineWidth = 2;
 					ctx.beginPath(); ctx.moveTo(x0, y0 + bLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + bLen, y0); ctx.stroke();
