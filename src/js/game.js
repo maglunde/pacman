@@ -397,7 +397,7 @@ function renderMenu() {
 		ctx.fillStyle = COLORS.darkGray;
 		ctx.font      = "8px 'Press Start 2P', monospace";
 		ctx.fillText('Enter to start • Esc back', cx, top + 162);
-		ctx.fillStyle = '#444444';
+		ctx.fillStyle = COLORS.gray;
 		ctx.font      = "7px 'Press Start 2P', monospace";
 		ctx.fillText('Tab through ghosts • Enter to control', cx, top + 178);
 
@@ -541,6 +541,16 @@ function renderMenu() {
 
 		ctx.restore();
 	}
+
+	// ── Version ────────────────────────────────────────────────────────────────
+	ctx.save();
+	ctx.setTransform(2, 0, 0, 2, 0, 0); // reset translates, keep 2x scale
+	ctx.fillStyle = COLORS.gray;
+	ctx.font      = "6px 'Press Start 2P', monospace";
+	ctx.textAlign = 'right';
+	ctx.fillText('v' + __APP_VERSION__, state.mapOffX + state.GRID_COLS * TILE, state.height / 2 - 4);
+	// ctx.fillText('v' + __APP_VERSION__, state.mapOffX + state.GRID_COLS * TILE, state.height / 2 - 4);
+	ctx.restore();
 
 	ctx.restore();
 }
