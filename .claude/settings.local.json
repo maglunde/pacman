@@ -15,7 +15,13 @@
       "Read(//Users/malund84/**)",
       "Bash(PLUGIN_ROOT=\"$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.9.0\")",
       "Bash(echo \"exit: $?\")",
-      "Bash(PLUGIN_ROOT=\"$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.9.0\" echo '{\"\"\"\"tool_name\"\"\"\":\"\"\"\"Bash\"\"\"\",\"\"\"\"tool_input\"\"\"\":{\"\"\"\"command\"\"\"\":\"\"\"\"echo test\"\"\"\"}}')"
+      "Bash(PLUGIN_ROOT=\"$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.9.0\" echo '{\"\"\"\"tool_name\"\"\"\":\"\"\"\"Bash\"\"\"\",\"\"\"\"tool_input\"\"\"\":{\"\"\"\"command\"\"\"\":\"\"\"\"echo test\"\"\"\"}}')",
+      "Bash(wc:*)",
+      "Bash(python3:*)",
+      "Bash(node_modules/.bin/vite build:*)",
+      "Bash(npm install:*)",
+      "Bash(grep -n \"Press Start 2P\" /Users/malund84/priv/pm-refaktor/src/js/*.js)",
+      "Bash(grep -n \"ctx.textAlign\" /Users/malund84/priv/pm-refaktor/src/js/*.js)"
     ]
   }
 }

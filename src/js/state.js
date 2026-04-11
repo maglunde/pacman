@@ -66,7 +66,8 @@ export const state = {
 	escapeMenuSelected:    0,
 	escapeMenuBounds:      null,
 	settingsOverlayActive: false,
-	settingsRow:           0,    // 0=speed  1=volume  2=indicator
+	settingsRow:           0,    // 0=speed  1=volume  2=back
+	personalityRow:        0,    // 0=selector  1=back
 	menuStartFrame:        -1,   // state.frames value when menu was last entered
 
 	// Audio

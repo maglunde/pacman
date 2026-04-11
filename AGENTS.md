@@ -48,6 +48,8 @@ These rules apply in every change, without exception:
 6. **All pathfinding goes through `pacmanBFS`** — do not write a new BFS function; extend the existing one via `opts`.
 7. **Always run `npm run build` after changes** — verify the project compiles before considering a task done.
 8. **No UI frameworks** — this project is intentionally framework-free; do not introduce React, Vue, or similar.
+9. **Every interactive menu element must support all three input methods** — mouse click (`menu.js` hit-test), `Enter` key (`input.js`), and arrow-key navigation. If an element can be activated, it must also be reachable by keyboard alone. Add a `state.*Row` field to `state.js` when a new sub-screen needs focus tracking.
+10. **Use `drawText` for all pixel-font rendering** — never write the raw `fillStyle` / `font` / `textAlign` / `fillText` four-liner; import and call `drawText` from `draw.js` instead.
 
 ---
 
@@ -64,11 +66,19 @@ All source lives under `src/`:
 | `src/js/sprite.js` | Sprite sheet parsing and `Sprite.draw()`. `initSprites(pacmanImg, mspacImg)` takes both sheets. `setMapSprite(mapCfg)` swaps `s_map` when changing maps. |
 | `src/js/pacman-entity.js` | Sets `state.pacman`. Entity has `init()`, `update()`, `draw()`. |
 | `src/js/ghost.js` | Ghost factory (`makeGhost`), `initGhosts()`, `bfsReturnPath()`, `ghostLookahead()` |
+| `src/js/ghost-render.js` | Ghost `draw()` — sprite selection, scared/returning states, four selection indicator styles |
 | `src/js/ai.js` | AI decision loop (`aiDecide()`), single BFS entry point `pacmanBFS(goalFn, opts)` |
 | `src/js/dots.js` | Dot/big-dot initialisation and drawing |
 | `src/js/audio.js` | Web Audio API waka sound |
 | `src/js/hud.js` | Score/lives/level drawing, sliders, path-toggle panel |
-| `src/js/game.js` | State machine (`menu → ready → playing → dead/gameover/win`), main loop, keyboard input |
+| `src/js/game.js` | Main loop (`run()`), `update()` dispatcher, `render()`, canvas + event-listener setup (`main()`) |
+| `src/js/game-states.js` | State transitions (`newGame`, `nextLevel`, `loseLife`, `startReady`) and scoring (`addScore`, `addPopup`) |
+| `src/js/collision.js` | Ghost–Pac-Man collision, ghost eating, life loss, win check |
+| `src/js/input.js` | All keyboard routing (`initInput(newGame)`) — menu navigation, gameplay controls, shortcuts |
+| `src/js/menu.js` | Menu rendering (`renderMenu`), page renderers, mouse input. Organised top-down: `renderMenu` → page renderers → mouse handlers → settings helpers. |
+| `src/js/draw.js` | Shared canvas helpers. `drawText(ctx, text, x, y, size, color, align='center')` — always use this instead of the raw four-liner (`fillStyle` / `font` / `textAlign` / `fillText`). Font family `'Press Start 2P'` is baked in. |
+| `src/js/pathvis.js` | Debug path visualisation (`renderPaths(ctx)`) for Pac-Man and ghost lookahead |
+| `src/js/fruit.js` | Fruit definitions and availability by level |
 | `src/scss/` | Sass stylesheets |
 | `src/assets/` | Sprite sheet and other static assets |
 
@@ -152,6 +162,7 @@ All source lives under `src/`:
 - Run `npm run build` after every non-trivial change to catch bundler/import errors early.
 - If adding a tunable value, add it to `constants.js` first, then reference it.
 - If extending BFS behaviour, use `opts.blockFn` or `opts.threatMap` — do not duplicate the BFS loop.
+- When adding a menu element that can be clicked or confirmed with Enter: (1) render it in `menu.js`, (2) add a hit-test branch in `menuHitTest`, (3) handle it in `menuMouseDown`, (4) add arrow-key navigation in `input.js` under the correct `menuSubState` block, (5) add any needed focus-row field to `state.js`. All five steps are required — partial implementations are bugs.
 - When adding a new map: add an entry to `MAPS` in `constants.js`. Use the **empty** (no pre-drawn dots) board sprite for both display and wall detection — sprites with pre-drawn dots have bright yellow pixels that are misdetected as walls. If the sprite sheet uses smaller tiles, set `scale: 2` (or the appropriate factor) so the offscreen wall-detection canvas renders at 16 px/tile.
 
 **Debugging approach:**

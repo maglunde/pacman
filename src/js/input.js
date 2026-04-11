@@ -120,14 +120,25 @@ function keydown(e, newGame) {
 			}
 		} else if (state.menuSubState === 'personality') {
 			switch (e.key) {
-				case 'ArrowLeft':  state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length; break;
-				case 'ArrowRight': state.aiPersonalityIdx = (state.aiPersonalityIdx + 1) % AI_PERSONALITY_KEYS.length; break;
+				case 'ArrowUp':   state.personalityRow = 0; break;
+				case 'ArrowDown': state.personalityRow = 1; break;
+				case 'ArrowLeft':
+					if (state.personalityRow === 0) state.aiPersonalityIdx = (state.aiPersonalityIdx - 1 + AI_PERSONALITY_KEYS.length) % AI_PERSONALITY_KEYS.length;
+					break;
+				case 'ArrowRight':
+					if (state.personalityRow === 0) state.aiPersonalityIdx = (state.aiPersonalityIdx + 1) % AI_PERSONALITY_KEYS.length;
+					break;
 				case 'Enter':
-					state.aiMode       = true;
-					state.menuSubState = 'main';
-					newGame();
-					state.pendingBeginning = true;
-					playBeginning();
+					if (state.personalityRow === 1) {
+						state.menuSubState  = 'main';
+						state.personalityRow = 0;
+					} else {
+						state.aiMode       = true;
+						state.menuSubState = 'main';
+						newGame();
+						state.pendingBeginning = true;
+						playBeginning();
+					}
 					break;
 			}
 		} else {
@@ -155,7 +166,8 @@ function keydown(e, newGame) {
 						state.menuSubState = 'settings';
 						state.settingsRow  = 0;
 					} else if (state.menuSelected === 1) {
-						state.menuSubState = 'personality';
+						state.menuSubState   = 'personality';
+						state.personalityRow = 0;
 					} else if (state.menuSelected === 0) {
 						state.aiMode = false;
 						newGame();
