@@ -1,6 +1,6 @@
 import { dir, TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, AI_PERSONALITIES, AI_PERSONALITY_KEYS } from './constants.js';
 import { state } from './state.js';
-import { delta, isPacWall, wrapCol } from './grid.js';
+import { delta, isPacWall, wrapCol, oppositeDir } from './grid.js';
 import { ghostLookahead } from './ghost.js';
 
 // ── Internal AI state ─────────────────────────────────────────────────────────
@@ -363,10 +363,3 @@ export function aiDecide() {
 	}
 }
 
-function oppositeDir(d) {
-	if (d === dir.left)  return dir.right;
-	if (d === dir.right) return dir.left;
-	if (d === dir.up)    return dir.down;
-	if (d === dir.down)  return dir.up;
-	return dir.none;
-}

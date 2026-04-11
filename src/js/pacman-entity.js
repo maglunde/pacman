@@ -3,7 +3,7 @@ import { state } from './state.js';
 import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
 import { getPacmanSpriteSet } from './sprite.js';
-import { addScore } from './game.js';
+import { addScore } from './game-states.js';
 
 state.pacman = {
 	col: 13, row: 23,
