@@ -39,7 +39,7 @@ const GHOST_RUN_FRAMES = [
 const SCARED_GHOST_FRAME = { sheet: PACMAN_SHEET_URL, x: 533, y: 139, w: 30, h: 30 };
 
 export function MenuShell({ children }) {
-	let fit = useFitScale();
+	let fit = useFitScale({ portraitMaxScale: 3 });
 	return (
 		<div className="overlay-screen overlay-screen--menu-main">
 			<div className="menu-fit-frame" ref={fit.frameRef}>
@@ -49,6 +49,22 @@ export function MenuShell({ children }) {
 					style={{ transform: `scale(${fit.scale})` }}
 				>
 					<MenuHeader />
+					{children}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export function ModalShell({ children, panelWidth = '20rem' }) {
+	let fit = useFitScale({ maxScale: 1, portraitMaxScale: 3 });
+	return (
+		<div className="overlay-screen overlay-screen--dim">
+			<div className="menu-fit-frame" ref={fit.frameRef}>
+				<div
+					ref={fit.contentRef}
+					style={{ width: panelWidth, transformOrigin: 'center center', transform: `scale(${fit.scale})` }}
+				>
 					{children}
 				</div>
 			</div>

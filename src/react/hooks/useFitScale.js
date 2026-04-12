@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
-export function useFitScale() {
+export function useFitScale({ maxScale = 1.4, portraitMaxScale = maxScale } = {}) {
 	let frameRef = useRef(null);
 	let contentRef = useRef(null);
 	let [scale, setScale] = useState(1);
@@ -17,7 +17,8 @@ export function useFitScale() {
 			let contentHeight = contentEl.offsetHeight;
 			if (!frameRect.width || !frameRect.height || !contentWidth || !contentHeight) return;
 
-			let nextScale = Math.min(frameRect.width / contentWidth, frameRect.height / contentHeight, 1.4);
+			let cap = frameRect.height > frameRect.width ? portraitMaxScale : maxScale;
+			let nextScale = Math.min(frameRect.width / contentWidth, frameRect.height / contentHeight, cap);
 			setScale(nextScale);
 		}
 

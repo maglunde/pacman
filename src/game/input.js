@@ -217,4 +217,27 @@ function keydown(e, newGame) {
 // newGame is passed as a callback to avoid a circular import with game.js
 export function initInput(newGame) {
 	document.addEventListener('keydown', function(e) { keydown(e, newGame); });
+
+	let startX, startY;
+	document.addEventListener('touchstart', function(e) {
+		startX = e.touches[0].clientX;
+		startY = e.touches[0].clientY;
+	}, { passive: true });
+	document.addEventListener('touchend', function(e) {
+		if (startX === undefined) return;
+		let dx = e.changedTouches[0].clientX - startX;
+		let dy = e.changedTouches[0].clientY - startY;
+		startX = undefined;
+		if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) {
+			// Tap: fire Enter if not on an interactive element (buttons handle themselves via onClick)
+			if (!e.target.closest('button, input, a, select')) {
+				keydown({ key: 'Enter', code: '' }, newGame);
+			}
+		} else {
+			let key = Math.abs(dx) > Math.abs(dy)
+				? (dx > 0 ? 'ArrowRight' : 'ArrowLeft')
+				: (dy > 0 ? 'ArrowDown' : 'ArrowUp');
+			keydown({ key, code: '' }, newGame);
+		}
+	}, { passive: true });
 }

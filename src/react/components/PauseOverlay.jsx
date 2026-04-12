@@ -1,11 +1,12 @@
 import React from 'react';
 import { continuePausedGame, focusPauseOption, quitToMenu } from '../../game/menu.js';
+import { ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
 import '../styles/PauseOverlay.scss';
 
 export function PauseOverlay({ snapshot }) {
 	return (
-		<div className="overlay-screen overlay-screen--dim">
+		<ModalShell panelWidth="18rem">
 			<div className="retro-panel retro-panel--modal retro-panel--narrow">
 				<div className="retro-title">PAUSE</div>
 				<div className="menu-button-list">
@@ -23,6 +24,6 @@ export function PauseOverlay({ snapshot }) {
 					/>
 				</div>
 			</div>
-		</div>
+		</ModalShell>
 	);
 }

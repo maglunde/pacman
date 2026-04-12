@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { quitToMenu, saveUsername } from '../../game/menu.js';
 import { submitScore } from '../../lib/scores.js';
 import { AI_PERSONALITY_KEYS } from '../../game/constants.js';
+import { ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
 import '../styles/GameOverOverlay.scss';
 
 export function GameOverOverlay({ snapshot }) {
-	const [name, setName]           = useState(snapshot.username || '');
-	const [submitted, setSubmitted] = useState(false);
+	const [name, setName]             = useState(snapshot.username || '');
+	const [submitted, setSubmitted]   = useState(false);
 	const [submitting, setSubmitting] = useState(false);
-	const [error, setError]         = useState(null);
+	const [error, setError]           = useState(null);
 
 	const ready = snapshot.stateTimer <= 0;
 
@@ -20,6 +21,18 @@ export function GameOverOverlay({ snapshot }) {
 			.then(function() { setSubmitted(true); })
 			.catch(function(err) { setError(err?.message || 'SUBMIT FAILED'); });
 	}, [ready]);
+
+	useEffect(function() {
+		if (!snapshot.aiMode || !ready) return;
+		function onKey(e) {
+			if (e.key === 'Enter') {
+				e.stopPropagation();
+				quitToMenu();
+			}
+		}
+		document.addEventListener('keydown', onKey, true);
+		return function() { document.removeEventListener('keydown', onKey, true); };
+	}, [snapshot.aiMode, ready]);
 
 	async function handleSubmit() {
 		if (!name.trim() || submitting) return;
@@ -43,7 +56,7 @@ export function GameOverOverlay({ snapshot }) {
 	if (snapshot.aiMode) {
 		const aiName = 'AI:' + AI_PERSONALITY_KEYS[snapshot.aiPersonalityIdx].toUpperCase();
 		return (
-			<div className="overlay-screen overlay-screen--dim">
+			<ModalShell>
 				<div className="retro-panel retro-panel--modal">
 					<div className="gameover-title">GAME OVER</div>
 					<div className="gameover-score">SCORE: {snapshot.score}</div>
@@ -55,12 +68,12 @@ export function GameOverOverlay({ snapshot }) {
 						</div>
 					)}
 				</div>
-			</div>
+			</ModalShell>
 		);
 	}
 
 	return (
-		<div className="overlay-screen overlay-screen--dim">
+		<ModalShell>
 			<div className="retro-panel retro-panel--modal">
 				<div className="gameover-title">GAME OVER</div>
 				<div className="gameover-score">SCORE: {snapshot.score}</div>
@@ -102,7 +115,7 @@ export function GameOverOverlay({ snapshot }) {
 					<div className="gameover-label">SAVED!</div>
 				)}
 			</div>
-		</div>
+		</ModalShell>
 	);
 
 	function handleSkip() {

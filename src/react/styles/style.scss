@@ -1,5 +1,12 @@
 @use 'variables';
 
+:root {
+	--game-canvas-width: 1800;
+	--game-canvas-height: 1200;
+	--game-board-width: 896;
+	--game-board-height: 992;
+}
+
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -16,6 +23,7 @@ body {
 	color: var(--color-text);
 	font-family: 'Press Start 2P', monospace;
 	overflow: hidden;
+	touch-action: none;
 }
 
 button {
@@ -45,4 +53,48 @@ button {
 .canvas-host canvas {
 	display: block;
 	image-rendering: pixelated;
+}
+
+// Portrait: scale canvas so the board (896px wide) fills 100vw
+@media (orientation: portrait) {
+	.game-scene {
+		width: 100vw;
+		height: min(100dvh, calc(100vw * var(--game-canvas-height) / var(--game-board-width)));
+		overflow: hidden;
+	}
+
+	.canvas-host {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.canvas-host canvas {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: calc(100vw * var(--game-canvas-width) / var(--game-board-width));
+		height: calc(100vw * var(--game-canvas-height) / var(--game-board-width));
+		transform: translate(-50%, -50%);
+	}
+}
+
+// Landscape mobile: scale canvas so the board (992px tall) fills 100vh
+@media (orientation: landscape) and (pointer: coarse) {
+	.game-scene {
+		overflow: hidden;
+	}
+
+	.canvas-host {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.canvas-host canvas {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: calc(100vh * var(--game-canvas-width) / var(--game-board-height));
+		height: calc(100vh * var(--game-canvas-height) / var(--game-board-height));
+		transform: translate(-50%, -50%);
+	}
 }

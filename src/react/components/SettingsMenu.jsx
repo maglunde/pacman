@@ -8,7 +8,7 @@ import {
 	focusSettingsRow,
 	getVolumeShortcutLabel,
 } from '../../game/menu.js';
-import { MenuShell } from './MenuAnimation.jsx';
+import { MenuShell, ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
 import { SettingsRow } from './SettingsRow.jsx';
 import '../styles/SettingsOverlay.scss';
@@ -61,7 +61,7 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 	}
 
 	return (
-		<div className="overlay-screen overlay-screen--dim">
+		<ModalShell>
 			<div className="retro-panel retro-panel--modal">
 				<div className="retro-title">SETTINGS</div>
 				<div className="settings-list">
@@ -86,7 +86,7 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 				</div>
 				<button type="button" className="panel-close" onClick={closeSettingsOverlay}>CLOSE</button>
 			</div>
-		</div>
+		</ModalShell>
 	);
 }
 

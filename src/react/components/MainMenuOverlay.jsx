@@ -20,7 +20,7 @@ export function MainMenuOverlay({ snapshot }) {
 		);
 	}
 
-	let fit = useFitScale();
+	let fit = useFitScale({ portraitMaxScale: 3 });
 
 	return (
 		<div className="overlay-screen overlay-screen--menu-main">
