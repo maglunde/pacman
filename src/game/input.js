@@ -100,13 +100,7 @@ function keydown(e, newGame) {
 		if (e.code === 'KeyO') { state.settingsOverlayActive = false; state.paused = false; resumeAudio(); return; }
 		return; // block all other keys while settings overlay is open
 	}
-	if (state.gameState === 'gameover' && state.stateTimer <= 0) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			quitToMenu();
-			return;
-		}
-		// fall through to allow shortcuts (M, Q, speed, etc.)
-	}
+	if (state.gameState === 'gameover') return; // GameOverOverlay håndterer all input
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'settings') {
 			switch (e.key) {

@@ -1,19 +1,11 @@
-import { supabase } from './supabase.js';
+import { getSupabase } from './supabase.js';
 
 const LEADERBOARD_LIMIT = 10;
-const USER_ID_KEY = 'pacman-user-id';
-
-function getUserId() {
-	let id = localStorage.getItem(USER_ID_KEY);
-	if (!id) {
-		id = crypto.randomUUID();
-		localStorage.setItem(USER_ID_KEY, id);
-	}
-	return id;
-}
 
 export async function submitScore({ displayName, score, level }) {
-	const { error } = await supabase.from('anonymous_scores').insert({
+	const client = getSupabase();
+	if (!client) throw new Error('Leaderboard not available');
+	const { error } = await client.from('anonymous_scores').insert({
 		display_name: displayName,
 		score,
 		level,
@@ -22,9 +14,13 @@ export async function submitScore({ displayName, score, level }) {
 }
 
 export async function fetchTopScores(limit = LEADERBOARD_LIMIT) {
-	const { data, error } = await supabase
+	const client = getSupabase();
+	if (!client) throw new Error('Leaderboard not available');
+	const { data, error } = await client
 		.from('anonymous_leaderboard')
 		.select('display_name, score, level')
+		.order('score', { ascending: false })
+		.order('display_name', { ascending: true })
 		.limit(limit);
 	if (error) throw error;
 	return data;
