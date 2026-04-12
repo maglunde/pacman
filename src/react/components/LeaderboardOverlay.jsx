@@ -8,7 +8,7 @@ import '../styles/LeaderboardOverlay.scss';
 export function LeaderboardOverlay() {
 	const [rows, setRows]         = useState(null);
 	const [error, setError]       = useState(null);
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = useState(-1); // -1 = ingenting valgt, rows.length = BACK
 
 	useEffect(function() {
 		fetchTopScores()
@@ -20,12 +20,12 @@ export function LeaderboardOverlay() {
 		function onKey(e) {
 			if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
 				e.stopPropagation();
-				const count = rows ? rows.length : 0;
-				if (count === 0) return;
+				const count = rows ? rows.length + 1 : 1; // +1 for BACK
 				setSelected(function(s) {
+					const start = s === -1 ? 0 : s;
 					return e.key === 'ArrowUp'
-						? (s - 1 + count) % count
-						: (s + 1) % count;
+						? (start - 1 + count) % count
+						: (start + 1) % count;
 				});
 			}
 			if (e.key === 'Enter' || e.key === 'Escape') {
@@ -36,6 +36,8 @@ export function LeaderboardOverlay() {
 		document.addEventListener('keydown', onKey, true);
 		return function() { document.removeEventListener('keydown', onKey, true); };
 	}, [rows]);
+
+	const backSelected = rows !== null && selected === rows.length;
 
 	return (
 		<MenuShell>
@@ -60,8 +62,8 @@ export function LeaderboardOverlay() {
 						<tbody>
 							{rows.map(function(row, i) {
 								let className = '';
-								if (i === selected) className = 'leaderboard-row--selected';
-								else if (i === 0)   className = 'leaderboard-row--gold';
+								if (i === selected)      className = 'leaderboard-row--selected';
+								else if (i === 0)        className = 'leaderboard-row--gold';
 								return (
 									<tr key={i} className={className}>
 										<td>{i + 1}</td>
@@ -76,7 +78,7 @@ export function LeaderboardOverlay() {
 				)}
 			</div>
 			<div className="menu-button-list">
-				<MenuButton label="BACK" active={false} onClick={closeMenuSubPage} />
+				<MenuButton label="BACK" active={backSelected} onClick={closeMenuSubPage} />
 			</div>
 		</MenuShell>
 	);
