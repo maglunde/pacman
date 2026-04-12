@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { quitToMenu, saveUsername } from '../../game/menu.js';
 import { submitScore } from '../../lib/scores.js';
-import { AI_PERSONALITY_KEYS } from '../../game/constants.js';
+import { AI_PERSONALITIES, AI_PERSONALITY_KEYS } from '../../game/constants.js';
 import { ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
 import '../styles/GameOverOverlay.scss';
@@ -13,14 +13,14 @@ export function GameOverOverlay({ snapshot }) {
 	const [error, setError]           = useState(null);
 
 	const ready = snapshot.stateTimer <= 0;
+	const aiName = getAiDisplayName(snapshot.aiPersonalityIdx);
 
 	useEffect(function() {
 		if (!ready || !snapshot.aiMode || submitted || submitting) return;
-		const aiName = 'AI:' + AI_PERSONALITY_KEYS[snapshot.aiPersonalityIdx].toUpperCase();
 		submitScore({ displayName: aiName, score: snapshot.score, level: snapshot.level })
 			.then(function() { setSubmitted(true); })
 			.catch(function(err) { setError(err?.message || 'SUBMIT FAILED'); });
-	}, [ready]);
+	}, [aiName, ready, snapshot.aiMode, snapshot.level, snapshot.score, submitted, submitting]);
 
 	useEffect(function() {
 		if (!snapshot.aiMode || !ready) return;
@@ -54,7 +54,6 @@ export function GameOverOverlay({ snapshot }) {
 	}
 
 	if (snapshot.aiMode) {
-		const aiName = 'AI:' + AI_PERSONALITY_KEYS[snapshot.aiPersonalityIdx].toUpperCase();
 		return (
 			<ModalShell>
 				<div className="retro-panel retro-panel--modal">
@@ -62,7 +61,7 @@ export function GameOverOverlay({ snapshot }) {
 					<div className="gameover-score">SCORE: {snapshot.score}</div>
 					{ready && (
 						<div className="gameover-submit">
-							{submitted && <div className="gameover-label">SAVED AS {aiName}</div>}
+							{submitted && <div className="gameover-label">SAVED AS <span className="gameover-name">{aiName}</span></div>}
 							{error && <div className="gameover-error">{error}</div>}
 							<MenuButton label="RETURN TO MENU" active={true} onClick={quitToMenu} />
 						</div>
@@ -121,4 +120,10 @@ export function GameOverOverlay({ snapshot }) {
 	function handleSkip() {
 		quitToMenu();
 	}
+}
+
+function getAiDisplayName(aiPersonalityIdx) {
+	const personalityKey = AI_PERSONALITY_KEYS[aiPersonalityIdx];
+	const personalityLabel = AI_PERSONALITIES[personalityKey]?.label || personalityKey;
+	return 'AI:' + personalityLabel;
 }
