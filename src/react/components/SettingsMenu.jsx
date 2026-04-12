@@ -39,7 +39,7 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 						onNext={function() { focusSettingsRow(1); adjustSetting(1, 1); }}
 					/>
 					<SettingsRow
-						label="MAP"
+						label="STARTMAP"
 						value={MAPS[snapshot.mapIdx].name}
 						shortcut=""
 						active={snapshot.settingsRow === 2}
@@ -84,7 +84,6 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 						onNext={function() { focusSettingsRow(1); adjustSetting(1, 1); }}
 					/>
 				</div>
-				<div className="retro-hint">↑ ↓ select • ← → adjust • O / Esc close</div>
 				<button type="button" className="panel-close" onClick={closeSettingsOverlay}>CLOSE</button>
 			</div>
 		</div>

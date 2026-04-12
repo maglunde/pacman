@@ -15,6 +15,14 @@ const PACMAN_RIGHT_FRAMES = [
 	{ sheet: MSPACMAN_SHEET_URL, x: 472, y: 144, w: 14, h: 14 },
 	{ sheet: MSPACMAN_SHEET_URL, x: 456, y: 144, w: 14, h: 14 },
 ];
+const MSPACMAN_LEFT_FRAMES = [
+	{ sheet: MSPACMAN_SHEET_URL, x: 457, y: 17, w: 14, h: 14 },
+	{ sheet: MSPACMAN_SHEET_URL, x: 473, y: 17, w: 14, h: 14 },
+];
+const MSPACMAN_RIGHT_FRAMES = [
+	{ sheet: MSPACMAN_SHEET_URL, x: 457, y: 1, w: 14, h: 14 },
+	{ sheet: MSPACMAN_SHEET_URL, x: 473, y: 1, w: 14, h: 14 },
+];
 const GHOST_ROW_FRAMES = [
 	{ sheet: MSPACMAN_SHEET_URL, x: 456, y: 64,  w: 16, h: 16, colorVar: '--color-blinky', name: 'SHADOW',  nick: '"BLINKY"' },
 	{ sheet: MSPACMAN_SHEET_URL, x: 456, y: 80,  w: 16, h: 16, colorVar: '--color-pinky',  name: 'SPEEDY',  nick: '"PINKY"' },
@@ -74,25 +82,27 @@ export function MenuGhostRoster() {
 	);
 }
 
-export function MenuAnimation({ frames, menuStartFrame }) {
+export function MenuAnimation({ frames, menuStartFrame, isMsPacman }) {
 	let animationDelay = 60;
 	let menuAge = Math.max(0, frames - menuStartFrame);
 	let mouthFrame = Math.floor(frames / 5) % 2;
 	let bob = Math.floor(frames / 10) % 2 === 0 ? 0 : 2;
-	let phase0Duration = 520;
-	let phase1Duration = 700;
-	let cycleLength = phase0Duration + phase1Duration;
+	let phase0Duration = 720;
+	let pauseDuration = 180;
+	let phase1Duration = 720;
+	let cycleLength = phase0Duration + pauseDuration + phase1Duration;
 	let animationFrame = Math.max(0, menuAge - animationDelay) % cycleLength;
-	let isChasePhase = animationFrame >= phase0Duration;
-	let phaseFrame = isChasePhase ? animationFrame - phase0Duration : animationFrame;
-	let travelWidth = 640;
-	let startX = 660;
-	let endX = -220;
+	let isChasePhase = animationFrame >= phase0Duration + pauseDuration;
+	let phaseFrame = isChasePhase ? animationFrame - phase0Duration - pauseDuration : animationFrame;
+	let startX = 1500;
+	let endX = -420;
 	let percent = isChasePhase ? phaseFrame / phase1Duration : phaseFrame / phase0Duration;
 	let animationX = isChasePhase
 		? endX + (startX - endX) * percent
 		: startX + (endX - startX) * percent;
-	let pacmanFrame = isChasePhase ? PACMAN_RIGHT_FRAMES[mouthFrame] : PACMAN_LEFT_FRAMES[mouthFrame];
+	let leftFrames  = isMsPacman ? MSPACMAN_LEFT_FRAMES  : PACMAN_LEFT_FRAMES;
+	let rightFrames = isMsPacman ? MSPACMAN_RIGHT_FRAMES : PACMAN_RIGHT_FRAMES;
+	let pacmanFrame = isChasePhase ? rightFrames[mouthFrame] : leftFrames[mouthFrame];
 
 	return (
 		<div className="menu-animation-strip">

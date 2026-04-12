@@ -93,13 +93,13 @@ export function adjustSetting(row, d) {
 	if (row === 0) {
 		state.gameSpeed = Math.max(SPEED_MIN, Math.min(SPEED_MAX, Math.round((state.gameSpeed + d * 0.25) * 100) / 100));
 		saveSpeed();
-		state.settingToast = { text: state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7', timer: 60 };
+		if (!state.settingsOverlayActive) state.settingToast = { text: state.gameSpeed.toFixed(2).replace(/\.?0+$/, '') + '\u00D7', timer: 60 };
 	} else if (row === 1) {
 		state.muted = false;
 		state.volume = Math.max(0, Math.min(1, Math.round((state.volume + d * 0.1) * 10) / 10));
 		saveVolume();
 		updateLoopVolume();
-		state.settingToast = { text: Math.round(state.volume * 100) + '%', timer: 60 };
+		if (!state.settingsOverlayActive) state.settingToast = { text: Math.round(state.volume * 100) + '%', timer: 60 };
 	}
 }
 

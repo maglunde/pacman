@@ -53,7 +53,7 @@ export function MainMenuOverlay({ snapshot }) {
 					</div>
 					{/*<div className="menu-divider"></div>*/}
 					<MenuGhostRoster />
-					<MenuAnimation frames={snapshot.frames} menuStartFrame={snapshot.menuStartFrame} />
+					<MenuAnimation frames={snapshot.frames} menuStartFrame={snapshot.menuStartFrame} isMsPacman={snapshot.mapIdx > 0} />
 				</div>
 			</div>
 		</div>
