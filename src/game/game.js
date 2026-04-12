@@ -25,7 +25,7 @@ import { drawHUD } from './hud.js';
 
 function levelSpeedFactor() { return 1 + (state.level - 1) * 0.06; }
 
-function update() {
+export function tickGame() {
 	state.frames++;
 
 	if (state.gameState === 'ready') { if (state.aiMode) state.gameState = 'playing'; return; }
@@ -199,7 +199,7 @@ function run() {
 			if (state.gameState === 'playing' || state.gameState === 'ready' ||
 				state.gameState === 'dead' || state.gameState === 'gameover' ||
 				state.gameState === 'win' || state.gameState === 'menu') {
-				update();
+				tickGame();
 			}
 			accumulator -= TICK_MS;
 		}
