@@ -17,7 +17,7 @@ npm run dev
 
 - **Play** — classic Pac-Man with arrow keys
 - **Watch AI** — AI agent with selectable personality (Coward, Balanced, Aggressive, Greedy)
-- **2-player** — one player controls Pac-Man with arrow keys, another controls a ghost with WASD (Tab to select, Enter to take over)
+- **2-player** — Pac-Man on arrow keys, ghost on WASD; or take over a ghost from the AI with arrow keys (Tab to select, Enter to take over)
 
 ## Leaderboard
 
