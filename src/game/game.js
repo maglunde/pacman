@@ -1,4 +1,4 @@
-import { initSprites, s_map, s_ready } from './sprite.js';
+import { initSprites, s_map, s_ready, s_gameover } from './sprite.js';
 import {
 	TILE,
 	FRUIT_DOT_THRESHOLD, FRUIT_DURATION, FRUIT_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
@@ -146,6 +146,11 @@ function render() {
 	if (state.gameState === 'ready') {
 		let cx = state.mapOffX + (state.GRID_COLS * TILE) / 2;
 		s_ready.draw(ctx, cx - 48, state.mapOffY + 16 * TILE, 96, 17);
+	}
+
+	if (state.gameState === 'gameover') {
+		let cx = state.mapOffX + (state.GRID_COLS * TILE) / 2;
+		s_gameover.draw(ctx, cx - 82, state.mapOffY + 16 * TILE, 164, 25);
 	}
 
 	if (state.cherry) {

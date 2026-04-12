@@ -17,7 +17,7 @@ export function OverlayUi() {
 			{snapshot.gameState === 'menu' ? renderMenuRoute(snapshot) : null}
 			{snapshot.escapeMenuActive ? <PauseOverlay snapshot={snapshot} /> : null}
 			{snapshot.settingsOverlayActive ? <SettingsMenu snapshot={snapshot} /> : null}
-			{snapshot.gameState === 'gameover' ? <GameOverOverlay snapshot={snapshot} /> : null}
+			{/*{snapshot.gameState === 'gameover' ? <GameOverOverlay snapshot={snapshot} /> : null}*/}
 			{snapshot.gameState === 'win' ? <CenterNotice text={`LEVEL ${snapshot.level} COMPLETE!`} accent="success" /> : null}
 			{snapshot.gameState !== 'menu' && snapshot.settingToast.timer > 0 ? <SettingToast text={snapshot.settingToast.text} /> : null}
 		</div>

@@ -7,7 +7,6 @@ export function GameOverOverlay({ snapshot }) {
 	return (
 		<div className="overlay-screen overlay-screen--dim">
 			<div className="retro-panel retro-panel--modal">
-				<div className="logo-title logo-title--small">GAME OVER</div>
 				<div className="retro-score">SCORE: {snapshot.score}</div>
 				{snapshot.stateTimer <= 0 ? (
 					<MenuButton label="RETURN TO MENU" active={false} onClick={quitToMenu} />

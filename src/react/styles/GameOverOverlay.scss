@@ -1,19 +1,5 @@
-.logo-title,
 .retro-score {
 	text-transform: uppercase;
-}
-
-.logo-title {
-	color: var(--color-pacman);
-	font-size: clamp(1.4rem, 4vw, 3rem);
-	line-height: 1.1;
-}
-
-.logo-title--small {
-	font-size: clamp(1rem, 2.6vw, 1.7rem);
-}
-
-.retro-score {
 	color: var(--color-gray);
 	font-size: clamp(0.58rem, 1vw, 0.82rem);
 }
