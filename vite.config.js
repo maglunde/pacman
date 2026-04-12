@@ -7,6 +7,9 @@ const { version } = JSON.parse(readFileSync('./package.json', 'utf8'))
 export default defineConfig({
   plugins: [react()],
   base: '/pacman/',
+  server: {
+    port: 9001,
+  },
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
