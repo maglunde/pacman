@@ -31,21 +31,21 @@ function update() {
 	if (state.paused) return;
 
 	if (state.gameState === 'dead') {
-		if ((state.stateTimer -= state.gameSpeed) <= 0) startReady();
+		if ((state.stateTimer -= state.effectiveSpeed) <= 0) startReady();
 		return;
 	}
 	if (state.gameState === 'gameover') {
-		if (state.stateTimer > 0) state.stateTimer -= state.gameSpeed;
+		if (state.stateTimer > 0) state.stateTimer -= state.effectiveSpeed;
 		return;
 	}
 	if (state.gameState === 'win') {
-		if ((state.stateTimer -= state.gameSpeed) <= 0) nextLevel();
+		if ((state.stateTimer -= state.effectiveSpeed) <= 0) nextLevel();
 		return;
 	}
 	if (state.gameState !== 'playing') return;
 
 	if (state.ghostEatenFreezeTimer > 0) {
-		state.ghostEatenFreezeTimer -= state.gameSpeed;
+		state.ghostEatenFreezeTimer -= state.effectiveSpeed;
 		if (state.ghostEatenFreezeTimer <= 0) {
 			state.ghosts.forEach(function(g) {
 				if (g.pendingReturn) {
@@ -60,7 +60,7 @@ function update() {
 	}
 
 	if (state.scaredTimer > 0) {
-		state.scaredTimer -= state.gameSpeed;
+		state.scaredTimer -= state.effectiveSpeed;
 		if (state.scaredTimer <= 0) {
 			state.scaredTimer = 0;
 			state.ghostCombo = 0;
@@ -80,7 +80,7 @@ function update() {
 	}
 
 	if (state.scaredTimer === 0 && state.scatterPhase < SCATTER_CHASE_PHASES.length - 1) {
-		state.scatterTimer -= state.gameSpeed;
+		state.scatterTimer -= state.effectiveSpeed;
 		if (state.scatterTimer <= 0) {
 			state.scatterPhase++;
 			state.scatterTimer = SCATTER_CHASE_PHASES[state.scatterPhase];
@@ -93,7 +93,7 @@ function update() {
 	if (state.settingToast.timer > 0) state.settingToast.timer--;
 
 	if (state.cherry) {
-		state.cherry.timer -= state.gameSpeed;
+		state.cherry.timer -= state.effectiveSpeed;
 		if (state.cherry.timer <= 0) {
 			state.cherry = null;
 		} else if (state.cherry.col === state.pacman.col && state.cherry.row === state.pacman.row) {
@@ -117,7 +117,7 @@ function update() {
 
 	if (state.aiMode) aiDecide();
 	state.pacman.update();
-	state.ghosts.forEach(function(g) { g.update(levelSpeedFactor() * state.gameSpeed); });
+	state.ghosts.forEach(function(g) { g.update(levelSpeedFactor() * state.effectiveSpeed); });
 
 	checkCollisions();
 }
@@ -168,20 +168,45 @@ function render() {
 	drawHUD();
 }
 
+const TICK_MS = 1000 / 60;
+
 function run() {
 	newGame();
 	state.gameState = 'menu';
 	state.menuStartFrame = 0;
-	let loop = function() {
-		if (state.gameState === 'playing' || state.gameState === 'ready' ||
-			state.gameState === 'dead' || state.gameState === 'gameover' ||
-			state.gameState === 'win' || state.gameState === 'menu') {
-			update();
+
+	let lastTimestamp = null;
+	let accumulator = 0;
+
+	let loop = function(timestamp) {
+		if (lastTimestamp === null) {
+			lastTimestamp = timestamp;
+			window.requestAnimationFrame(loop);
+			return;
 		}
+
+		let elapsed = Math.min(timestamp - lastTimestamp, TICK_MS * 5);
+		lastTimestamp = timestamp;
+		accumulator += elapsed;
+
+		while (accumulator >= TICK_MS) {
+			if (state.gameState === 'playing' || state.gameState === 'ready' ||
+				state.gameState === 'dead' || state.gameState === 'gameover' ||
+				state.gameState === 'win' || state.gameState === 'menu') {
+				update();
+			}
+			accumulator -= TICK_MS;
+		}
+
 		render();
 		window.requestAnimationFrame(loop);
 	};
-	loop();
+
+	document.addEventListener('visibilitychange', function() {
+		if (!document.hidden) lastTimestamp = null;
+	});
+
+	window.requestAnimationFrame(loop);
 }
 
 export function mountGame(containerEl) {

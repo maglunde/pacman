@@ -103,7 +103,7 @@ export function makeGhost(config) {
 			this.returning    = false;
 			this.pendingReturn = false;
 			this.bounceDir    = this.houseBounceDir;
-			this.releaseFrame = state.frames + this.releaseDelay / state.gameSpeed;
+			this.releaseFrame = state.frames + this.releaseDelay / state.effectiveSpeed;
 			this.nextDir      = dir.none;
 			let p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
@@ -115,7 +115,7 @@ export function makeGhost(config) {
 
 			// ── Returning to house after being eaten ──────────────────────────
 			if (this.returning) {
-				let rspd = GHOST_SPEED * 3 * state.gameSpeed;
+				let rspd = GHOST_SPEED * 3 * state.effectiveSpeed;
 				if (!this.moving) {
 					if (this.returnPath && this.returnPathIdx < this.returnPath.length) {
 						let next = this.returnPath[this.returnPathIdx];
@@ -131,7 +131,7 @@ export function makeGhost(config) {
 						this.returning     = false;
 						this.exited        = false;
 						this.immune        = state.scaredTimer > 0;
-						this.releaseFrame  = state.frames + GHOST_REGEN_DELAY / state.gameSpeed;
+						this.releaseFrame  = state.frames + GHOST_REGEN_DELAY / state.effectiveSpeed;
 						this.returnPath    = null;
 						this.returnPathIdx = 0;
 						this.bounceDir     = this.houseBounceDir;
@@ -153,7 +153,7 @@ export function makeGhost(config) {
 					applyMove(this, 0, this.bounceDir === dir.up ? -1 : 1);
 				}
 				if (this.moving) {
-					moveTowardTarget(this, GHOST_SPEED * state.gameSpeed);
+					moveTowardTarget(this, GHOST_SPEED * state.effectiveSpeed);
 				}
 				return;
 			}

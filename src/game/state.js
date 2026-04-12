@@ -78,6 +78,7 @@ export const state = {
 	volume:        parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
 	muted:         localStorage.getItem('pacman-muted') === '1',
 	gameSpeed:     parseFloat(localStorage.getItem('pacman-speed') || '1'),
+	get effectiveSpeed() { return this.gameSpeed * 2; },
 	pendingBeginning: false,
 	activeLoopTrack: null,  // 'fright' | 'eyes' | null
 	loopNodes:       null,  // { intro: AudioBufferSourceNode, loop: AudioBufferSourceNode, gain: GainNode }

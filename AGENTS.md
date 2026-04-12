@@ -64,7 +64,8 @@ Rendrer overlay-UI over canvas. Les aldri fra React-state for spilldata — bruk
 - **Kart-konfigurasjon i `MAPS[]`** (`constants.js`). Hvert kart angir sprite-koordinater, start-posisjoner, big-dot-plasseringer og ghost house-bounds. Alle kart bruker samme `DEFAULT_GHOST_LAYOUT`.
 - **AI-personligheter** definert i `AI_PERSONALITIES` i `constants.js` — parametere styrer flukt-terskel, lookahead-dybde, klynge-prioriotering osv.
 - **Scatter/chase-syklus** styres av `SCATTER_CHASE_PHASES` — alternerende faser, siste er `Infinity`.
-- **Spill-hastighet** er en multiplikator (`state.gameSpeed`), lagret i `localStorage`. Alle tidsavhengige operasjoner multipliserer med denne.
+- **Spill-hastighet** er en bruker-synlig multiplikator (`state.gameSpeed`, skala 0.25–8×), lagret i `localStorage`. All intern spillogikk bruker `state.effectiveSpeed` (= `gameSpeed * 2`) for å kompensere for at game loop-en kjører på 60 ticks/sek uavhengig av skjermens Hz. Endre aldri `gameSpeed` direkte i logikk — bruk `effectiveSpeed`.
+- **Game loop** bruker fixed timestep med accumulator (`TICK_MS = 1000/60`). `update()` kjøres et heltall ganger per `requestAnimationFrame`-callback basert på faktisk forløpt tid. Maks 5 catch-up-ticks per frame. `visibilitychange` nullstiller tidsstempel for å unngå hopp etter tab-switch.
 - **Canvas er 1800×1200 px** internt, skalert ned til vinduet via CSS (`useFitScale`). Alt spill-rendering bruker `ctx.scale(2, 2)` for kartet.
 
 ## Persistens (localStorage)

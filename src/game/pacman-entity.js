@@ -48,7 +48,7 @@ state.pacman = {
 		}
 
 		if (this.moving) {
-			let pacSpd = (state.dots[this.row][this.col] === 1 ? SPEED * PACMAN_DOT_SPEED_FACTOR : SPEED) * state.gameSpeed;
+			let pacSpd = (state.dots[this.row][this.col] === 1 ? SPEED * PACMAN_DOT_SPEED_FACTOR : SPEED) * state.effectiveSpeed;
 			if (moveTowardTarget(this, pacSpd)) {
 				if (state.dots[this.row][this.col] === 1) {
 					state.dots[this.row][this.col] = 0;
