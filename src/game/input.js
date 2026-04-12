@@ -121,10 +121,8 @@ function keydown(e, newGame) {
 					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx + 1) % MAPS.length; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
 					break;
 				case 'Enter':
-					if (state.settingsRow === 3) {
-						state.menuSubState = 'main';
-						state.settingsRow = 0;
-					}
+					state.menuSubState = 'main';
+					state.settingsRow = 0;
 					break;
 			}
 		} else if (state.menuSubState === 'personality') {
