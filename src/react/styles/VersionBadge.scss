@@ -1,0 +1,10 @@
+.version-badge {
+	position: absolute;
+	bottom: 0.4em;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 0.45em;
+	color: var(--color-gray);
+	pointer-events: none;
+	user-select: none;
+}
