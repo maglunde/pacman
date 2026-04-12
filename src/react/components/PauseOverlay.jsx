@@ -6,7 +6,7 @@ import '../styles/PauseOverlay.scss';
 
 export function PauseOverlay({ snapshot }) {
 	return (
-		<ModalShell panelWidth="18rem">
+		<ModalShell panelWidth="18rem" testId="pause-modal">
 			<div className="retro-panel retro-panel--modal retro-panel--narrow">
 				<div className="retro-title">PAUSE</div>
 				<div className="menu-button-list">

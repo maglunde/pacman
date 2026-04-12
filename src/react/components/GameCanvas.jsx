@@ -9,5 +9,5 @@ export function GameCanvas() {
 		mountGame(hostRef.current);
 	}, []);
 
-	return <div className="canvas-host" ref={hostRef}></div>;
+	return <div className="canvas-host" data-testid="canvas-host" ref={hostRef}></div>;
 }

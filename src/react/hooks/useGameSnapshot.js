@@ -21,7 +21,7 @@ export function useGameSnapshot() {
 	return snapshot;
 }
 
-function readSnapshot() {
+export function readSnapshot() {
 	return {
 		gameState: state.gameState,
 		engineReady: state.engineReady,

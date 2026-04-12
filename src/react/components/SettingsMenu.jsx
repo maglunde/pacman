@@ -17,7 +17,7 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 	if (menuMode) {
 		let activeRowCount = 4;
 		return (
-			<MenuShell>
+			<MenuShell testId="settings-menu">
 				<div className="retro-title">SETTINGS</div>
 				<div className="settings-list">
 					<SettingsRow
@@ -61,7 +61,7 @@ export function SettingsMenu({ snapshot, menuMode = false }) {
 	}
 
 	return (
-		<ModalShell>
+		<ModalShell testId="settings-modal">
 			<div className="retro-panel retro-panel--modal">
 				<div className="retro-title">SETTINGS</div>
 				<div className="settings-list">

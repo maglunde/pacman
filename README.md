@@ -13,6 +13,17 @@ npm install
 npm run dev
 ```
 
+## Testing
+
+```bash
+npm run test:unit
+npm run test:e2e
+npm test
+```
+
+- `Vitest` covers game state transitions, menu actions, overlay routing, and responsive scaling logic.
+- `Playwright` covers the main menu, settings, leaderboard, AI personality menu, pause overlay, in-game settings, win notice, game-over submit flow, gameplay start, and mobile menu scaling.
+
 ## Modes
 
 - **Play** — classic Pac-Man with arrow keys

@@ -15,7 +15,7 @@ export function PersonalityMenu({ snapshot }) {
 	let personality = AI_PERSONALITIES[personalityKey];
 
 	return (
-		<MenuShell>
+		<MenuShell testId="personality-menu">
 			<div className="retro-title">CHOOSE AI STYLE</div>
 			<div>
 				<div

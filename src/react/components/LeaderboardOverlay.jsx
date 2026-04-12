@@ -40,7 +40,7 @@ export function LeaderboardOverlay() {
 	const backSelected = rows !== null && selected === rows.length;
 
 	return (
-		<MenuShell>
+		<MenuShell testId="leaderboard-menu">
 			<div className="retro-title">LEADERBOARD</div>
 			<div className="leaderboard-body">
 				{error ? (

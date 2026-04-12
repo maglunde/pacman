@@ -38,13 +38,14 @@ const GHOST_RUN_FRAMES = [
 ];
 const SCARED_GHOST_FRAME = { sheet: PACMAN_SHEET_URL, x: 533, y: 139, w: 30, h: 30 };
 
-export function MenuShell({ children }) {
+export function MenuShell({ children, testId = 'menu-shell' }) {
 	let fit = useFitScale({ portraitMaxScale: 3 });
 	return (
-		<div className="overlay-screen overlay-screen--menu-main">
-			<div className="menu-fit-frame" ref={fit.frameRef}>
+		<div className="overlay-screen overlay-screen--menu-main" data-testid={testId}>
+			<div className="menu-fit-frame" data-testid={`${testId}-frame`} ref={fit.frameRef}>
 				<div
 					className="retro-panel retro-panel--menu-shell"
+					data-testid={`${testId}-panel`}
 					ref={fit.contentRef}
 					style={{ transform: `scale(${fit.scale})` }}
 				>
@@ -56,12 +57,13 @@ export function MenuShell({ children }) {
 	);
 }
 
-export function ModalShell({ children, panelWidth = '20rem' }) {
+export function ModalShell({ children, panelWidth = '20rem', testId = 'modal-shell' }) {
 	let fit = useFitScale({ maxScale: 1, portraitMaxScale: 3 });
 	return (
-		<div className="overlay-screen overlay-screen--dim">
-			<div className="menu-fit-frame" ref={fit.frameRef}>
+		<div className="overlay-screen overlay-screen--dim" data-testid={testId}>
+			<div className="menu-fit-frame" data-testid={`${testId}-frame`} ref={fit.frameRef}>
 				<div
+					data-testid={`${testId}-panel`}
 					ref={fit.contentRef}
 					style={{ width: panelWidth, transformOrigin: 'center center', transform: `scale(${fit.scale})` }}
 				>

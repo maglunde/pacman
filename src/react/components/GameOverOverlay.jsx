@@ -55,7 +55,7 @@ export function GameOverOverlay({ snapshot }) {
 
 	if (snapshot.aiMode) {
 		return (
-			<ModalShell>
+			<ModalShell testId="gameover-modal">
 				<div className="retro-panel retro-panel--modal">
 					<div className="gameover-title">GAME OVER</div>
 					<div className="gameover-score">SCORE: {snapshot.score}</div>
@@ -72,7 +72,7 @@ export function GameOverOverlay({ snapshot }) {
 	}
 
 	return (
-		<ModalShell>
+		<ModalShell testId="gameover-modal">
 			<div className="retro-panel retro-panel--modal">
 				<div className="gameover-title">GAME OVER</div>
 				<div className="gameover-score">SCORE: {snapshot.score}</div>

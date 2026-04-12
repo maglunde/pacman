@@ -23,10 +23,11 @@ export function MainMenuOverlay({ snapshot }) {
 	let fit = useFitScale({ portraitMaxScale: 3 });
 
 	return (
-		<div className="overlay-screen overlay-screen--menu-main">
-			<div className="menu-fit-frame" ref={fit.frameRef}>
+		<div className="overlay-screen overlay-screen--menu-main" data-testid="main-menu">
+			<div className="menu-fit-frame" data-testid="main-menu-frame" ref={fit.frameRef}>
 				<div
 					className="retro-panel retro-panel--menu-shell"
+					data-testid="main-menu-panel"
 					ref={fit.contentRef}
 					style={{ transform: `scale(${fit.scale})` }}
 				>
@@ -35,24 +36,28 @@ export function MainMenuOverlay({ snapshot }) {
 					<div className="menu-button-list">
 						<MenuButton
 							label="START GAME"
+							testId="menu-start-game"
 							active={snapshot.menuSelected === 0}
 							onMouseEnter={function() { focusMainMenuItem(0); }}
 							onClick={startManualGame}
 						/>
 						<MenuButton
 							label="WATCH AI PLAY"
+							testId="menu-watch-ai"
 							active={snapshot.menuSelected === 1}
 							onMouseEnter={function() { focusMainMenuItem(1); }}
 							onClick={openPersonalityMenu}
 						/>
 						<MenuButton
 							label="LEADERBOARD"
+							testId="menu-leaderboard"
 							active={snapshot.menuSelected === 2}
 							onMouseEnter={function() { focusMainMenuItem(2); }}
 							onClick={openLeaderboard}
 						/>
 						<MenuButton
 							label="SETTINGS"
+							testId="menu-settings"
 							active={snapshot.menuSelected === 3}
 							onMouseEnter={function() { focusMainMenuItem(3); }}
 							onClick={openSettingsMenu}
