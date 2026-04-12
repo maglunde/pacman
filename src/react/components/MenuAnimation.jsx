@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFitScale } from '../hooks/useFitScale.js';
 import '../styles/MenuAnimation.scss';
 
 const BASE_URL = import.meta.env.BASE_URL;
@@ -27,6 +28,24 @@ const GHOST_RUN_FRAMES = [
 	{ sheet: MSPACMAN_SHEET_URL, x: 488, y: 112, w: 16, h: 16 },
 ];
 const SCARED_GHOST_FRAME = { sheet: PACMAN_SHEET_URL, x: 533, y: 139, w: 30, h: 30 };
+
+export function MenuShell({ children }) {
+	let fit = useFitScale();
+	return (
+		<div className="overlay-screen overlay-screen--menu-main">
+			<div className="menu-fit-frame" ref={fit.frameRef}>
+				<div
+					className="retro-panel retro-panel--menu-shell"
+					ref={fit.contentRef}
+					style={{ transform: `scale(${fit.scale})` }}
+				>
+					<MenuHeader />
+					{children}
+				</div>
+			</div>
+		</div>
+	);
+}
 
 export function MenuHeader() {
 	return (

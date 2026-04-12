@@ -29,8 +29,8 @@ export function MainMenuOverlay({ snapshot }) {
 					ref={fit.contentRef}
 					style={{ transform: `scale(${fit.scale})` }}
 				>
-					{snapshot.highScore > 0 ? <div className="retro-subtitle menu-high-score">HIGH-SCORE: {snapshot.highScore}</div> : null}
 					<MenuHeader />
+					{snapshot.highScore > 0 ? <div className="retro-subtitle menu-high-score">HIGH-SCORE: {snapshot.highScore}</div> : null}
 					<div className="menu-button-list">
 						<MenuButton
 							label="START GAME"

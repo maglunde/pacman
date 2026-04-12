@@ -16,6 +16,7 @@
 
 .retro-panel--menu-shell {
 	width: 34rem;
+	height: 31rem;
 	padding: 0.2rem 0;
 	background: transparent;
 	transform-origin: center center;
@@ -53,8 +54,9 @@
 	display: grid;
 	grid-template-columns: auto 1fr auto;
 	align-items: center;
-	padding: 0.35rem 0.45rem;
+	padding: 0.5rem 0.45rem;
 	width: fit-content;
+	margin: 0 auto;
 	color: var(--color-gray);
 }
 
@@ -78,7 +80,7 @@
 
 .selector-value {
 	padding: 0.55rem 0.75rem;
-	font-size: clamp(0.64rem, 1vw, 0.92rem);
+	font-size: clamp(0.64rem, 12px, 0.92rem);
 }
 
 .retro-description {

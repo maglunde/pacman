@@ -20,7 +20,7 @@ export function OverlayUi() {
 			{/*{snapshot.gameState === 'ready' ? <CenterNotice text="READY!" /> : null}*/}
 			{snapshot.gameState === 'gameover' ? <GameOverOverlay snapshot={snapshot} /> : null}
 			{snapshot.gameState === 'win' ? <CenterNotice text={`LEVEL ${snapshot.level} COMPLETE!`} accent="success" /> : null}
-			{snapshot.settingToast.timer > 0 ? <SettingToast text={snapshot.settingToast.text} /> : null}
+			{snapshot.gameState !== 'menu' && snapshot.settingToast.timer > 0 ? <SettingToast text={snapshot.settingToast.text} /> : null}
 		</div>
 	);
 }

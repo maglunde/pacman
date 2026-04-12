@@ -6,6 +6,7 @@ import {
 	focusPersonalityRow,
 	startAiGame,
 } from '../../game/menu.js';
+import { MenuShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
 import '../styles/MainMenuOverlay.scss';
 
@@ -14,9 +15,9 @@ export function PersonalityMenu({ snapshot }) {
 	let personality = AI_PERSONALITIES[personalityKey];
 
 	return (
-		<div className="overlay-screen">
-			<div className="retro-panel retro-panel--menu">
-				<div className="retro-title">CHOOSE AI STYLE</div>
+		<MenuShell>
+			<div className="retro-title">CHOOSE AI STYLE</div>
+			<div>
 				<div
 					className={snapshot.personalityRow === 0 ? 'selector-row selector-row--active' : 'selector-row'}
 					onMouseEnter={function() { focusPersonalityRow(0); }}
@@ -26,6 +27,8 @@ export function PersonalityMenu({ snapshot }) {
 					<button type="button" className="selector-arrow" onClick={function() { changeAiPersonality(1); }}>►</button>
 				</div>
 				<div className="retro-description">{getPersonalityDescription(personalityKey)}</div>
+			</div>
+			<div className="menu-button-list">
 				<MenuButton
 					label="BACK"
 					active={snapshot.personalityRow === 1}
@@ -33,7 +36,7 @@ export function PersonalityMenu({ snapshot }) {
 					onClick={closeMenuSubPage}
 				/>
 			</div>
-		</div>
+		</MenuShell>
 	);
 }
 
