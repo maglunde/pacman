@@ -1,51 +1,38 @@
 # Pac-Man
 
-Klassisk Pac-Man i nettleseren, bygget med vanilla JavaScript og Canvas API. Støtter manuell spilling, AI-modus med fire personligheter, og 2-spiller ghostkontroll.
+Classic Pac-Man in the browser. Vanilla JS + Canvas, React for UI overlays.
 
-## Kom i gang
+## Play
+
+[maglunde.github.io/pacman](https://maglunde.github.io/pacman)
+
+## Run locally
 
 ```bash
 npm install
-npm run dev      # åpner spillet lokalt
-npm run build    # produksjonsbygg til dist/
+npm run dev
 ```
 
-## Spillmodi
+## Modes
 
-| Modus | Beskrivelse |
+- **Play** — classic Pac-Man with arrow keys
+- **Watch AI** — AI agent with selectable personality (Coward, Balanced, Aggressive, Greedy)
+- **2-player ghost** — control one ghost manually while AI controls the rest
+
+## Leaderboard
+
+Scores are submitted to a global leaderboard after each game. AI runs are submitted automatically under the personality name (e.g. `AI:BALANCED`).
+
+## Controls
+
+| Key | Action |
 |---|---|
-| Spill selv | Klassisk Pac-Man med piltaster |
-| La AI spille | AI-agent med valgbar personlighet |
-| 2-spiller ghost | Kontroller én ghost manuelt mens AI styrer de andre |
-
-### AI-personligheter
-
-- **Coward** – flykter tidlig, tar ingen sjanser
-- **Balanced** – balansert og effektiv
-- **Aggressive** – jakter aktivt på ghosts
-- **Greedy** – maksimerer poeng, tar risiko
-
-AI-en bruker BFS-padsøk, trusselmapping og felledeteksjon.
-
-## Kontroller
-
-| Tast | Handling |
-|---|---|
-| Piltaster | Flytt Pac-Man |
+| Arrow keys | Move Pac-Man |
 | `P` | Pause |
-| `M` | Lyd av/på |
-| `,` / `.` | Senk/øk hastighet |
-| `Z X C V` | Vis/skjul ghost-stier |
-| `B` | Vis/skjul Pac-Man-sti (AI-modus) |
-| `I` | Bytt ghost-indikatorstil |
-| `Q` | Vis/skjul info-panel |
-| `Esc` | Pausemeny / tilbake til meny |
-| `Tab` | Velg ghost å kontrollere |
-| `Enter` | Ta over valgt ghost |
+| `M` | Mute |
+| `,` / `.` | Speed down/up |
+| `Esc` | Pause menu / back |
 
-## Teknisk
+## Stack
 
-- **Bundler:** Vite
-- **Språk:** Vanilla JS (ES-moduler), Sass
-- **Lyd:** Web Audio API
-- **Lagring:** `localStorage` (highscore, volum, hastighet)
+Vite · React 19 · Vanilla JS · Sass · Supabase
