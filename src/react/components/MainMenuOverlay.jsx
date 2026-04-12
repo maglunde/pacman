@@ -3,6 +3,7 @@ import {
 	focusMainMenuItem,
 	openSettingsMenu,
 	openPersonalityMenu,
+	openLeaderboard,
 	startManualGame,
 } from '../../game/menu.js';
 import { useFitScale } from '../hooks/useFitScale.js';
@@ -45,9 +46,15 @@ export function MainMenuOverlay({ snapshot }) {
 							onClick={openPersonalityMenu}
 						/>
 						<MenuButton
-							label="SETTINGS"
+							label="LEADERBOARD"
 							active={snapshot.menuSelected === 2}
 							onMouseEnter={function() { focusMainMenuItem(2); }}
+							onClick={openLeaderboard}
+						/>
+						<MenuButton
+							label="SETTINGS"
+							active={snapshot.menuSelected === 3}
+							onMouseEnter={function() { focusMainMenuItem(3); }}
 							onClick={openSettingsMenu}
 						/>
 					</div>

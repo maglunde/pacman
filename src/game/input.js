@@ -59,7 +59,7 @@ function keydown(e, newGame) {
 			resumeAudio();
 			return;
 		}
-		if (state.gameState === 'menu' && (state.menuSubState === 'personality' || state.menuSubState === 'settings')) {
+		if (state.gameState === 'menu' && (state.menuSubState === 'personality' || state.menuSubState === 'settings' || state.menuSubState === 'leaderboard')) {
 			state.menuSubState = 'main';
 			return;
 		}
@@ -148,14 +148,20 @@ function keydown(e, newGame) {
 					}
 					break;
 			}
+		} else if (state.menuSubState === 'leaderboard') {
+			if (e.key === 'Escape' || e.key === 'Enter') {
+				state.menuSubState = 'main';
+			}
 		} else {
 			switch (e.key) {
-				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 2) % 3; break;
-				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 3; break;
+				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 3) % 4; break;
+				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 4; break;
 				case 'Enter':
-					if (state.menuSelected === 2) {
+					if (state.menuSelected === 3) {
 						state.menuSubState = 'settings';
 						state.settingsRow  = 0;
+					} else if (state.menuSelected === 2) {
+						state.menuSubState = 'leaderboard';
 					} else if (state.menuSelected === 1) {
 						state.menuSubState   = 'personality';
 						state.personalityRow = 0;

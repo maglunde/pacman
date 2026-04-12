@@ -37,6 +37,7 @@ function readSnapshot() {
 		highScore: state.highScore,
 		score: state.score,
 		level: state.level,
+		username: state.username,
 		stateTimer: state.stateTimer,
 		escapeMenuActive: state.escapeMenuActive,
 		escapeMenuSelected: state.escapeMenuSelected,

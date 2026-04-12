@@ -21,10 +21,19 @@ export function openSettingsMenu() {
 	state.settingsRow = 0;
 }
 
+export function openLeaderboard() {
+	state.menuSubState = 'leaderboard';
+}
+
 export function closeMenuSubPage() {
 	state.menuSubState = 'main';
 	state.settingsRow = 0;
 	state.personalityRow = 0;
+}
+
+export function saveUsername(name) {
+	state.username = name;
+	localStorage.setItem('pacman-username', name);
 }
 
 export function startAiGame() {

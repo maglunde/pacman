@@ -47,6 +47,7 @@ export const state = {
 	score:               0,
 	lastExtraLifeScore:  0,
 	highScore:           parseInt(localStorage.getItem('pacman-hi')    || '0'),
+	username:            localStorage.getItem('pacman-username') || '',
 	lives:       3,
 	level:       1,
 	ghostCombo:  0,
@@ -59,7 +60,7 @@ export const state = {
 	paused:       false,
 	aiMode:       false,
 	menuSelected: 0,
-	menuSubState: 'main', // 'main' | 'personality' | 'settings'
+	menuSubState: 'main', // 'main' | 'personality' | 'settings' | 'leaderboard'
 	aiPersonalityIdx: 1,
 	selectedGhostIdx:      -1,  // ghost highlighted for takeover in AI mode (-1 = none)
 	controlledGhostIdx:    -1,  // ghost currently player-controlled (-1 = AI controls all)

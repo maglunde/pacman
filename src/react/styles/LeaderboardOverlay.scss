@@ -1,0 +1,55 @@
+.leaderboard-body {
+	width: 100%;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.leaderboard-status {
+	color: var(--color-gray);
+	font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+
+	&--error {
+		color: var(--color-blinky);
+	}
+}
+
+.leaderboard-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: clamp(0.55rem, 0.9vw, 0.76rem);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--color-gray);
+
+	th {
+		color: var(--color-light-gray);
+		padding: 0.25rem 0.6rem;
+		text-align: left;
+		border-bottom: 1px solid var(--color-dark-gray);
+	}
+
+	td {
+		padding: 0.3rem 0.6rem;
+	}
+
+	tr + tr td {
+		border-top: 1px solid #1a1a1a;
+	}
+
+	th:nth-child(1), td:nth-child(1) { width: 2rem; text-align: center; }
+	th:nth-child(3), td:nth-child(3) { text-align: right; }
+	th:nth-child(4), td:nth-child(4) { text-align: right; width: 3rem; }
+}
+
+.leaderboard-row--gold td {
+	color: var(--color-pacman);
+}
+
+.leaderboard-row--selected td {
+	color: var(--color-pacman);
+	background: var(--color-black);
+}
