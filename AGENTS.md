@@ -1,96 +1,120 @@
-# AGENTS.md — Pac-Man Refaktor
+# AGENTS.md — Pac-Man
 
-## Hva er dette prosjektet?
+## What is this project?
 
-Pac-Man implementert i vanilla JS med et React-lag på toppen for UI/overlay.
-Under refaktorering fra en gammel monolitt (`src/js/`) til modulær struktur (`src/game/` + `src/react/`).
-De gamle filene under `src/js/` er slettet; alt nytt liv bor i `src/game/` og `src/react/`.
+Pac-Man implemented in vanilla JS with a React layer on top for UI/overlays.
+Refactored from an old monolith (`src/js/`) to a modular structure (`src/game/` + `src/react/`).
+All new code lives in `src/game/` and `src/react/`.
 
 ## Stack
 
-- **Vite** — dev server og bundler (`npm run dev` / `npm run build`)
-- **React 19** — kun for overlay-UI, ikke selve spillet
-- **Sass** — stilark under `src/react/styles/`
-- **Vanilla JS (ESM)** — all spillogikk i `src/game/`
-- Base path: `/pacman/` (konfigurert i `vite.config.js`)
-- Versjonsnummer leses fra `package.json` via Vite `define`
+- **Vite** — dev server and bundler (`npm run dev` / `npm run build`)
+- **React 19** — overlay UI only, not the game itself
+- **Sass** — stylesheets under `src/react/styles/`
+- **Vanilla JS (ESM)** — all game logic in `src/game/`
+- **Supabase** — leaderboard backend (`src/lib/`)
+- Base path: `/pacman/` (configured in `vite.config.js`)
+- Version number read from `package.json` via Vite `define`
 
-## Arkitektur: to lag
+## Architecture: two layers
 
-### Spillaget (`src/game/`)
+### Game layer (`src/game/`)
 
-Ren canvas-basert game loop. Ingen React. Kommuniserer med omverdenen kun via det globale `state`-objektet.
+Pure canvas-based game loop. No React. Communicates with the outside world only via the global `state` object.
 
-| Fil | Ansvar |
+| File | Responsibility |
 |---|---|
-| `state.js` | Enkelt mutable objekt — aldri erstatt, bare muter properties |
-| `constants.js` | Alle magic numbers, kartdefinisjoner (`MAPS[]`), AI-personligheter |
+| `state.js` | Single mutable object — never replace, only mutate properties |
+| `constants.js` | All magic numbers, map definitions (`MAPS[]`), AI personalities |
 | `game.js` | `mountGame(el)` — entry point, game loop (`update`/`render`) |
-| `game-states.js` | State-maskin-overganger: `newGame`, `nextLevel`, `startReady`, `addScore` |
-| `ghost.js` | Ghost-logikk, BFS-retur til hus, `ghostLookahead` for trussel-kart |
-| `ai.js` | AI-styring av Pac-Man (kan brukes som spiller eller demo) |
-| `grid.js` | Vegg-deteksjon (pixel-basert fra sprite sheet), koordinat-hjelpere |
-| `collision.js` | Pac-Man ↔ ghost / dot-kollisjoner |
-| `dots.js` | Init og tegning av dots/big dots |
-| `draw.js` | Hjelpefunksjoner for canvas-rendering |
-| `sprite.js` | Sprite-lasting og sprite-objekt-fabrikk |
-| `input.js` | Tastatur- og musinnput |
-| `audio.js` | Web Audio API — looping music, lydeffekter |
-| `hud.js` | Score, liv, speed/volum-slidere (tegnes på canvas) |
-| `menu.js` | Meny-logikk (input-siden) |
-| `pacman-entity.js` | Pac-Man-entitet (update + draw) |
-| `ghost-render.js` | Ghost-rendering separert fra logikk |
-| `pathvis.js` | Debug-visualisering av AI-stier |
-| `fruit.js` | Frukt-spawning per nivå |
+| `game-states.js` | State machine transitions: `newGame`, `nextLevel`, `startReady`, `addScore` |
+| `ghost.js` | Ghost logic, BFS return to house, `ghostLookahead` for threat map |
+| `ai.js` | AI control of Pac-Man (used as player or demo) |
+| `grid.js` | Wall detection (pixel-based from sprite sheet), coordinate helpers |
+| `collision.js` | Pac-Man ↔ ghost / dot collisions |
+| `dots.js` | Init and drawing of dots/big dots |
+| `draw.js` | Canvas rendering helpers |
+| `sprite.js` | Sprite loading and sprite object factory |
+| `input.js` | Keyboard and mouse input |
+| `audio.js` | Web Audio API — looping music, sound effects |
+| `hud.js` | Score, lives, speed/volume sliders (drawn on canvas) |
+| `menu.js` | Menu logic (input side) |
+| `pacman-entity.js` | Pac-Man entity (update + draw) |
+| `ghost-render.js` | Ghost rendering separated from logic |
+| `pathvis.js` | Debug visualization of AI paths |
+| `fruit.js` | Fruit spawning per level |
 
-### React-laget (`src/react/`)
+### React layer (`src/react/`)
 
-Rendrer overlay-UI over canvas. Les aldri fra React-state for spilldata — bruk `useGameSnapshot`.
+Renders overlay UI on top of the canvas. Never read from React state for game data — use `useGameSnapshot`.
 
-| Fil / mappe | Ansvar |
+| File / folder | Responsibility |
 |---|---|
-| `main.jsx` | React entry, mounter `<App>` |
+| `main.jsx` | React entry, mounts `<App>` |
 | `App.jsx` | Shell: `<GameCanvas>` + `<OverlayUi>` |
-| `components/GameCanvas.jsx` | Mounter canvas-elementet, kaller `mountGame(el)` |
-| `components/OverlayUi.jsx` | Router for alle overlays basert på `snapshot.gameState` |
-| `hooks/useGameSnapshot.js` | Poll `state`-objektet hvert frame via `rAF`, returner flatt snapshot |
-| `hooks/useFitScale.js` | CSS-skalering for å passe canvas til vinduet |
-| `components/*` | Individuelle overlay-komponenter (meny, pause, gameover, innstillinger osv.) |
+| `components/GameCanvas.jsx` | Mounts canvas element, calls `mountGame(el)` |
+| `components/OverlayUi.jsx` | Router for all overlays based on `snapshot.gameState` |
+| `hooks/useGameSnapshot.js` | Polls `state` object every frame via `rAF`, returns flat snapshot |
+| `hooks/useFitScale.js` | CSS scaling to fit canvas to window |
+| `components/*` | Individual overlay components (menu, pause, gameover, settings, leaderboard, etc.) |
 
-## Viktige designvalg
+### Lib layer (`src/lib/`)
 
-- **`state.js` er single source of truth.** Alle spillmoduler importerer og muterer `state` direkte. React leser kun via `useGameSnapshot` — skriver aldri tilbake.
-- **Vegg-deteksjon er pixel-basert.** `grid.js` leser pikselbrightness fra det rendrede sprite-arket for å avgjøre om en tile er vegg (`WALL_BRIGHTNESS_THRESHOLD = 80`). Viktig å forstå ved kart-endringer.
-- **Kart-konfigurasjon i `MAPS[]`** (`constants.js`). Hvert kart angir sprite-koordinater, start-posisjoner, big-dot-plasseringer og ghost house-bounds. Alle kart bruker samme `DEFAULT_GHOST_LAYOUT`.
-- **AI-personligheter** definert i `AI_PERSONALITIES` i `constants.js` — parametere styrer flukt-terskel, lookahead-dybde, klynge-prioriotering osv.
-- **Scatter/chase-syklus** styres av `SCATTER_CHASE_PHASES` — alternerende faser, siste er `Infinity`.
-- **Spill-hastighet** er en bruker-synlig multiplikator (`state.gameSpeed`, skala 0.25–8×), lagret i `localStorage`. All intern spillogikk bruker `state.effectiveSpeed` (= `gameSpeed * 2`) for å kompensere for at game loop-en kjører på 60 ticks/sek uavhengig av skjermens Hz. Endre aldri `gameSpeed` direkte i logikk — bruk `effectiveSpeed`.
-- **Game loop** bruker fixed timestep med accumulator (`TICK_MS = 1000/60`). `update()` kjøres et heltall ganger per `requestAnimationFrame`-callback basert på faktisk forløpt tid. Maks 5 catch-up-ticks per frame. `visibilitychange` nullstiller tidsstempel for å unngå hopp etter tab-switch.
-- **Canvas er 1800×1200 px** internt, skalert ned til vinduet via CSS (`useFitScale`). Alt spill-rendering bruker `ctx.scale(2, 2)` for kartet.
+| File | Responsibility |
+|---|---|
+| `supabase.js` | Lazy-initialized Supabase client with env guard — returns `null` if env vars are missing |
+| `scores.js` | `submitScore()` and `fetchTopScores()` — writes to `anonymous_scores`, reads from `anonymous_leaderboard` view |
 
-## Persistens (localStorage)
+## Key design decisions
 
-| Nøkkel | Innhold |
+- **`state.js` is single source of truth.** All game modules import and mutate `state` directly. React reads only via `useGameSnapshot` — never writes back.
+- **Wall detection is pixel-based.** `grid.js` reads pixel brightness from the rendered sprite sheet to determine if a tile is a wall (`WALL_BRIGHTNESS_THRESHOLD = 80`).
+- **Map configuration in `MAPS[]`** (`constants.js`). Each map specifies sprite coordinates, start positions, big dot placements and ghost house bounds.
+- **AI personalities** defined in `AI_PERSONALITIES` in `constants.js` — parameters control escape threshold, lookahead depth, cluster prioritization, etc.
+- **Scatter/chase cycle** controlled by `SCATTER_CHASE_PHASES` — alternating phases, last one is `Infinity`.
+- **Game speed** is a user-visible multiplier (`state.gameSpeed`, scale 0.25–8×), stored in `localStorage`. All internal game logic uses `state.effectiveSpeed` (= `gameSpeed * 2`). Never change `gameSpeed` directly in logic — use `effectiveSpeed`.
+- **Game loop** uses fixed timestep with accumulator (`TICK_MS = 1000/60`). `update()` runs an integer number of times per `requestAnimationFrame` callback based on actual elapsed time. Max 5 catch-up ticks per frame.
+- **Canvas is 1800×1200 px** internally, scaled down to the window via CSS (`useFitScale`). All game rendering uses `ctx.scale(2, 2)` for the map.
+
+## Persistence (localStorage)
+
+| Key | Content |
 |---|---|
 | `pacman-hi` | High score |
-| `pacman-vol` | Volum (0–1) |
-| `pacman-speed` | Spill-hastighet multiplikator |
-| `pacman-muted` | `'1'` hvis muted |
+| `pacman-vol` | Volume (0–1) |
+| `pacman-speed` | Game speed multiplier |
+| `pacman-muted` | `'1'` if muted |
+| `pacman-username` | Last used display name for leaderboard submit |
 
-## Ressursfiler
+## Supabase / leaderboard
 
-- `res/sheet-2.png` — Pac-Man sprite sheet (kart + sprites)
-- `res/mspacmansheet.png` — Ms. Pac-Man sprite sheet
+- **`anonymous_scores`** table — open insert/select for anon role, no foreign keys
+- **`anonymous_leaderboard`** view — deduplicates by `display_name`, returns best score per name, ordered by score desc
+- Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) must be set as GitHub Actions secrets for production builds — they are not committed to the repo
+- The client is lazy-initialized; if env vars are missing the leaderboard feature degrades silently without crashing the app
+- A future `scores` table exists for authenticated users (Google/GitHub OAuth via Supabase Auth) — do not modify it
 
-## Spilltilstander (`state.gameState`)
+## Game states (`state.gameState`)
 
 `'menu'` → `'ready'` → `'playing'` → `'dead'` / `'win'` / `'gameover'`
 
-## Bransjestrategi
+## Menu sub-states (`state.menuSubState`)
+
+`'main'` | `'personality'` | `'settings'` | `'leaderboard'`
+
+## Asset files
+
+- `res/sheet-2.png` — Pac-Man sprite sheet (map + sprites)
+- `res/mspacmansheet.png` — Ms. Pac-Man sprite sheet
+
+## Branch strategy
 
 - `master` — main branch
-- `pm-refaktor` — aktiv refaktoreringsgren
 
-## Søking i koden
+## Searching the codebase
 
-Begrens alltid filsøk til `src/` — aldri traverser `node_modules`.
+Always limit file searches to `src/` — never traverse `node_modules`.
+
+## Commit messages
+
+All commit messages must be written in English.
