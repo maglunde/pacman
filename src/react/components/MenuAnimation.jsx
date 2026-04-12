@@ -1,5 +1,6 @@
 import React from 'react';
 import { useFitScale } from '../hooks/useFitScale.js';
+import { TICKS_PER_SECOND } from '../../game/constants.js';
 import '../styles/MenuAnimation.scss';
 
 const BASE_URL = import.meta.env.BASE_URL;
@@ -83,23 +84,30 @@ export function MenuGhostRoster() {
 }
 
 export function MenuAnimation({ frames, menuStartFrame, isMsPacman }) {
-	let animationDelay = 60;
+	let tps = TICKS_PER_SECOND;
+	let animationDelay = 1 * tps;
 	let menuAge = Math.max(0, frames - menuStartFrame);
-	let mouthFrame = Math.floor(frames / 5) % 2;
-	let bob = Math.floor(frames / 10) % 2 === 0 ? 0 : 2;
-	let phase0Duration = 720;
-	let pauseDuration = 180;
-	let phase1Duration = 720;
-	let cycleLength = phase0Duration + pauseDuration + phase1Duration;
+	let mouthFrame = Math.floor(frames / Math.round(tps / 12)) % 2;
+	let bob = Math.floor(frames / Math.round(tps / 6)) % 2 === 0 ? 0 : 2;
+	let phase0Duration = 3 * tps;
+	let pauseDuration = 2 * tps;
+	let phase1Duration = 3 * tps;
+	let restDuration = 3 * tps;
+	let cycleLength = phase0Duration + pauseDuration + phase1Duration + restDuration;
 	let animationFrame = Math.max(0, menuAge - animationDelay) % cycleLength;
-	let isChasePhase = animationFrame >= phase0Duration + pauseDuration;
+	let isChasePhase = animationFrame >= phase0Duration + pauseDuration && animationFrame < phase0Duration + pauseDuration + phase1Duration;
+	let isRestPhase = animationFrame >= phase0Duration + pauseDuration + phase1Duration;
 	let phaseFrame = isChasePhase ? animationFrame - phase0Duration - pauseDuration : animationFrame;
-	let startX = 1500;
-	let endX = -420;
-	let percent = isChasePhase ? phaseFrame / phase1Duration : phaseFrame / phase0Duration;
-	let animationX = isChasePhase
-		? endX + (startX - endX) * percent
-		: startX + (endX - startX) * percent;
+	let startX = 554;
+	let endX = -252;
+	let percent = isChasePhase
+		? Math.min(1, phaseFrame / phase1Duration)
+		: Math.min(1, phaseFrame / phase0Duration);
+	let animationX = isRestPhase
+		? startX
+		: isChasePhase
+			? endX + (startX - endX) * percent
+			: startX + (endX - startX) * percent;
 	let leftFrames  = isMsPacman ? MSPACMAN_LEFT_FRAMES  : PACMAN_LEFT_FRAMES;
 	let rightFrames = isMsPacman ? MSPACMAN_RIGHT_FRAMES : PACMAN_RIGHT_FRAMES;
 	let pacmanFrame = isChasePhase ? rightFrames[mouthFrame] : leftFrames[mouthFrame];

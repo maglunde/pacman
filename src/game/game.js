@@ -1,5 +1,6 @@
 import { initSprites, s_map, s_ready, s_gameover } from './sprite.js';
 import {
+	TICKS_PER_SECOND,
 	TILE,
 	FRUIT_DOT_THRESHOLD, FRUIT_DURATION, FRUIT_FLASH_THRESHOLD, FRUIT_SPAWN_COL, FRUIT_SPAWN_ROW,
 	SCATTER_CHASE_PHASES, FRUIT_DRAW_SIZE,
@@ -173,7 +174,7 @@ function render() {
 	drawHUD();
 }
 
-const TICK_MS = 1000 / 60;
+const TICK_MS = 1000 / TICKS_PER_SECOND;
 
 function run() {
 	newGame();

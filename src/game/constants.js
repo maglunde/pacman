@@ -1,3 +1,4 @@
+export const TICKS_PER_SECOND        = 120;
 export const TILE                    = 16;
 export const BOARD_TILE_ROWS         = 31;
 export const SPEED                   = 0.8;

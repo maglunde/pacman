@@ -1,3 +1,5 @@
+import { TICKS_PER_SECOND } from './constants.js';
+
 // Single mutable game state object shared across all modules.
 // Each property is mutated in-place; never replace the object itself.
 export const state = {
@@ -79,7 +81,7 @@ export const state = {
 	volume:        parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
 	muted:         localStorage.getItem('pacman-muted') === '1',
 	gameSpeed:     parseFloat(localStorage.getItem('pacman-speed') || '1'),
-	get effectiveSpeed() { return this.gameSpeed * 2; },
+	get effectiveSpeed() { return this.gameSpeed * 2 * (60 / TICKS_PER_SECOND); },
 	pendingBeginning: false,
 	activeLoopTrack: null,  // 'fright' | 'eyes' | null
 	loopNodes:       null,  // { intro: AudioBufferSourceNode, loop: AudioBufferSourceNode, gain: GainNode }

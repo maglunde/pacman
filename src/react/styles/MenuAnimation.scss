@@ -58,6 +58,7 @@
 	align-items: flex-end;
 	gap: 3.5rem;
 	will-change: transform;
+	transition: transform 80ms linear;
 }
 
 .menu-animation-ghosts {
