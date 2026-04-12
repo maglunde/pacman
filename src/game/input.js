@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { dir, AI_PERSONALITY_KEYS, MAPS } from './constants.js';
-import { adjustSetting } from './menu.js';
+import { adjustSetting, quitToMenu } from './menu.js';
 import { setMapSprite } from './sprite.js';
 import {
 	initAudio, playBeginning, updateLoopVolume, pauseAudio, resumeAudio,
@@ -29,9 +29,17 @@ function keydown(e, newGame) {
 	if (e.code === 'KeyC') { togglePath('inky');   return; }
 	if (e.code === 'KeyV') { togglePath('clyde');  return; }
 	if (e.code === 'KeyB') { togglePath('pacman'); return; }
-	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.paused)) {
-		state.paused = !state.paused;
-		if (state.paused) pauseAudio(); else resumeAudio();
+	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.gameState === 'ready' || state.paused)) {
+		if (state.escapeMenuActive) {
+			state.escapeMenuActive = false;
+			state.paused           = false;
+			resumeAudio();
+		} else {
+			state.escapeMenuActive   = true;
+			state.escapeMenuSelected = 0;
+			state.paused             = true;
+			pauseAudio();
+		}
 		return;
 	}
 	if (e.code === 'KeyI') {
@@ -63,10 +71,7 @@ function keydown(e, newGame) {
 			return;
 		}
 		// Fallback: go straight to menu (win screen)
-		newGame();
-		state.gameState      = 'menu';
-		state.menuSubState   = 'main';
-		state.menuStartFrame = state.frames;
+		quitToMenu();
 		return;
 	}
 	if (state.escapeMenuActive) {
@@ -79,11 +84,7 @@ function keydown(e, newGame) {
 					state.paused           = false;
 					resumeAudio();
 				} else {
-					state.escapeMenuActive = false;
-					newGame();
-					state.gameState      = 'menu';
-					state.menuSubState   = 'main';
-					state.menuStartFrame = state.frames;
+					quitToMenu();
 				}
 				return;
 		}
@@ -101,10 +102,7 @@ function keydown(e, newGame) {
 	}
 	if (state.gameState === 'gameover' && state.stateTimer <= 0) {
 		if (e.key === 'Enter' || e.key === ' ') {
-			newGame();
-			state.gameState      = 'menu';
-			state.menuSubState   = 'main';
-			state.menuStartFrame = state.frames;
+			quitToMenu();
 			return;
 		}
 		// fall through to allow shortcuts (M, Q, speed, etc.)
@@ -112,11 +110,22 @@ function keydown(e, newGame) {
 	if (state.gameState === 'menu') {
 		if (state.menuSubState === 'settings') {
 			switch (e.key) {
-				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 2) % 3; break;
-				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 3; break;
-				case 'ArrowLeft':  if (state.settingsRow < 2) adjustSetting(state.settingsRow, -1); break;
-				case 'ArrowRight': if (state.settingsRow < 2) adjustSetting(state.settingsRow, +1); break;
-				case 'Enter':      if (state.settingsRow === 2) { state.menuSubState = 'main'; state.settingsRow = 0; } break;
+				case 'ArrowUp':    state.settingsRow = (state.settingsRow + 3) % 4; break;
+				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 4; break;
+				case 'ArrowLeft':
+					if (state.settingsRow < 2) adjustSetting(state.settingsRow, -1);
+					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
+					break;
+				case 'ArrowRight':
+					if (state.settingsRow < 2) adjustSetting(state.settingsRow, +1);
+					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx + 1) % MAPS.length; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
+					break;
+				case 'Enter':
+					if (state.settingsRow === 3) {
+						state.menuSubState = 'main';
+						state.settingsRow = 0;
+					}
+					break;
 			}
 		} else if (state.menuSubState === 'personality') {
 			switch (e.key) {
@@ -143,26 +152,10 @@ function keydown(e, newGame) {
 			}
 		} else {
 			switch (e.key) {
-				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 3) % 4; break;
-				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 4; break;
-				case 'ArrowLeft':
-					if (state.menuSelected === 2) {
-						state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length;
-						state.activeMap = MAPS[state.mapIdx];
-						state.playerSpriteSheet = state.activeMap.spriteSheet;
-						setMapSprite(state.activeMap);
-					}
-					break;
-				case 'ArrowRight':
-					if (state.menuSelected === 2) {
-						state.mapIdx = (state.mapIdx + 1) % MAPS.length;
-						state.activeMap = MAPS[state.mapIdx];
-						state.playerSpriteSheet = state.activeMap.spriteSheet;
-						setMapSprite(state.activeMap);
-					}
-					break;
+				case 'ArrowUp':    state.menuSelected = (state.menuSelected + 2) % 3; break;
+				case 'ArrowDown':  state.menuSelected = (state.menuSelected + 1) % 3; break;
 				case 'Enter':
-					if (state.menuSelected === 3) {
+					if (state.menuSelected === 2) {
 						state.menuSubState = 'settings';
 						state.settingsRow  = 0;
 					} else if (state.menuSelected === 1) {

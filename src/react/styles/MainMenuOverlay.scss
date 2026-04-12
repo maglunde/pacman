@@ -1,0 +1,93 @@
+.retro-panel {
+	width: min(100%, 44rem);
+	padding: 1.5rem 1.75rem;
+	background: rgba(0, 0, 0, 0.84);
+	color: var(--color-gray);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1rem;
+	text-align: center;
+}
+
+.retro-panel--main {
+	width: min(100%, 48rem);
+}
+
+.retro-panel--menu-shell {
+	width: 34rem;
+	padding: 0.2rem 0;
+	background: transparent;
+	transform-origin: center center;
+}
+
+.retro-panel--modal {
+	border: 1px solid #555555;
+}
+
+.retro-panel--narrow {
+	width: min(100%, 18rem);
+}
+
+.retro-title,
+.retro-description {
+	text-transform: uppercase;
+}
+
+.retro-title {
+	color: var(--color-light-gray);
+	font-size: clamp(0.7rem, 1.4vw, 1rem);
+}
+
+.menu-button-list {
+	margin-bottom: 1rem;
+}
+
+.menu-divider {
+	width: 100%;
+	height: 1px;
+	background: var(--color-dark-gray);
+}
+
+.selector-row {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	padding: 0.35rem 0.45rem;
+	width: fit-content;
+	color: var(--color-gray);
+}
+
+.selector-row--active {
+	background: var(--color-black);
+	color: var(--color-pacman);
+}
+
+.selector-arrow,
+.selector-value {
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+
+.selector-arrow {
+	padding: 0.4rem 0.6rem;
+	font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+}
+
+.selector-value {
+	padding: 0.55rem 0.75rem;
+	font-size: clamp(0.64rem, 1vw, 0.92rem);
+}
+
+.retro-description {
+	color: #666666;
+	font-size: clamp(0.48rem, 0.8vw, 0.68rem);
+	line-height: 1.6;
+}
+
+.retro-subtitle {
+	color: var(--color-gray);
+	font-size: clamp(0.58rem, 1vw, 0.82rem);
+}

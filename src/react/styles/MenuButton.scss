@@ -1,0 +1,20 @@
+.menu-button {
+	width: 100%;
+	border: 0;
+	background: transparent;
+	color: var(--color-light-gray);
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	font-size: clamp(0.65rem, 12px, 0.92rem);
+	text-transform: uppercase;
+}
+
+.menu-button--active {
+	background: var(--color-black);
+	color: var(--color-pacman);
+}
+
+.menu-button:focus-visible {
+	outline: 1px solid var(--color-pacman);
+	outline-offset: 2px;
+}

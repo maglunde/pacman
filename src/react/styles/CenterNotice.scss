@@ -1,0 +1,11 @@
+.center-notice {
+	padding: 0.5rem 0.8rem;
+	color: var(--color-pacman);
+	background: rgba(0, 0, 0, 0.7);
+	font-size: clamp(0.75rem, 1.25vw, 1rem);
+	text-transform: uppercase;
+}
+
+.center-notice--success {
+	color: var(--color-text);
+}

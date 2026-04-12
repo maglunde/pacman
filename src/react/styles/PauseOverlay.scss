@@ -1,0 +1,13 @@
+.retro-panel--modal {
+	border: 1px solid #555555;
+}
+
+.retro-panel--narrow {
+	width: min(100%, 18rem);
+}
+
+.retro-title {
+	color: var(--color-light-gray);
+	font-size: clamp(0.7rem, 1.4vw, 1rem);
+	text-transform: uppercase;
+}

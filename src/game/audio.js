@@ -18,8 +18,13 @@ const AUDIO_FILES = [
 export function initAudio() {
 	if (state.audioCtx) return;
 	state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	
+
+	// AudioBuffers are context-independent — skip fetch if already decoded
+	const alreadyLoaded = AUDIO_FILES.every(f => state.audioBuffers[f.key]);
+	if (alreadyLoaded) return;
+
 	AUDIO_FILES.forEach(file => {
+		if (state.audioBuffers[file.key]) return;
 		fetch(file.url)
 			.then(r => r.arrayBuffer())
 			.then(ab => state.audioCtx.decodeAudioData(ab))
@@ -35,6 +40,7 @@ export function initAudio() {
 
 function playBuffer(key, volumeMult = 1, offset = 0, duration) {
 	if (!state.audioCtx || !state.audioBuffers[key]) return;
+	if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
 	
 	const gain = state.audioCtx.createGain();
 	gain.gain.value = state.muted ? 0 : state.volume * volumeMult;
@@ -108,6 +114,15 @@ export function startEyes() {
 export function stopLoopingMusic() {
 	stopLoopNodes();
 	state.activeLoopTrack = null;
+}
+
+export function stopAllAudio() {
+	stopLoopNodes();
+	state.activeLoopTrack = null;
+	if (state.audioCtx) {
+		state.audioCtx.close();
+		state.audioCtx = null;
+	}
 }
 
 export function pauseAudio() {

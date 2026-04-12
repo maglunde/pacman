@@ -46,6 +46,7 @@ export function startReady() {
 }
 
 export function newGame() {
+	if (!state.engineReady) return;
 	stopLoopingMusic();
 	resumeAudio();
 	state.score = 0;

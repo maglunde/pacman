@@ -1,0 +1,14 @@
+.retro-hint {
+	color: #666666;
+	font-size: clamp(0.48rem, 0.8vw, 0.68rem);
+	line-height: 1.6;
+	text-transform: uppercase;
+}
+
+.panel-close {
+	color: var(--color-pacman);
+	padding: 0.5rem 0.8rem;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+}

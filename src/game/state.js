@@ -4,6 +4,9 @@ export const state = {
 	// Canvas / rendering
 	canvas:    null,
 	ctx:       null,
+	sceneEl:   null,
+	engineStarted: false,
+	engineReady: false,
 	width:     0,
 	height:    0,
 	img:       null,
@@ -56,7 +59,7 @@ export const state = {
 	paused:       false,
 	aiMode:       false,
 	menuSelected: 0,
-	menuSubState: 'main', // 'main' | 'personality'
+	menuSubState: 'main', // 'main' | 'personality' | 'settings'
 	aiPersonalityIdx: 1,
 	selectedGhostIdx:      -1,  // ghost highlighted for takeover in AI mode (-1 = none)
 	controlledGhostIdx:    -1,  // ghost currently player-controlled (-1 = AI controls all)
@@ -64,9 +67,8 @@ export const state = {
 	indicatorStyleBounds:  null, // hit-test bounds for indicator picker clicks
 	escapeMenuActive:      false,
 	escapeMenuSelected:    0,
-	escapeMenuBounds:      null,
 	settingsOverlayActive: false,
-	settingsRow:           0,    // 0=speed  1=volume  2=back
+	settingsRow:           0,    // 0=speed  1=volume  2=map  3=back
 	personalityRow:        0,    // 0=selector  1=back
 	menuStartFrame:        -1,   // state.frames value when menu was last entered
 
@@ -76,6 +78,7 @@ export const state = {
 	volume:        parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
 	muted:         localStorage.getItem('pacman-muted') === '1',
 	gameSpeed:     parseFloat(localStorage.getItem('pacman-speed') || '1'),
+	pendingBeginning: false,
 	activeLoopTrack: null,  // 'fright' | 'eyes' | null
 	loopNodes:       null,  // { intro: AudioBufferSourceNode, loop: AudioBufferSourceNode, gain: GainNode }
 

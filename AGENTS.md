@@ -1,192 +1,95 @@
-# AGENTS.md
+# AGENTS.md — Pac-Man Refaktor
 
-Onboarding guide for AI agents working in this repository.
+## Hva er dette prosjektet?
 
----
+Pac-Man implementert i vanilla JS med et React-lag på toppen for UI/overlay.
+Under refaktorering fra en gammel monolitt (`src/js/`) til modulær struktur (`src/game/` + `src/react/`).
+De gamle filene under `src/js/` er slettet; alt nytt liv bor i `src/game/` og `src/react/`.
 
-## Prosjektoversikt
+## Stack
 
-Browser-based Pac-Man clone that renders to a `<canvas>` element and runs a `requestAnimationFrame` game loop. No UI frameworks — pure vanilla JavaScript (ES modules), Vite as bundler, and Sass for styling.
+- **Vite** — dev server og bundler (`npm run dev` / `npm run build`)
+- **React 19** — kun for overlay-UI, ikke selve spillet
+- **Sass** — stilark under `src/react/styles/`
+- **Vanilla JS (ESM)** — all spillogikk i `src/game/`
+- Base path: `/pacman/` (konfigurert i `vite.config.js`)
+- Versjonsnummer leses fra `package.json` via Vite `define`
 
-**Tech stack:**
-- Language: JavaScript (ES2022, native ES modules)
-- Bundler: Vite
-- Styling: Sass (`.scss`)
-- Audio: Web Audio API
-- No runtime dependencies beyond Vite/Sass
+## Arkitektur: to lag
 
-```
-npm run dev      # dev server → http://localhost:5173
-npm run build    # production build → dist/
-npm run preview  # preview the dist/ build
-```
+### Spillaget (`src/game/`)
 
----
+Ren canvas-basert game loop. Ingen React. Kommuniserer med omverdenen kun via det globale `state`-objektet.
 
-## Arkitekturprinsipper
-
-**Modular Vanilla JS** — the codebase was split from a single monolithic file into focused ES modules. Each module owns one concern and communicates through the shared `state` object.
-
-- **Single shared mutable state** (`state.js`): all mutable game state lives in one object imported by every module. This is the project's central data bus — there is no pub/sub or event system.
-- **Entity pattern**: Pac-Man and ghosts are entity objects with `init()`, `update()`, `draw()` methods. Pac-Man's entity is owned by `pacman-entity.js`; ghosts are created by a factory function `makeGhost()` in `ghost.js`.
-- **Tile-based movement**: entities move tile-by-tile. Pixel interpolation happens inside `moveTowardTarget()` in `grid.js`. Post-arrival logic (dot eating, collision checks) belongs in the caller after the return value signals arrival.
-- **Single BFS entry point**: all AI pathfinding goes through `pacmanBFS(goalFn, opts)` in `ai.js`. There is no second BFS implementation.
-- **Constants over magic numbers**: all tunable values (speeds, timers, grid bounds, AI thresholds) live in `constants.js`. Game logic files must never contain bare numeric literals that represent configuration.
-- **Per-map configuration via `MAPS`**: all layout data specific to a map (sprite coordinates, scale, ghost house, door, big dot positions, Pac-Man start) lives in the `MAPS` array in `constants.js`. No map-specific coordinates belong anywhere else. `state.activeMap` always points to the current map's config entry.
-
----
-
-## Definerte Sannheter
-
-These rules apply in every change, without exception:
-
-1. **Never use magic numbers in game logic** — add named constants to `constants.js` first.
-2. **Never replace the `state` object** — mutate its properties in-place. Modules import the same object reference.
-3. **No module-level mutable variables** — the only permitted exceptions are `state.pacman` (owned by `pacman-entity.js`) and `bfsDirOrder` in `ai.js`.
-4. **`e.key` / `e.code` for all keyboard events** — `e.which` and `e.keyCode` are deprecated; never use them.
-5. **`var` is banned** — declare all variables with `const` or `let` at the top of their scope.
-6. **All pathfinding goes through `pacmanBFS`** — do not write a new BFS function; extend the existing one via `opts`.
-7. **Always run `npm run build` after changes** — verify the project compiles before considering a task done.
-8. **No UI frameworks** — this project is intentionally framework-free; do not introduce React, Vue, or similar.
-9. **Every interactive menu element must support all three input methods** — mouse click (`menu.js` hit-test), `Enter` key (`input.js`), and arrow-key navigation. If an element can be activated, it must also be reachable by keyboard alone. Add a `state.*Row` field to `state.js` when a new sub-screen needs focus tracking.
-10. **Use `drawText` for all pixel-font rendering** — never write the raw `fillStyle` / `font` / `textAlign` / `fillText` four-liner; import and call `drawText` from `draw.js` instead.
-
----
-
-## Kritisk Kontekst
-
-All source lives under `src/`:
-
-| Path | What lives here |
+| Fil | Ansvar |
 |---|---|
-| `src/js/main.js` | Entry point — calls `main()` from `game.js` |
-| `src/js/constants.js` | All named constants and the `MAPS` array. Add new values here first. |
-| `src/js/state.js` | Single mutable `state` object. All runtime game state. |
-| `src/js/grid.js` | Wall queries, coordinate helpers (`wrapCol`, `tilePixel`, `ghostTilePixel`), movement primitives (`applyMove`, `moveTowardTarget`) |
-| `src/js/sprite.js` | Sprite sheet parsing and `Sprite.draw()`. `initSprites(pacmanImg, mspacImg)` takes both sheets. `setMapSprite(mapCfg)` swaps `s_map` when changing maps. |
-| `src/js/pacman-entity.js` | Sets `state.pacman`. Entity has `init()`, `update()`, `draw()`. |
-| `src/js/ghost.js` | Ghost factory (`makeGhost`), `initGhosts()`, `bfsReturnPath()`, `ghostLookahead()` |
-| `src/js/ghost-render.js` | Ghost `draw()` — sprite selection, scared/returning states, four selection indicator styles |
-| `src/js/ai.js` | AI decision loop (`aiDecide()`), single BFS entry point `pacmanBFS(goalFn, opts)` |
-| `src/js/dots.js` | Dot/big-dot initialisation and drawing |
-| `src/js/audio.js` | Web Audio API waka sound |
-| `src/js/hud.js` | Score/lives/level drawing, sliders, path-toggle panel |
-| `src/js/game.js` | Main loop (`run()`), `update()` dispatcher, `render()`, canvas + event-listener setup (`main()`) |
-| `src/js/game-states.js` | State transitions (`newGame`, `nextLevel`, `loseLife`, `startReady`) and scoring (`addScore`, `addPopup`) |
-| `src/js/collision.js` | Ghost–Pac-Man collision, ghost eating, life loss, win check |
-| `src/js/input.js` | All keyboard routing (`initInput(newGame)`) — menu navigation, gameplay controls, shortcuts |
-| `src/js/menu.js` | Menu rendering (`renderMenu`), page renderers, mouse input. Organised top-down: `renderMenu` → page renderers → mouse handlers → settings helpers. |
-| `src/js/draw.js` | Shared canvas helpers. `drawText(ctx, text, x, y, size, color, align='center')` — always use this instead of the raw four-liner (`fillStyle` / `font` / `textAlign` / `fillText`). Font family `'Press Start 2P'` is baked in. |
-| `src/js/pathvis.js` | Debug path visualisation (`renderPaths(ctx)`) for Pac-Man and ghost lookahead |
-| `src/js/fruit.js` | Fruit definitions and availability by level |
-| `src/scss/` | Sass stylesheets |
-| `src/assets/` | Sprite sheet and other static assets |
+| `state.js` | Enkelt mutable objekt — aldri erstatt, bare muter properties |
+| `constants.js` | Alle magic numbers, kartdefinisjoner (`MAPS[]`), AI-personligheter |
+| `game.js` | `mountGame(el)` — entry point, game loop (`update`/`render`) |
+| `game-states.js` | State-maskin-overganger: `newGame`, `nextLevel`, `startReady`, `addScore` |
+| `ghost.js` | Ghost-logikk, BFS-retur til hus, `ghostLookahead` for trussel-kart |
+| `ai.js` | AI-styring av Pac-Man (kan brukes som spiller eller demo) |
+| `grid.js` | Vegg-deteksjon (pixel-basert fra sprite sheet), koordinat-hjelpere |
+| `collision.js` | Pac-Man ↔ ghost / dot-kollisjoner |
+| `dots.js` | Init og tegning av dots/big dots |
+| `draw.js` | Hjelpefunksjoner for canvas-rendering |
+| `sprite.js` | Sprite-lasting og sprite-objekt-fabrikk |
+| `input.js` | Tastatur- og musinnput |
+| `audio.js` | Web Audio API — looping music, lydeffekter |
+| `hud.js` | Score, liv, speed/volum-slidere (tegnes på canvas) |
+| `menu.js` | Meny-logikk (input-siden) |
+| `pacman-entity.js` | Pac-Man-entitet (update + draw) |
+| `ghost-render.js` | Ghost-rendering separert fra logikk |
+| `pathvis.js` | Debug-visualisering av AI-stier |
+| `fruit.js` | Frukt-spawning per nivå |
 
-**Key state fields:**
-- `state.pacman` — Pac-Man entity (col, row, x, y, targetX, targetY, moving, dir)
-- `state.ghosts` — array of 4 ghost objects `[blinky, pinky, inky, clyde]`
-- `state.gameState` — `'menu' | 'ready' | 'playing' | 'dead' | 'gameover' | 'win'`
-- `state.dots[row][col]` — 1 = present, 0 = eaten
-- `state.bigDots` — array of `{ col, row, eaten }`
-- `state.scaredTimer` — frames remaining; > 0 means ghosts are scared
-- `state.gameSpeed` — speed multiplier (0.25–8.0, default 1.0)
-- `state.frames` — global frame counter (never reset)
-- `state.mapIdx` — index into `MAPS`; set by menu selection and incremented by `nextLevel`
-- `state.activeMap` — reference to `MAPS[state.mapIdx]`; must be set before calling `initWallData`, `buildGrid`, `initDots`, `initBigDots`, or any entity `init()`
-- `state.mapScaledW / state.mapScaledH` — pixel dimensions of the wall-detection canvas (sprite dimensions × `scale`); used by `isWall()`
+### React-laget (`src/react/`)
 
-**`dir` enum** (constants.js): `dir.none = -1`, `dir.left = 0`, `dir.up = 1`, `dir.right = 2`, `dir.down = 3`
+Rendrer overlay-UI over canvas. Les aldri fra React-state for spilldata — bruk `useGameSnapshot`.
 
-**AI decision priority** (aiDecide, runs when `state.pacman.moving === false`):
-1. Flee if ghost within `cfg.fleeAt` tiles
-2. Strategic power pellet (cluster score or trapped path)
-3. Hunt scared ghosts (personality-dependent)
-4. Cherry
-5. Eat nearest safe dot (time-aware BFS)
-6. Fallback flee
+| Fil / mappe | Ansvar |
+|---|---|
+| `main.jsx` | React entry, mounter `<App>` |
+| `App.jsx` | Shell: `<GameCanvas>` + `<OverlayUi>` |
+| `components/GameCanvas.jsx` | Mounter canvas-elementet, kaller `mountGame(el)` |
+| `components/OverlayUi.jsx` | Router for alle overlays basert på `snapshot.gameState` |
+| `hooks/useGameSnapshot.js` | Poll `state`-objektet hvert frame via `rAF`, returner flatt snapshot |
+| `hooks/useFitScale.js` | CSS-skalering for å passe canvas til vinduet |
+| `components/*` | Individuelle overlay-komponenter (meny, pause, gameover, innstillinger osv.) |
 
-**Input bindings**: arrow keys move Pac-Man; `P` pause; `M` mute; `,`/`.` speed; `Z X C V` ghost paths; `B` Pac-Man path; `Q` info panel; `Esc` menu.
+## Viktige designvalg
 
----
+- **`state.js` er single source of truth.** Alle spillmoduler importerer og muterer `state` direkte. React leser kun via `useGameSnapshot` — skriver aldri tilbake.
+- **Vegg-deteksjon er pixel-basert.** `grid.js` leser pikselbrightness fra det rendrede sprite-arket for å avgjøre om en tile er vegg (`WALL_BRIGHTNESS_THRESHOLD = 80`). Viktig å forstå ved kart-endringer.
+- **Kart-konfigurasjon i `MAPS[]`** (`constants.js`). Hvert kart angir sprite-koordinater, start-posisjoner, big-dot-plasseringer og ghost house-bounds. Alle kart bruker samme `DEFAULT_GHOST_LAYOUT`.
+- **AI-personligheter** definert i `AI_PERSONALITIES` i `constants.js` — parametere styrer flukt-terskel, lookahead-dybde, klynge-prioriotering osv.
+- **Scatter/chase-syklus** styres av `SCATTER_CHASE_PHASES` — alternerende faser, siste er `Infinity`.
+- **Spill-hastighet** er en multiplikator (`state.gameSpeed`), lagret i `localStorage`. Alle tidsavhengige operasjoner multipliserer med denne.
+- **Canvas er 1800×1200 px** internt, skalert ned til vinduet via CSS (`useFitScale`). Alt spill-rendering bruker `ctx.scale(2, 2)` for kartet.
 
-## Game Loop
+## Persistens (localStorage)
 
-`window.requestAnimationFrame` drives a single `loop()` function in `game.js` that calls `update()` then `render()` every frame.
+| Nøkkel | Innhold |
+|---|---|
+| `pacman-hi` | High score |
+| `pacman-vol` | Volum (0–1) |
+| `pacman-speed` | Spill-hastighet multiplikator |
+| `pacman-muted` | `'1'` hvis muted |
 
-**`update()` — executes in this order each frame:**
+## Ressursfiler
 
-1. Increment `state.frames`
-2. Early-out for non-playing states (`ready`, `dead`, `gameover`, `win`)
-3. Decrement `state.ghostEatenFreezeTimer` — the game is paused for all other updates while this is > 0 (brief freeze when a ghost is eaten)
-4. Decrement `state.scaredTimer` (counts down after a power pellet is eaten)
-5. Advance `state.scatterTimer` / `state.scatterPhase` — the scatter/chase alternation cycle; pauses while `scaredTimer > 0`
-6. Age and cull `state.scorePopups`
-7. Tick `state.cherry` timer; spawn cherry at `dotsEaten === CHERRY_DOT_THRESHOLD`
-8. `aiDecide()` — sets `state.pacman.nextDir` when `state.aiMode` is true
-9. `state.pacman.update()` — moves Pac-Man one step toward its tile target, eats dots, triggers scared mode on big dot
-10. `state.ghosts.forEach(g => g.update())` — each ghost updates independently; their movement decisions read `state.scatterPhase` to pick scatter corner vs. chase target
-11. Ghost collision — if ghost and Pac-Man share a tile: eat ghost (if scared) or lose a life
-12. Win check — count remaining dots; transition to `'win'` if zero
+- `res/sheet-2.png` — Pac-Man sprite sheet (kart + sprites)
+- `res/mspacmansheet.png` — Ms. Pac-Man sprite sheet
 
-**`render()` — executes every frame regardless of game state:**
+## Spilltilstander (`state.gameState`)
 
-1. Clear canvas
-2. Draw map sprite
-3. Draw dots
-4. Draw AI path (Pac-Man) and ghost lookahead paths if enabled
-5. Draw each ghost (`draw()` picks sprite based on `returning`, `pendingReturn`, `scaredTimer`)
-6. Draw Pac-Man
-7. Draw cherry, score popups, and state overlays (`READY!`, `PAUSED`, `GAME OVER`, `LEVEL COMPLETE`)
-8. Draw HUD (score, lives, level, sliders)
+`'menu'` → `'ready'` → `'playing'` → `'dead'` / `'win'` / `'gameover'`
 
-**Scatter/chase cycle** (`state.scatterPhase`, `state.scatterTimer`):
-- Even phase index → scatter (ghosts target `g.scatterTarget` corners)
-- Odd phase index → chase (ghosts use `g.getTarget()`)
-- Phases (frames at 60 fps): `[420, 1200, 420, 1200, 300, 1200, 300, ∞]`
-- Timer is frozen while `scaredTimer > 0`
+## Bransjestrategi
 
-**Key state fields added alongside scatter:**
-- `state.scatterPhase` — current phase index (0 = first scatter)
-- `state.scatterTimer` — frames remaining in current phase
-- `g.scatterTarget` — `{ col, row }` corner target per ghost (Blinky top-right, Pinky top-left, Inky bottom-right, Clyde bottom-left)
+- `master` — main branch
+- `pm-refaktor` — aktiv refaktoreringsgren
 
----
+## Søking i koden
 
-## Workflow & Commits
-
-**Before starting work:**
-- Read the relevant module(s) before modifying them — do not assume structure from module names alone.
-- Identify whether the change belongs in a single module or requires coordinating across `state.js` and a game module.
-
-**During work:**
-- Run `npm run build` after every non-trivial change to catch bundler/import errors early.
-- If adding a tunable value, add it to `constants.js` first, then reference it.
-- If extending BFS behaviour, use `opts.blockFn` or `opts.threatMap` — do not duplicate the BFS loop.
-- When adding a menu element that can be clicked or confirmed with Enter: (1) render it in `menu.js`, (2) add a hit-test branch in `menuHitTest`, (3) handle it in `menuMouseDown`, (4) add arrow-key navigation in `input.js` under the correct `menuSubState` block, (5) add any needed focus-row field to `state.js`. All five steps are required — partial implementations are bugs.
-- When adding a new map: add an entry to `MAPS` in `constants.js`. Use the **empty** (no pre-drawn dots) board sprite for both display and wall detection — sprites with pre-drawn dots have bright yellow pixels that are misdetected as walls. If the sprite sheet uses smaller tiles, set `scale: 2` (or the appropriate factor) so the offscreen wall-detection canvas renders at 16 px/tile.
-
-**Debugging approach:**
-1. Check `state` fields first — most bugs are incorrect state transitions.
-2. Check `constants.js` for off-by-one values before touching logic.
-3. Use the in-game path-visualisation toggles (`Z X C V B`) to inspect AI paths live.
-
-**Commit message format** (Conventional Commits):
-```
-<type>: <short imperative summary>
-
-Optional body explaining *why*, not what.
-```
-
-Types: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`, `test`.
-
-Examples:
-```
-feat: add scatter mode for blinky during level 2+
-fix: prevent ghost from re-entering house after reset
-refactor: extract dot-count logic into dots.js
-```
-
-- Subject line: ≤ 72 characters, imperative mood, no trailing period.
-- Body: explain motivation or non-obvious constraints; skip if self-evident.
-- No `WIP` commits on `master` — squash or amend locally first.
-Do not commit unless user has said so.
+Begrens alltid filsøk til `src/` — aldri traverser `node_modules`.

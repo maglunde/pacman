@@ -1,0 +1,73 @@
+.menu-header {
+	display: flex;
+	justify-content: center;
+	//margin-top: -0.35rem;
+}
+
+.menu-title-sprite {
+	max-width: 100%;
+}
+
+.menu-roster {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.menu-roster-title {
+	color: var(--color-white);
+	font-size: clamp(0.8rem, 16px, 1.2rem);
+	text-transform: uppercase;
+}
+
+.menu-roster-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+}
+
+.menu-roster-row {
+	display: grid;
+	grid-template-columns: 2rem 9rem 7rem;
+	align-items: center;
+	column-gap: 0.8rem;
+	font-size: clamp(0.52rem, 12px, 0.9rem);
+	text-transform: uppercase;
+}
+
+.menu-roster-name,
+.menu-roster-nick {
+	text-align: left;
+}
+
+.menu-animation-strip {
+	width: 100%;
+	height: 3.9rem;
+	overflow: hidden;
+	position: relative;
+	margin-bottom: -0.15rem;
+}
+
+.menu-animation-track {
+	position: absolute;
+	left: 0;
+	bottom: 0.2rem;
+	display: flex;
+	align-items: flex-end;
+	gap: 3.5rem;
+	will-change: transform;
+}
+
+.menu-animation-ghosts {
+	display: flex;
+	align-items: flex-end;
+	gap: 1rem;
+}
+
+.sprite-frame {
+	position: relative;
+	overflow: hidden;
+	flex: 0 0 auto;
+}
