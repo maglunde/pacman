@@ -108,11 +108,11 @@ function keydown(e, newGame) {
 				case 'ArrowDown':  state.settingsRow = (state.settingsRow + 1) % 4; break;
 				case 'ArrowLeft':
 					if (state.settingsRow < 2) adjustSetting(state.settingsRow, -1);
-					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
+					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx - 1 + MAPS.length) % MAPS.length; state.startingMapIdx = state.mapIdx; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
 					break;
 				case 'ArrowRight':
 					if (state.settingsRow < 2) adjustSetting(state.settingsRow, +1);
-					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx + 1) % MAPS.length; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
+					if (state.settingsRow === 2) { state.mapIdx = (state.mapIdx + 1) % MAPS.length; state.startingMapIdx = state.mapIdx; state.activeMap = MAPS[state.mapIdx]; state.playerSpriteSheet = state.activeMap.spriteSheet; setMapSprite(state.activeMap); }
 					break;
 				case 'Enter':
 					state.menuSubState = 'main';

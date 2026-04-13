@@ -63,6 +63,7 @@ export function focusPersonalityRow(index) {
 export function cycleMap(direction) {
 	state.settingsRow = 2;
 	state.mapIdx = (state.mapIdx + direction + MAPS.length) % MAPS.length;
+	state.startingMapIdx = state.mapIdx;
 	state.activeMap = MAPS[state.mapIdx];
 	state.playerSpriteSheet = state.activeMap.spriteSheet;
 	setMapSprite(state.activeMap);

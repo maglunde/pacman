@@ -94,6 +94,7 @@ describe('game state transitions', function() {
 	it('starts a fresh game from the selected map when the engine is ready', function() {
 		state.engineReady = true;
 		state.mapIdx = 1;
+		state.startingMapIdx = 1;
 		state.score = 999;
 		state.level = 3;
 		state.lives = 1;

@@ -20,6 +20,7 @@ export function resetState() {
 		mapScaledW: 0,
 		mapScaledH: 0,
 		mapIdx: 0,
+		startingMapIdx: 0,
 		activeMap: MAPS[0],
 		playerSpriteSheet: MAPS[0].spriteSheet,
 		GRID_COLS: 0,

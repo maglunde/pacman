@@ -20,7 +20,8 @@ export const state = {
 	mapScaledH: 0,
 
 	// Active map config (set from MAPS[mapIdx] before any init functions run)
-	mapIdx:    0,
+	mapIdx:         0, // current map (advances each level)
+	startingMapIdx: 0, // user's chosen starting map (set in settings)
 	activeMap: null,
 	playerSpriteSheet: null,
 

@@ -55,6 +55,7 @@ export function newGame() {
 	state.level = 1;
 	state.dotsEaten = 0;
 	state.fruitDotsSinceSpawn = 0;
+	state.mapIdx = state.startingMapIdx;
 	state.activeMap = MAPS[state.mapIdx];
 	state.playerSpriteSheet = state.activeMap.spriteSheet;
 	setMapSprite(state.activeMap);
