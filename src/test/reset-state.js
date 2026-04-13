@@ -58,6 +58,8 @@ export function resetState() {
 		indicatorStyleBounds: null,
 		escapeMenuActive: false,
 		escapeMenuSelected: 0,
+		backConfirmActive: false,
+		backConfirmSelected: 0,
 		settingsOverlayActive: false,
 		settingsRow: 0,
 		personalityRow: 0,

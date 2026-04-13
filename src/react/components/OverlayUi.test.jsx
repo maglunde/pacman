@@ -76,6 +76,14 @@ vi.mock('./SettingsMenu.jsx', function() {
 	};
 });
 
+vi.mock('./BackConfirmModal.jsx', function() {
+	return {
+		BackConfirmModal: function() {
+			return <div data-testid="back-confirm-modal">QUIT?</div>;
+		},
+	};
+});
+
 import { OverlayUi } from './OverlayUi.jsx';
 
 function createSnapshot(overrides = {}) {
@@ -84,6 +92,7 @@ function createSnapshot(overrides = {}) {
 		menuSubState: 'main',
 		escapeMenuActive: false,
 		settingsOverlayActive: false,
+		backConfirmActive: false,
 		level: 1,
 		settingToast: { text: '', timer: 0 },
 		...overrides,
@@ -127,6 +136,16 @@ describe('OverlayUi', function() {
 		expect(screen.getByTestId('settings-modal-overlay')).toBeInTheDocument();
 		expect(screen.getByTestId('gameover-overlay')).toBeInTheDocument();
 		expect(screen.getByTestId('setting-toast')).toHaveTextContent('80%');
+	});
+
+	it('shows the back confirm modal only when backConfirmActive is true', function() {
+		mockSnapshot.mockReturnValue(createSnapshot({ gameState: 'playing', backConfirmActive: false }));
+		const { rerender } = render(<OverlayUi />);
+		expect(screen.queryByTestId('back-confirm-modal')).not.toBeInTheDocument();
+
+		mockSnapshot.mockReturnValue(createSnapshot({ gameState: 'playing', backConfirmActive: true }));
+		rerender(<OverlayUi />);
+		expect(screen.getByTestId('back-confirm-modal')).toBeInTheDocument();
 	});
 
 	it('renders the win notice with the current level', function() {

@@ -71,6 +71,8 @@ export const state = {
 	indicatorStyleBounds:  null, // hit-test bounds for indicator picker clicks
 	escapeMenuActive:      false,
 	escapeMenuSelected:    0,
+	backConfirmActive:     false,
+	backConfirmSelected:   0,  // 0=CONTINUE  1=QUIT
 	settingsOverlayActive: false,
 	settingsRow:           0,    // 0=speed  1=volume  2=map  3=back
 	personalityRow:        0,    // 0=selector  1=back

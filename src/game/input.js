@@ -10,6 +10,16 @@ import { saveVolume, togglePath } from './hud.js';
 function keydown(e, newGame) {
 	initAudio();
 
+	if (state.backConfirmActive) {
+		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') state.backConfirmSelected = state.backConfirmSelected === 0 ? 1 : 0;
+		if (e.key === 'Escape') state.backConfirmActive = false;
+		if (e.key === 'Enter') {
+			if (state.backConfirmSelected === 1) quitToMenu();
+			state.backConfirmActive = false;
+		}
+		return;
+	}
+
 	// Global shortcuts
 	if (e.code === 'KeyM') { state.muted = !state.muted; saveVolume(); updateLoopVolume(); return; }
 	if (e.code === 'KeyQ') { state.showInfoPanel = !state.showInfoPanel; return; }

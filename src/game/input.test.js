@@ -74,6 +74,45 @@ describe('game input', function() {
 		expect(quitToMenu).toHaveBeenCalledTimes(1);
 	});
 
+	it('handles the back confirm modal: arrows toggle selection, Escape dismisses, Enter executes', function() {
+		state.gameState = 'playing';
+		state.backConfirmActive = true;
+		state.backConfirmSelected = 0;
+
+		// Arrow toggles selection
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+		expect(state.backConfirmSelected).toBe(1);
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+		expect(state.backConfirmSelected).toBe(0);
+
+		// Escape dismisses without quitting
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(state.backConfirmActive).toBe(false);
+		expect(quitToMenu).not.toHaveBeenCalled();
+
+		// Enter on CONTINUE (selected=0) dismisses without quitting
+		state.backConfirmActive = true;
+		state.backConfirmSelected = 0;
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		expect(state.backConfirmActive).toBe(false);
+		expect(quitToMenu).not.toHaveBeenCalled();
+
+		// Enter on QUIT (selected=1) quits and dismisses
+		state.backConfirmActive = true;
+		state.backConfirmSelected = 1;
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		expect(state.backConfirmActive).toBe(false);
+		expect(quitToMenu).toHaveBeenCalledTimes(1);
+	});
+
+	it('blocks other keys while back confirm modal is active', function() {
+		state.gameState = 'playing';
+		state.backConfirmActive = true;
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyP', key: 'p', bubbles: true }));
+		expect(state.escapeMenuActive).toBe(false);
+	});
+
 	it('maps a swipe to directional input on touch devices', function() {
 		state.gameState = 'ready';
 		state.aiMode = false;

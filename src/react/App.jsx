@@ -8,6 +8,21 @@ import { isPacmanTestMode } from '../lib/test-mode.js';
 
 export function App() {
 	useEffect(function() {
+		history.pushState({ pacmanGame: true }, '');
+
+		function onPopState() {
+			history.pushState({ pacmanGame: true }, '');
+			if (state.gameState !== 'menu') {
+				state.backConfirmActive   = true;
+				state.backConfirmSelected = 0;
+			}
+		}
+
+		window.addEventListener('popstate', onPopState);
+		return function() { window.removeEventListener('popstate', onPopState); };
+	}, []);
+
+	useEffect(function() {
 		if (!isPacmanTestMode()) return;
 
 		window.__PACMAN_TEST_API__ = {
@@ -36,7 +51,7 @@ export function App() {
 				<GameCanvas />
 				<OverlayUi />
 				<VersionBadge />
-			</div>
+				</div>
 		</div>
 	);
 }

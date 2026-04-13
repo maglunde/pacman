@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameSnapshot } from '../hooks/useGameSnapshot.js';
+import { BackConfirmModal } from './BackConfirmModal.jsx';
 import { CenterNotice } from './CenterNotice.jsx';
 import { GameOverOverlay } from './GameOverOverlay.jsx';
 import { LeaderboardOverlay } from './LeaderboardOverlay.jsx';
@@ -21,6 +22,7 @@ export function OverlayUi() {
 			{snapshot.gameState === 'gameover' ? <GameOverOverlay snapshot={snapshot} /> : null}
 			{snapshot.gameState === 'win' ? <CenterNotice text={`LEVEL ${snapshot.level} COMPLETE!`} accent="success" /> : null}
 			{snapshot.gameState !== 'menu' && snapshot.settingToast.timer > 0 ? <SettingToast text={snapshot.settingToast.text} /> : null}
+			{snapshot.backConfirmActive ? <BackConfirmModal snapshot={snapshot} /> : null}
 		</div>
 	);
 }

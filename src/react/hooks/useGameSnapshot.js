@@ -41,6 +41,8 @@ export function readSnapshot() {
 		stateTimer: state.stateTimer,
 		escapeMenuActive: state.escapeMenuActive,
 		escapeMenuSelected: state.escapeMenuSelected,
+		backConfirmActive: state.backConfirmActive,
+		backConfirmSelected: state.backConfirmSelected,
 		settingsOverlayActive: state.settingsOverlayActive,
 		gameSpeed: state.gameSpeed,
 		volume: state.volume,
