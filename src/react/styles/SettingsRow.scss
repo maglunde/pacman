@@ -11,6 +11,14 @@
 	align-items: center;
 	font-size: clamp(0.65rem, 12px, 0.92rem);
 	color: var(--color-gray);
+
+	@media (orientation: portrait) {
+		grid-template-columns: 6rem 1fr;
+
+		.settings-shortcut {
+			display: none;
+		}
+	}
 }
 
 .settings-row--active {
