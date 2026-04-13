@@ -1,7 +1,7 @@
 import { getSupabase } from './supabase.js';
 import { getPacmanTestMocks } from './test-mode.js';
 
-const LEADERBOARD_LIMIT = 10;
+const LEADERBOARD_LIMIT = 100;
 
 export async function submitScore({ displayName, score, level }) {
 	const testMocks = getPacmanTestMocks();
