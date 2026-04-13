@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { closeMenuSubPage } from '../../game/menu.js';
 import { fetchTopScores } from '../../lib/scores.js';
 import { MenuShell } from './MenuAnimation.jsx';
@@ -9,6 +9,7 @@ export function LeaderboardOverlay() {
 	const [rows, setRows]         = useState(null);
 	const [error, setError]       = useState(null);
 	const [selected, setSelected] = useState(-1); // -1 = ingenting valgt, rows.length = BACK
+	const selectedRowRef = useRef(null);
 
 	useEffect(function() {
 		fetchTopScores()
@@ -36,6 +37,12 @@ export function LeaderboardOverlay() {
 		document.addEventListener('keydown', onKey, true);
 		return function() { document.removeEventListener('keydown', onKey, true); };
 	}, [rows]);
+
+	useEffect(function() {
+		if (selectedRowRef.current) {
+			selectedRowRef.current.scrollIntoView({ block: 'nearest' });
+		}
+	}, [selected]);
 
 	const backSelected = rows !== null && selected === rows.length;
 
@@ -65,7 +72,7 @@ export function LeaderboardOverlay() {
 								if (i === selected)      className = 'leaderboard-row--selected';
 								else if (i === 0)        className = 'leaderboard-row--gold';
 								return (
-									<tr key={i} className={className}>
+									<tr key={i} className={className} ref={i === selected ? selectedRowRef : null}>
 										<td>{i + 1}</td>
 										<td>{row.display_name}</td>
 										<td>{row.score}</td>
