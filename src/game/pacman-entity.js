@@ -1,8 +1,8 @@
-import { TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, SCARED_DURATION, PACMAN_DRAW_SIZE, dir } from './constants.js';
+import { TILE, SPEED, PACMAN_DOT_SPEED_FACTOR, SCARED_DURATION, PACMAN_DRAW_SIZE, DEAD_STATE_FRAMES, RESULT_STATE_FRAMES, dir } from './constants.js';
 import { state } from './state.js';
 import { delta, tilePixel, isPacWall, applyMove, moveTowardTarget } from './grid.js';
 import { playWaka } from './audio.js';
-import { getPacmanSpriteSet } from './sprite.js';
+import { getPacmanSpriteSet, s_pacman_dies } from './sprite.js';
 import { addScore } from './game-states.js';
 
 state.pacman = {
@@ -84,7 +84,26 @@ state.pacman = {
 	},
 
 	draw: function() {
-		let ctx   = state.ctx;
+		let ctx = state.ctx;
+
+		if (state.gameState === 'dead' || state.gameState === 'gameover') {
+			let elapsed = state.gameState === 'dead'
+				? DEAD_STATE_FRAMES - state.stateTimer
+				: RESULT_STATE_FRAMES - state.stateTimer;
+			let progress = Math.min(elapsed, DEAD_STATE_FRAMES) / DEAD_STATE_FRAMES;
+			let frameIdx = Math.min(Math.floor(progress * s_pacman_dies.length), s_pacman_dies.length - 1);
+			let rotations = { [dir.right]: 0, [dir.down]: Math.PI / 2, [dir.left]: Math.PI, [dir.up]: -Math.PI / 2 };
+			let angle = rotations[this.dir] || 0;
+			let cx = this.x + PACMAN_DRAW_SIZE / 2;
+			let cy = this.y + PACMAN_DRAW_SIZE / 2;
+			ctx.save();
+			ctx.translate(cx, cy);
+			ctx.rotate(angle);
+			s_pacman_dies[frameIdx].draw(ctx, -PACMAN_DRAW_SIZE / 2, -PACMAN_DRAW_SIZE / 2, PACMAN_DRAW_SIZE, PACMAN_DRAW_SIZE);
+			ctx.restore();
+			return;
+		}
+
 		let mapW  = state.GRID_COLS * TILE;
 		let relX  = this.x - state.mapOffX;
 		let spr   = this.sprite[state.frame % 2];

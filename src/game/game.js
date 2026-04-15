@@ -141,7 +141,7 @@ function render() {
 
 	renderPaths(ctx);
 
-	state.ghosts.forEach(function(g) { g.draw(); });
+	if (state.gameState !== 'dead' && state.gameState !== 'gameover') state.ghosts.forEach(function(g) { g.draw(); });
 	state.pacman.draw();
 
 	if (state.gameState === 'ready') {

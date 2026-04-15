@@ -17,7 +17,7 @@ export const SPEED_MIN               = 0.25;
 export const SPEED_MAX               = 8.0;
 
 // State-machine durations (frames)
-export const DEAD_STATE_FRAMES        = 120;
+export const DEAD_STATE_FRAMES        = 220;
 export const RESULT_STATE_FRAMES      = 180; // Win + gameover hold
 export const GHOST_EATEN_FREEZE_FRAMES = 120;
 export const GHOST_REGEN_DELAY        = 300; // Frames in house before re-release after returning
