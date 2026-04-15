@@ -5,6 +5,7 @@
 	--game-canvas-height: 1200;
 	--game-board-width: 896;
 	--game-board-height: 992;
+	--controls-h: 44px;
 }
 
 * {
@@ -34,14 +35,15 @@ button {
 	width: 100%;
 	height: 100%;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 }
 
 .game-scene {
 	position: relative;
-	width: min(100vw, 150vh);
-	height: min(100vh, 66.667vw);
+	width: min(100vw, calc(1.5 * (100vh - var(--controls-h))));
+	height: min(calc(100vh - var(--controls-h)), 66.667vw);
 }
 
 .canvas-host,
@@ -59,7 +61,7 @@ button {
 @media (orientation: portrait) {
 	.game-scene {
 		width: 100vw;
-		height: min(100dvh, calc(100vw * var(--game-canvas-height) / var(--game-board-width)));
+		height: min(calc(100dvh - var(--controls-h)), calc(100vw * var(--game-canvas-height) / var(--game-board-width)));
 		overflow: hidden;
 	}
 
@@ -93,8 +95,8 @@ button {
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		width: calc(100vh * var(--game-canvas-width) / var(--game-board-height));
-		height: calc(100vh * var(--game-canvas-height) / var(--game-board-height));
+		width: calc((100vh - var(--controls-h)) * var(--game-canvas-width) / var(--game-board-height));
+		height: calc((100vh - var(--controls-h)) * var(--game-canvas-height) / var(--game-board-height));
 		transform: translate(-50%, -50%);
 	}
 }

@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { GameCanvas } from './components/GameCanvas.jsx';
 import { OverlayUi } from './components/OverlayUi.jsx';
 import { VersionBadge } from './components/VersionBadge.jsx';
+import { SpeedControls } from './components/SpeedControls.jsx';
+import { pauseAudio } from '../game/audio.js';
 import { state } from '../game/state.js';
 import { readSnapshot } from './hooks/useGameSnapshot.js';
 import { isPacmanTestMode } from '../lib/test-mode.js';
@@ -13,8 +15,10 @@ export function App() {
 		function onPopState() {
 			history.pushState({ pacmanGame: true }, '');
 			if (state.gameState !== 'menu') {
+				state.paused              = true;
 				state.backConfirmActive   = true;
 				state.backConfirmSelected = 0;
+				pauseAudio();
 			}
 		}
 
@@ -47,11 +51,12 @@ export function App() {
 
 	return (
 		<div className="app-shell" data-testid="app-shell">
+			<SpeedControls />
 			<div className="game-scene" data-testid="game-scene">
 				<GameCanvas />
 				<OverlayUi />
 				<VersionBadge />
-				</div>
+			</div>
 		</div>
 	);
 }

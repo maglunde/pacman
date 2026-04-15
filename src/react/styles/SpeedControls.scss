@@ -1,0 +1,32 @@
+.speed-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1em;
+	height: var(--controls-h);
+	width: 100%;
+	font-size: clamp(8px, 1.5vw, 12px);
+	color: #fff;
+	touch-action: manipulation;
+	user-select: none;
+}
+
+.speed-btn {
+	background: none;
+	border: none;
+	color: #ffe000;
+	cursor: pointer;
+	min-width: 44px;
+	min-height: 44px;
+	font: inherit;
+	padding: 0;
+
+	&:active {
+		color: #fff;
+	}
+}
+
+.speed-label {
+	min-width: 7em;
+	text-align: center;
+}

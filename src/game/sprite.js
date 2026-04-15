@@ -21,7 +21,8 @@ s_dot,
 s_bigDot,
 s_title,
 s_ready,
-s_gameover
+s_gameover,
+s_pacman_dies
 ;
 
 export function Sprite(img, x, y, w, h, scale) {
@@ -146,5 +147,18 @@ export function initSprites(img, mspacImg) {
 	];
 	s_title = new Sprite(img, 0, 508, 425, 99);
 	s_ready = new Sprite(img, 626, 480, 96, 17);
-	s_gameover = new Sprite(img, 451, 476, 164, 25);
+	s_gameover = new Sprite(img, 451, 476, 164, 25),
+	s_pacman_dies = [
+		new Sprite(img, 233, 610, 30, 50),
+		new Sprite(img, 207, 610, 25, 50),
+		new Sprite(img, 186, 610, 21, 50),
+		new Sprite(img, 166, 610, 21, 50),
+		new Sprite(img, 147, 610, 21, 50),
+		new Sprite(img, 127, 610, 21, 50),
+		new Sprite(img, 105, 610, 22, 50),
+		new Sprite(img, 83, 610, 22, 50),
+		new Sprite(img, 57, 610, 24, 50),
+		new Sprite(img, 36, 610, 20, 50),
+		new Sprite(img, 4, 610, 32, 50)
+	];
 }

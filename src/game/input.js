@@ -12,9 +12,9 @@ function keydown(e, newGame) {
 
 	if (state.backConfirmActive) {
 		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') state.backConfirmSelected = state.backConfirmSelected === 0 ? 1 : 0;
-		if (e.key === 'Escape') state.backConfirmActive = false;
+		if (e.key === 'Escape') { state.backConfirmActive = false; state.paused = false; resumeAudio(); }
 		if (e.key === 'Enter') {
-			if (state.backConfirmSelected === 1) quitToMenu();
+			if (state.backConfirmSelected === 1) { quitToMenu(); } else { state.paused = false; resumeAudio(); }
 			state.backConfirmActive = false;
 		}
 		return;
