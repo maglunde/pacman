@@ -48,5 +48,6 @@ export function readSnapshot() {
 		volume: state.volume,
 		muted: state.muted,
 		settingToast: { text: state.settingToast.text, timer: state.settingToast.timer },
+		sessionToken: state.sessionToken,
 	};
 }

@@ -110,4 +110,10 @@ export const state = {
 
 	// Setting toast (center-screen flash when speed/volume changes)
 	settingToast: { text: '', timer: 0 },
+
+	// Leaderboard session token issued by the start-game edge function.
+	// Null when the leaderboard is unavailable or the session call failed —
+	// submitScore must degrade silently in that case.
+	sessionToken:   null,
+	sessionStartMs: 0,
 };

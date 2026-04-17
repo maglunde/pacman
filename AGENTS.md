@@ -88,9 +88,19 @@ Renders overlay UI on top of the canvas. Never read from React state for game da
 
 ## Supabase / leaderboard
 
-- **`anonymous_scores`** table — open insert/select for anon role, no foreign keys
-- **`anonymous_leaderboard`** view — deduplicates by `display_name`, returns best score per name, ordered by score desc
+- **`anonymous_scores`** table — writes are locked to `service_role` only (see
+  `supabase/migrations/0001_lockdown_scores.sql`). Anon cannot INSERT.
+- **`anonymous_leaderboard`** view — deduplicates by `display_name`, returns best score per name, ordered by score desc. Anon SELECT is open.
+- **Score submission goes through two edge functions** in `supabase/functions/`:
+  - `start-game` — issues an HMAC-signed session token (uses `SESSION_SECRET`)
+  - `submit-score` — verifies token freshness, plausibility, one-shot use
+    (`used_sessions`) and per-IP rate limit (`submit_rate`), then inserts via
+    `service_role`
+- Client calls `startGameSession()` in `newGame()` and passes the resulting
+  token to `submitScore()` — see `src/lib/scores.js`
 - Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) must be set as GitHub Actions secrets for production builds — they are not committed to the repo
+- Edge-function secrets (`SESSION_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`) must be
+  set via `supabase secrets set` or the dashboard — never in the client bundle
 - The client is lazy-initialized; if env vars are missing the leaderboard feature degrades silently without crashing the app
 - A future `scores` table exists for authenticated users (Google/GitHub OAuth via Supabase Auth) — do not modify it
 

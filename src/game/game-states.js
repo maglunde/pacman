@@ -6,6 +6,7 @@ import { initDots, initBigDots } from './dots.js';
 import { initGhosts } from './ghost.js';
 import { shuffleBFSDirs } from './ai.js';
 import { stopLoopingMusic, resumeAudio, playDeath, playExtraPac } from './audio.js';
+import { startGameSession } from '../lib/scores.js';
 
 // ── Score ─────────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,13 @@ export function newGame() {
 	if (!state.engineReady) return;
 	stopLoopingMusic();
 	resumeAudio();
+	state.sessionToken   = null;
+	state.sessionStartMs = 0;
+	startGameSession().then(function(session) {
+		if (!session) return;
+		state.sessionToken   = session.token;
+		state.sessionStartMs = session.issued_at;
+	}).catch(function() { /* leaderboard degrades silently */ });
 	state.score = 0;
 	state.lastExtraLifeScore = 0;
 	state.lives = 3;

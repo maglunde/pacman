@@ -17,10 +17,15 @@ export function GameOverOverlay({ snapshot }) {
 
 	useEffect(function() {
 		if (!ready || !snapshot.aiMode || submitted || submitting) return;
-		submitScore({ displayName: aiName, score: snapshot.score, level: snapshot.level })
+		submitScore({
+			displayName: aiName,
+			score:       snapshot.score,
+			level:       snapshot.level,
+			token:       snapshot.sessionToken,
+		})
 			.then(function() { setSubmitted(true); })
 			.catch(function(err) { setError(err?.message || 'SUBMIT FAILED'); });
-	}, [aiName, ready, snapshot.aiMode, snapshot.level, snapshot.score, submitted, submitting]);
+	}, [aiName, ready, snapshot.aiMode, snapshot.level, snapshot.score, snapshot.sessionToken, submitted, submitting]);
 
 	useEffect(function() {
 		if (!snapshot.aiMode || !ready) return;
@@ -44,6 +49,7 @@ export function GameOverOverlay({ snapshot }) {
 				displayName: name.trim(),
 				score:       snapshot.score,
 				level:       snapshot.level,
+				token:       snapshot.sessionToken,
 			});
 			setSubmitted(true);
 			quitToMenu();

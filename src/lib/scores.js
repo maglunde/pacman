@@ -3,18 +3,52 @@ import { getPacmanTestMocks } from './test-mode.js';
 
 const LEADERBOARD_LIMIT = 100;
 
-export async function submitScore({ displayName, score, level }) {
+// Called when a new game starts. Returns { token, sid, issued_at } on success,
+// or null if Supabase is unavailable / the edge function fails. Never throws —
+// leaderboard must degrade silently like the rest of the feature.
+export async function startGameSession() {
 	const testMocks = getPacmanTestMocks();
-	if (testMocks?.submitScore) return testMocks.submitScore({ displayName, score, level });
+	if (testMocks?.startGameSession) return testMocks.startGameSession();
+
+	const client = getSupabase();
+	if (!client) return null;
+	try {
+		const { data, error } = await client.functions.invoke('start-game', { body: {} });
+		if (error || !data?.token) return null;
+		return { token: data.token, sid: data.sid, issued_at: data.issued_at };
+	} catch {
+		return null;
+	}
+}
+
+export async function submitScore({ displayName, score, level, token }) {
+	const testMocks = getPacmanTestMocks();
+	if (testMocks?.submitScore) return testMocks.submitScore({ displayName, score, level, token });
 
 	const client = getSupabase();
 	if (!client) throw new Error('Leaderboard not available');
-	const { error } = await client.from('anonymous_scores').insert({
-		display_name: displayName,
-		score,
-		level,
+	if (!token) throw new Error('Session expired, restart the game');
+
+	const { data, error } = await client.functions.invoke('submit-score', {
+		body: { displayName, score, level, token },
 	});
-	if (error) throw error;
+	if (error) throw new Error(mapSubmitError(data?.error || error.message));
+	if (data?.error) throw new Error(mapSubmitError(data.error));
+}
+
+function mapSubmitError(code) {
+	switch (code) {
+		case 'too_soon':              return 'Game was too short';
+		case 'token_expired':         return 'Session expired';
+		case 'bad_signature':
+		case 'missing_token':         return 'Invalid session';
+		case 'session_reused':        return 'Score already submitted';
+		case 'score_too_high':
+		case 'score_too_low_for_level': return 'Score rejected';
+		case 'invalid_name':          return 'Invalid name';
+		case 'rate_limited':          return 'Too many submissions, try later';
+		default:                      return 'Submit failed';
+	}
 }
 
 export async function fetchTopScores(limit = LEADERBOARD_LIMIT) {
