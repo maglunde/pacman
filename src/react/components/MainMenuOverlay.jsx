@@ -12,8 +12,6 @@ import { MenuButton } from './MenuButton.jsx';
 import '../styles/MainMenuOverlay.scss';
 
 export function MainMenuOverlay({ snapshot }) {
-	let fit = useFitScale({ portraitMaxScale: 3 });
-
 	if (!snapshot.engineReady) {
 		return (
 			<div className="overlay-screen">
@@ -21,6 +19,8 @@ export function MainMenuOverlay({ snapshot }) {
 			</div>
 		);
 	}
+
+	let fit = useFitScale({ portraitMaxScale: 3 });
 
 	return (
 		<div className="overlay-screen overlay-screen--menu-main" data-testid="main-menu">
