@@ -34,8 +34,8 @@ export async function submitScore({ displayName, score, level, token }) {
 	if (turnstileEnabled()) {
 		try {
 			turnstileToken = await getTurnstileToken();
-		} catch {
-			throw new Error(mapSubmitError('captcha_failed'));
+		} catch (err) {
+			throw new Error(err?.message || mapSubmitError('captcha_failed'));
 		}
 	}
 

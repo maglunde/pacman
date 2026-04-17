@@ -11,6 +11,46 @@ const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render
 let scriptPromise = null;
 let readyPromise  = null;
 
+function createTurnstileError(errorCode) {
+	const code = Number(errorCode);
+	let message = 'Turnstile failed';
+
+	switch (code) {
+		case 110100:
+		case 110110:
+		case 400020:
+			message = 'Turnstile site key is invalid';
+			break;
+		case 110200:
+			message = 'Turnstile domain is not authorized for this site';
+			break;
+		case 110600:
+		case 110620:
+			message = 'Turnstile challenge timed out';
+			break;
+		case 200100:
+			message = 'Turnstile blocked by browser clock or cache';
+			break;
+		case 200500:
+			message = 'Turnstile iframe failed to load';
+			break;
+		case 400070:
+			message = 'Turnstile site key is disabled';
+			break;
+		default:
+			if (Math.floor(code / 1000) === 300 || Math.floor(code / 1000) === 600) {
+				message = 'Turnstile rejected the browser challenge';
+			} else if (Number.isFinite(code) && code > 0) {
+				message = 'Turnstile failed (' + code + ')';
+			}
+			break;
+	}
+
+	const err = new Error(message);
+	err.turnstileCode = Number.isFinite(code) ? code : null;
+	return err;
+}
+
 export function turnstileEnabled() {
 	return Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
 }
@@ -65,14 +105,22 @@ export async function getTurnstileToken() {
 		document.body.appendChild(container);
 
 		let settled = false;
+		let widgetId = null;
 		function cleanup() {
+			if (widgetId !== null) {
+				try {
+					window.turnstile?.remove(widgetId);
+				} catch {
+					// Best-effort cleanup only.
+				}
+			}
 			setTimeout(function() {
 				if (container.parentNode) container.parentNode.removeChild(container);
 			}, 400);
 		}
 
 		try {
-			window.turnstile.render(container, {
+			widgetId = window.turnstile.render(container, {
 				sitekey:    import.meta.env.VITE_TURNSTILE_SITE_KEY,
 				appearance: 'interaction-only',
 				callback:   function(token) {
@@ -81,17 +129,23 @@ export async function getTurnstileToken() {
 					cleanup();
 					resolve(token);
 				},
-				'error-callback': function() {
+				'error-callback': function(errorCode) {
 					if (settled) return;
 					settled = true;
 					cleanup();
-					reject(new Error('Captcha failed'));
+					reject(createTurnstileError(errorCode));
 				},
 				'expired-callback': function() {
 					if (settled) return;
 					settled = true;
 					cleanup();
-					reject(new Error('Captcha expired'));
+					reject(new Error('Turnstile token expired'));
+				},
+				'timeout-callback': function() {
+					if (settled) return;
+					settled = true;
+					cleanup();
+					reject(new Error('Turnstile challenge timed out'));
 				},
 			});
 		} catch (err) {
