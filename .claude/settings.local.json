@@ -21,7 +21,8 @@
       "Bash(node_modules/.bin/vite build:*)",
       "Bash(npm install:*)",
       "Bash(grep -n \"Press Start 2P\" /Users/malund84/priv/pm-refaktor/src/js/*.js)",
-      "Bash(grep -n \"ctx.textAlign\" /Users/malund84/priv/pm-refaktor/src/js/*.js)"
+      "Bash(grep -n \"ctx.textAlign\" /Users/malund84/priv/pm-refaktor/src/js/*.js)",
+      "Bash(curl *)"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { getSupabase } from './supabase.js';
 import { getPacmanTestMocks } from './test-mode.js';
+import { getTurnstileToken, turnstileEnabled } from './turnstile.js';
 
 const LEADERBOARD_LIMIT = 100;
 
@@ -29,8 +30,17 @@ export async function submitScore({ displayName, score, level, token }) {
 	if (!client) throw new Error('Leaderboard not available');
 	if (!token) throw new Error('Session expired, restart the game');
 
+	let turnstileToken = null;
+	if (turnstileEnabled()) {
+		try {
+			turnstileToken = await getTurnstileToken();
+		} catch {
+			throw new Error(mapSubmitError('captcha_failed'));
+		}
+	}
+
 	const { data, error } = await client.functions.invoke('submit-score', {
-		body: { displayName, score, level, token },
+		body: { displayName, score, level, token, turnstileToken },
 	});
 	if (error) throw new Error(mapSubmitError(data?.error || error.message));
 	if (data?.error) throw new Error(mapSubmitError(data.error));
@@ -47,6 +57,9 @@ function mapSubmitError(code) {
 		case 'score_too_low_for_level': return 'Score rejected';
 		case 'invalid_name':          return 'Invalid name';
 		case 'rate_limited':          return 'Too many submissions, try later';
+		case 'forbidden_origin':      return 'Submissions blocked from this origin';
+		case 'missing_captcha':
+		case 'captcha_failed':        return 'Captcha failed, try again';
 		default:                      return 'Submit failed';
 	}
 }

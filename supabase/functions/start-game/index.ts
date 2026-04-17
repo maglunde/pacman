@@ -4,19 +4,23 @@
 
 import { handleCorsPreflight, jsonResponse } from '../_shared/cors.ts';
 import { randomSid, signToken } from '../_shared/hmac.ts';
+import { allowedOriginFor } from '../_shared/origin.ts';
 
 const SESSION_SECRET = Deno.env.get('SESSION_SECRET');
 
 Deno.serve(async (req: Request) => {
-    const pre = handleCorsPreflight(req);
+    const origin = allowedOriginFor(req);
+
+    const pre = handleCorsPreflight(req, origin);
     if (pre) return pre;
 
-    if (req.method !== 'POST') return jsonResponse({ error: 'method_not_allowed' }, 405);
-    if (!SESSION_SECRET) return jsonResponse({ error: 'server_misconfigured' }, 500);
+    if (!origin) return jsonResponse({ error: 'forbidden_origin' }, 403, null);
+    if (req.method !== 'POST') return jsonResponse({ error: 'method_not_allowed' }, 405, origin);
+    if (!SESSION_SECRET) return jsonResponse({ error: 'server_misconfigured' }, 500, origin);
 
     const sid = randomSid();
     const issued_at = Date.now();
     const token = await signToken({ sid, issued_at }, SESSION_SECRET);
 
-    return jsonResponse({ token, sid, issued_at });
+    return jsonResponse({ token, sid, issued_at }, 200, origin);
 });

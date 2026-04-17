@@ -96,11 +96,22 @@ Renders overlay UI on top of the canvas. Never read from React state for game da
   - `submit-score` — verifies token freshness, plausibility, one-shot use
     (`used_sessions`) and per-IP rate limit (`submit_rate`), then inserts via
     `service_role`
+- Both edge functions enforce an **origin allowlist** (`_shared/origin.ts`).
+  Allowed origins are configured via the `ALLOWED_ORIGINS` env var
+  (comma-separated); defaults to production + local-dev ports. Requests with
+  missing or non-allowlisted `Origin` get `forbidden_origin` (HTTP 403).
+- `submit-score` also verifies a **Cloudflare Turnstile** token when
+  `TURNSTILE_SECRET` is set (`_shared/turnstile.ts`). The client fetches the
+  token via `src/lib/turnstile.js` using `VITE_TURNSTILE_SITE_KEY`. When either
+  var is missing (e.g. local dev) captcha is skipped.
 - Client calls `startGameSession()` in `newGame()` and passes the resulting
   token to `submitScore()` — see `src/lib/scores.js`
-- Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) must be set as GitHub Actions secrets for production builds — they are not committed to the repo
-- Edge-function secrets (`SESSION_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`) must be
-  set via `supabase secrets set` or the dashboard — never in the client bundle
+- Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+  `VITE_TURNSTILE_SITE_KEY`) must be set as GitHub Actions secrets for
+  production builds — they are not committed to the repo
+- Edge-function secrets (`SESSION_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `TURNSTILE_SECRET`, optional `ALLOWED_ORIGINS`) must be set via
+  `supabase secrets set` or the dashboard — never in the client bundle
 - The client is lazy-initialized; if env vars are missing the leaderboard feature degrades silently without crashing the app
 - A future `scores` table exists for authenticated users (Google/GitHub OAuth via Supabase Auth) — do not modify it
 
