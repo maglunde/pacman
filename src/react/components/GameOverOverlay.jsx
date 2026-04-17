@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { quitToMenu, saveUsername } from '../../game/menu.js';
 import { submitScore } from '../../lib/scores.js';
+import { preloadTurnstile } from '../../lib/turnstile.js';
 import { AI_PERSONALITIES, AI_PERSONALITY_KEYS } from '../../game/constants.js';
 import { ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
@@ -14,6 +15,12 @@ export function GameOverOverlay({ snapshot }) {
 
 	const ready = snapshot.stateTimer <= 0;
 	const aiName = getAiDisplayName(snapshot.aiPersonalityIdx);
+
+	useEffect(function() {
+		preloadTurnstile().catch(function() {
+			// Ignore preload failures; submit keeps the real error handling.
+		});
+	}, []);
 
 	useEffect(function() {
 		if (!ready || !snapshot.aiMode || submitted || submitting) return;
@@ -43,20 +50,26 @@ export function GameOverOverlay({ snapshot }) {
 		if (!name.trim() || submitting) return;
 		setSubmitting(true);
 		setError(null);
-		try {
-			saveUsername(name.trim());
-			await submitScore({
-				displayName: name.trim(),
-				score:       snapshot.score,
-				level:       snapshot.level,
-				token:       snapshot.sessionToken,
-			});
-			setSubmitted(true);
-			quitToMenu();
-		} catch (err) {
-			setError(err?.message || 'SUBMIT FAILED');
-			setSubmitting(false);
-		}
+		let displayName = name.trim();
+		saveUsername(displayName);
+
+		let submitPromise = submitScore({
+			displayName,
+			score: snapshot.score,
+			level: snapshot.level,
+			token: snapshot.sessionToken,
+		}).catch(function(err) {
+			console.error('Background score submit failed', err);
+		});
+
+		await Promise.race([
+			submitPromise,
+			new Promise(function(resolve) {
+				window.setTimeout(resolve, 1000);
+			}),
+		]);
+
+		quitToMenu();
 	}
 
 	if (snapshot.aiMode) {
@@ -103,7 +116,7 @@ export function GameOverOverlay({ snapshot }) {
 						{error && <div className="gameover-error">{error}</div>}
 						<div className="gameover-actions">
 							<MenuButton
-								label={submitting ? 'SAVING...' : 'SUBMIT'}
+								label={submitting ? 'SUBMITTING...' : 'SUBMIT'}
 								active={true}
 								onClick={handleSubmit}
 							/>

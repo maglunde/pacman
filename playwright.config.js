@@ -1,15 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const PLAYWRIGHT_PORT = process.env.PLAYWRIGHT_PORT || '45173';
+const PLAYWRIGHT_BASE_URL = `http://127.0.0.1:${PLAYWRIGHT_PORT}/pacman/`;
+
 export default defineConfig({
 	testDir: './tests/e2e',
 	fullyParallel: true,
 	use: {
-		baseURL: 'http://127.0.0.1:4173/pacman/',
+		baseURL: PLAYWRIGHT_BASE_URL,
 		trace: 'on-first-retry',
 	},
 	webServer: {
-		command: 'npm run dev:test',
-		url: 'http://127.0.0.1:4173/pacman/',
+		command: `npm run dev:test -- --port ${PLAYWRIGHT_PORT}`,
+		url: PLAYWRIGHT_BASE_URL,
 		reuseExistingServer: true,
 		timeout: 120000,
 	},

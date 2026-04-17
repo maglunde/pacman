@@ -92,6 +92,11 @@ function whenReady() {
 	return readyPromise;
 }
 
+export function preloadTurnstile() {
+	if (!turnstileEnabled()) return Promise.resolve();
+	return whenReady();
+}
+
 export async function getTurnstileToken() {
 	if (!turnstileEnabled()) return null;
 	await whenReady();
