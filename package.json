@@ -1,6 +1,6 @@
 {
   "name": "pacman",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "type": "module",
   "scripts": {
     "start": "npm run dev",
