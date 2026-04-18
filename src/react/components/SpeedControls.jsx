@@ -5,7 +5,7 @@ import '../styles/SpeedControls.scss';
 
 export function SpeedControls() {
 	let snapshot = useGameSnapshot();
-	let visible = snapshot.gameState === 'playing' && !snapshot.escapeMenuActive && !snapshot.settingsOverlayActive;
+	let visible = (snapshot.gameState === 'playing' || snapshot.gameState === 'ready') && !snapshot.settingsOverlayActive;
 	let value = trimNumber(snapshot.gameSpeed);
 	return (
 		<div className="speed-controls" style={{ visibility: visible ? 'visible' : 'hidden' }}>

@@ -65,7 +65,7 @@ export function GameOverOverlay({ snapshot }) {
 		await Promise.race([
 			submitPromise,
 			new Promise(function(resolve) {
-				window.setTimeout(resolve, 1000);
+				window.setTimeout(resolve, 500);
 			}),
 		]);
 

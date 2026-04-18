@@ -143,7 +143,7 @@ describe('game loop tick', function() {
 		tickGame();
 
 		expect(state.gameState).toBe('playing');
-		expect(state.frames).toBe(1);
+		expect(state.frames).toBe(0);
 	});
 
 	it('returns from dead state to ready when the timer expires', function() {

@@ -26,10 +26,10 @@ import { drawHUD } from './hud.js';
 function levelSpeedFactor() { return 1 + (state.level - 1) * 0.06; }
 
 export function tickGame() {
-	state.frames++;
-
 	if (state.gameState === 'ready') { if (state.aiMode) state.gameState = 'playing'; return; }
 	if (state.paused) return;
+
+	state.frames++;
 
 	if (state.gameState === 'dead') {
 		if ((state.stateTimer -= state.effectiveSpeed) <= 0) startReady();
