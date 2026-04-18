@@ -103,7 +103,8 @@ export function makeGhost(config) {
 			this.returning    = false;
 			this.pendingReturn = false;
 			this.bounceDir    = this.houseBounceDir;
-			this.releaseFrame = state.frames + this.releaseDelay / state.effectiveSpeed;
+			const jitter = this.releaseDelay > 0 ? (Math.random() - 0.5) * 60 : 0;
+		this.releaseFrame = state.frames + this.releaseDelay / state.effectiveSpeed + jitter;
 			this.nextDir      = dir.none;
 			let p = ghostTilePixel(this.col, this.row);
 			this.x = p.x; this.y = p.y;
@@ -224,7 +225,7 @@ export function makeGhost(config) {
 							let nc = this.col + dl[0], nr = this.row + dl[1];
 							if (!isGhostWall(nc, nr, d)) {
 								let dist = Math.abs(target.col - nc) + Math.abs(target.row - nr);
-								if (dist < bestDist) { bestDist = dist; best = d; }
+								if (dist < bestDist || (dist === bestDist && Math.random() < 0.5)) { bestDist = dist; best = d; }
 							}
 						}
 						if (best === dir.none) best = opp;

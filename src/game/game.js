@@ -84,7 +84,8 @@ export function tickGame() {
 		state.scatterTimer -= state.effectiveSpeed;
 		if (state.scatterTimer <= 0) {
 			state.scatterPhase++;
-			state.scatterTimer = SCATTER_CHASE_PHASES[state.scatterPhase];
+			const base = SCATTER_CHASE_PHASES[state.scatterPhase];
+			state.scatterTimer = base === Infinity ? base : base + (Math.random() - 0.5) * 60;
 		}
 	}
 
