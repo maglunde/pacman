@@ -22,7 +22,11 @@
       "Bash(npm install:*)",
       "Bash(grep -n \"Press Start 2P\" /Users/malund84/priv/pm-refaktor/src/js/*.js)",
       "Bash(grep -n \"ctx.textAlign\" /Users/malund84/priv/pm-refaktor/src/js/*.js)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "WebFetch(domain:maglunde.github.io)",
+      "WebSearch",
+      "WebFetch(domain:freepacman.org)",
+      "WebFetch(domain:www.crazygames.com)"
     ]
   }
 }

@@ -1,9 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pacman</title>
+  <title>Play Pac-Man Online Free – Browser Game with AI Opponents</title>
+  <meta name="description" content="Play Pac-Man free in your browser – featuring AI ghost opponents, global leaderboard, and ghost control mode. No download needed. Classic arcade fun!">
+  <meta name="keywords" content="pacman, pac-man, play pacman online, pacman game, browser game, pacman free, pacman ai, arcade game">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://maglunde.github.io/pacman/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://maglunde.github.io/pacman/">
+  <meta property="og:title" content="Play Pac-Man Online Free – Browser Game with AI Opponents">
+  <meta property="og:description" content="Play Pac-Man free in your browser – featuring AI ghost opponents, global leaderboard, and ghost control mode. No download needed!">
+  <meta property="og:image" content="https://maglunde.github.io/pacman/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Play Pac-Man Online Free – Browser Game with AI Opponents">
+  <meta name="twitter:description" content="Play Pac-Man free in your browser – AI ghosts, global leaderboard, ghost control mode. No download needed!">
+  <meta name="twitter:image" content="https://maglunde.github.io/pacman/og-image.png">
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Pac-Man Online",
+    "description": "Play Pac-Man free in your browser. Watch the AI play Pac-Man with four different personalities, control a ghost yourself, or go for the global leaderboard. No download required.",
+    "url": "https://maglunde.github.io/pacman/",
+    "genre": "Arcade",
+    "gamePlatform": "Web Browser",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "softwareVersion": "1.5.5",
+    "datePublished": "2024-01-01",
+    "dateModified": "2026-04-18",
+    "playMode": ["SinglePlayer", "MultiPlayer"],
+    "numberOfPlayers": {
+      "@type": "QuantitativeValue",
+      "minValue": 1,
+      "maxValue": 2
+    },
+    "screenshot": "https://maglunde.github.io/pacman/og-image.png",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Magnus Lunde",
+      "url": "https://github.com/maglunde",
+      "sameAs": "https://github.com/maglunde"
+    }
+  }
+  </script>
+
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +69,53 @@
 </head>
 <body>
   <div id="root"></div>
+
+  <noscript>
+    <h1>Play Pac-Man free in your browser</h1>
+    <p>
+      Pac-Man. No account, no download. Play it yourself, watch the AI play with four personalities
+      (Coward, Balanced, Aggressive, Greedy), or control a ghost while the AI runs Pac-Man.
+      Global leaderboard. Enable JavaScript to play.
+    </p>
+  </noscript>
+
+  <section id="about" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+    <h1>Pac-Man. Free. Runs in the browser.</h1>
+
+    <p>
+      It is Pac-Man. The maze, the ghosts, the pellets. 1980 Namco rules, running in a browser tab,
+      no account required. Three modes: play it yourself, watch the AI play it, or take control of
+      one of the ghosts while the AI runs Pac-Man.
+    </p>
+
+    <h2>Watch AI</h2>
+
+    <p>
+      The AI plays Pac-Man. Before it starts you pick a personality. Coward avoids ghosts compulsively,
+      even at the cost of pellets. Balanced is competent and boring. Aggressive hunts ghosts after
+      every energizer, which works until it does not. Greedy ignores the ghosts for pellets, and
+      survives longer than it has any right to.
+    </p>
+
+    <p>
+      The ghosts follow classic Namco behavior with minor randomization in release timing, scatter
+      phases and pathfinding. No two games are identical.
+    </p>
+
+    <h2>Leaderboard</h2>
+
+    <p>
+      Global leaderboard. Scores are HMAC-signed server-side before posting, so the numbers are real.
+      Pick a username, play, your best score submits at the end. No account.
+    </p>
+
+    <h2>About</h2>
+
+    <p>
+      Built by <a href="https://github.com/maglunde">Magnus Lunde</a>. Vanilla JavaScript and Canvas.
+      Version 1.5.5. <a href="https://github.com/maglunde/pacman">Source on GitHub.</a>
+    </p>
+  </section>
 </body>
 <script type="module" src="/src/react/main.jsx"></script>
 </html>

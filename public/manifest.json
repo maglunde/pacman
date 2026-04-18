@@ -1,0 +1,16 @@
+{
+  "name": "Pac-Man Online",
+  "short_name": "Pac-Man",
+  "description": "Play Pac-Man free in your browser with AI ghost opponents and global leaderboard.",
+  "start_url": "/pacman/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/pacman/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}
