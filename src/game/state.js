@@ -1,4 +1,5 @@
-import { TICKS_PER_SECOND } from './constants.js';
+import { TICKS_PER_SECOND, SPEED_MIN, SPEED_MAX } from './constants.js';
+import { loadNumber, loadString } from './storage.js';
 
 // Single mutable game state object shared across all modules.
 // Each property is mutated in-place; never replace the object itself.
@@ -49,8 +50,8 @@ export const state = {
 	// Scoring
 	score:               0,
 	lastExtraLifeScore:  0,
-	highScore:           parseInt(localStorage.getItem('pacman-hi')    || '0'),
-	username:            localStorage.getItem('pacman-username') || '',
+	highScore:           Math.floor(loadNumber('pacman-hi', 0, 0, Infinity)),
+	username:            loadString('pacman-username', ''),
 	lives:       3,
 	level:       1,
 	ghostCombo:  0,
@@ -81,9 +82,9 @@ export const state = {
 	// Audio
 	audioCtx:      null,
 	audioBuffers:  {},
-	volume:        parseFloat(localStorage.getItem('pacman-vol')   || '0.5'),
-	muted:         localStorage.getItem('pacman-muted') === '1',
-	gameSpeed:     parseFloat(localStorage.getItem('pacman-speed') || '1'),
+	volume:        loadNumber('pacman-vol', 0.5, 0, 1),
+	muted:         loadString('pacman-muted', '0') === '1',
+	gameSpeed:     loadNumber('pacman-speed', 1, SPEED_MIN, SPEED_MAX),
 	get effectiveSpeed() { return this.gameSpeed * 2 * (60 / TICKS_PER_SECOND); },
 	pendingBeginning: false,
 	activeLoopTrack: null,  // 'fright' | 'eyes' | null

@@ -4,6 +4,7 @@ import { setMapSprite } from './sprite.js';
 import { saveVolume, saveSpeed } from './hud.js';
 import { initAudio, playBeginning, stopAllAudio, updateLoopVolume } from './audio.js';
 import { newGame, saveHighScore } from './game-states.js';
+import { save } from './storage.js';
 import { resumeUnlessOverlayOpen } from './overlay.js';
 
 export function startManualGame() {
@@ -34,7 +35,7 @@ export function closeMenuSubPage() {
 
 export function saveUsername(name) {
 	state.username = name;
-	localStorage.setItem('pacman-username', name);
+	save('pacman-username', name);
 }
 
 export function startAiGame() {

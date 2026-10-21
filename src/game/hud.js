@@ -2,6 +2,7 @@ import {TILE, LIFE_ICON_SIZE, FRUIT_DRAW_SIZE, AI_PERSONALITIES, AI_PERSONALITY_
 import { state } from './state.js';
 import { getAvailableFruits } from './fruit.js';
 import { getPacmanSpriteSet } from './sprite.js';
+import { save } from './storage.js';
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
 
@@ -161,12 +162,12 @@ export function hexToRgb(hex) {
 // ── Persistence ───────────────────────────────────────────────────────────────
 
 export function saveVolume() {
-	localStorage.setItem('pacman-vol',   state.volume);
-	localStorage.setItem('pacman-muted', state.muted ? '1' : '0');
+	save('pacman-vol',   state.volume);
+	save('pacman-muted', state.muted ? '1' : '0');
 }
 
 export function saveSpeed() {
-	localStorage.setItem('pacman-speed', state.gameSpeed);
+	save('pacman-speed', state.gameSpeed);
 }
 
 // ── Ghost path toggle ─────────────────────────────────────────────────────────
