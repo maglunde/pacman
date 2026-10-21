@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./audio.js', function() {
 	return {
+		initAudio: vi.fn(),
 		playBeginning: vi.fn(),
 		stopAllAudio: vi.fn(),
 		updateLoopVolume: vi.fn(),
@@ -41,7 +42,7 @@ import {
 import { state } from './state.js';
 import { resetState } from '../test/reset-state.js';
 import { newGame } from './game-states.js';
-import { playBeginning, resumeAudio, stopAllAudio, updateLoopVolume } from './audio.js';
+import { initAudio, playBeginning, resumeAudio, stopAllAudio, updateLoopVolume } from './audio.js';
 import { saveSpeed, saveVolume } from './hud.js';
 import { setMapSprite } from './sprite.js';
 
@@ -105,15 +106,18 @@ describe('menu actions', function() {
 
 		expect(newGame).not.toHaveBeenCalled();
 		expect(playBeginning).not.toHaveBeenCalled();
+		expect(initAudio).not.toHaveBeenCalled();
 
 		state.engineReady = true;
 		startManualGame();
 		expect(state.aiMode).toBe(false);
+		expect(initAudio).toHaveBeenCalledTimes(1);
 		expect(newGame).toHaveBeenCalledTimes(1);
 		expect(playBeginning).toHaveBeenCalledTimes(1);
 
 		startAiGame();
 		expect(state.aiMode).toBe(true);
+		expect(initAudio).toHaveBeenCalledTimes(2);
 		expect(newGame).toHaveBeenCalledTimes(2);
 		expect(playBeginning).toHaveBeenCalledTimes(2);
 	});
