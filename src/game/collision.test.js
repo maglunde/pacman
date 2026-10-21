@@ -56,6 +56,7 @@ describe('collision rules', function() {
 			[1, 1],
 			[1, 1],
 		];
+		state.bigDots = [];
 	});
 
 	it('eats scared ghosts, awards combo score and freezes the game briefly', function() {
@@ -130,6 +131,20 @@ describe('collision rules', function() {
 
 		expect(loseLife).toHaveBeenCalledTimes(1);
 		expect(state.gameState).not.toBe('win');
+		expect(playIntermission).not.toHaveBeenCalled();
+	});
+
+	it('does not clear the level while a big dot is left', function() {
+		state.gameState = 'playing';
+		state.dots = [
+			[0, 0],
+			[0, 0],
+		];
+		state.bigDots = [{ col: 0, row: 0, eaten: false }];
+
+		checkCollisions();
+
+		expect(state.gameState).toBe('playing');
 		expect(playIntermission).not.toHaveBeenCalled();
 	});
 

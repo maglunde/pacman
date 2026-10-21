@@ -183,6 +183,9 @@ describe('pacman entity update', function() {
 		state.pacman.update();
 
 		expect(state.bigDots[0].eaten).toBe(true);
+		expect(state.dotsEaten).toBe(1);
+		expect(state.fruitDotsSinceSpawn).toBe(1);
+		expect(addScore).toHaveBeenCalledTimes(1);
 		expect(state.scaredTimer).toBe(SCARED_DURATION);
 		expect(state.ghostCombo).toBe(0);
 		expect(state.ghosts.every(function(ghost) { return ghost.immune === false; })).toBe(true);

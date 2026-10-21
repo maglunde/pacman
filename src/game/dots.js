@@ -48,6 +48,11 @@ export function initDots() {
 			}
 		}
 	}
+
+	// Energizer tiles hold only the big dot (tracked in state.bigDots), not a small one underneath.
+	state.activeMap.bigDots.forEach(function(p) {
+		if (state.dots[p.row]) state.dots[p.row][p.col] = 0;
+	});
 }
 
 export function drawDots() {

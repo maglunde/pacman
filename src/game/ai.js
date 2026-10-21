@@ -271,7 +271,8 @@ export function aiDecide() {
 		}
 		return false;
 	}
-	function isDot(c, r) { return !!(state.dots[r] && state.dots[r][c] === 1); }
+	// Energizer tiles have no small dot, but must still be eaten to clear the level
+	function isDot(c, r) { return !!(state.dots[r] && state.dots[r][c] === 1) || isPellet(c, r); }
 	function isScaredGhostAt(c, r) {
 		return state.ghosts.some(function(g) {
 			return g.exited && !g.returning && state.scaredTimer > 0 && !g.immune && g.col === c && g.row === r;
