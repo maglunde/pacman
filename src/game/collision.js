@@ -41,8 +41,9 @@ export function checkCollisions() {
 				playEatGhost();
 				break;
 			} else {
+				// Dying on the last dot is a death, not a level clear: skip the win check
 				loseLife();
-				break;
+				return;
 			}
 		}
 	}
