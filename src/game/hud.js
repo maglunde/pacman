@@ -39,7 +39,7 @@ function drawHighScore(ctx, mapX, mapW, mapY) {
 	ctx.textAlign = 'center';
 	ctx.fillText('HIGH-SCORE', mapX + mapW / 2, mapY - 28);
 	ctx.fillStyle = COLORS.pacman;
-	ctx.fillText(Math.max(state.score, state.highScore), mapX + mapW / 2, mapY - 8);
+	ctx.fillText(state.aiMode ? state.highScore : Math.max(state.score, state.highScore), mapX + mapW / 2, mapY - 8);
 }
 
 function drawLevel(ctx, mapX, mapW, mapY) {

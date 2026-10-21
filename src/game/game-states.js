@@ -89,15 +89,19 @@ export function nextLevel() {
 	startReady();
 }
 
+// The local high score belongs to the human player; AI runs go to the leaderboard only.
+export function saveHighScore() {
+	if (state.aiMode || state.score <= state.highScore) return;
+	state.highScore = state.score;
+	localStorage.setItem('pacman-hi', state.highScore);
+}
+
 export function loseLife() {
 	state.lives--;
 	stopLoopingMusic();
 	playDeath();
 	if (state.lives <= 0) {
-		if (state.score > state.highScore) {
-			state.highScore = state.score;
-			localStorage.setItem('pacman-hi', state.highScore);
-		}
+		saveHighScore();
 		state.gameState  = 'gameover';
 		state.stateTimer = RESULT_STATE_FRAMES;
 	} else {
