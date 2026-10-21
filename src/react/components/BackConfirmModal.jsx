@@ -1,6 +1,6 @@
 import React from 'react';
-import { resumeAudio } from '../../game/audio.js';
 import { quitToMenu } from '../../game/menu.js';
+import { resumeUnlessOverlayOpen } from '../../game/overlay.js';
 import { state } from '../../game/state.js';
 import { ModalShell } from './MenuAnimation.jsx';
 import { MenuButton } from './MenuButton.jsx';
@@ -8,8 +8,7 @@ import { MenuButton } from './MenuButton.jsx';
 export function BackConfirmModal({ snapshot }) {
 	function handleContinue() {
 		state.backConfirmActive = false;
-		state.paused = false;
-		resumeAudio();
+		resumeUnlessOverlayOpen();
 	}
 
 	function handleQuit() {

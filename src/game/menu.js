@@ -2,8 +2,9 @@ import { state } from './state.js';
 import { SPEED_MIN, SPEED_MAX, MAPS, AI_PERSONALITY_KEYS } from './constants.js';
 import { setMapSprite } from './sprite.js';
 import { saveVolume, saveSpeed } from './hud.js';
-import { initAudio, playBeginning, stopAllAudio, updateLoopVolume, resumeAudio } from './audio.js';
+import { initAudio, playBeginning, stopAllAudio, updateLoopVolume } from './audio.js';
 import { newGame } from './game-states.js';
+import { resumeUnlessOverlayOpen } from './overlay.js';
 
 export function startManualGame() {
 	if (!state.engineReady) return;
@@ -71,15 +72,13 @@ export function cycleMap(direction) {
 
 export function closeSettingsOverlay() {
 	state.settingsOverlayActive = false;
-	state.paused = false;
 	state.settingsRow = 0;
-	resumeAudio();
+	resumeUnlessOverlayOpen();
 }
 
 export function continuePausedGame() {
 	state.escapeMenuActive = false;
-	state.paused = false;
-	resumeAudio();
+	resumeUnlessOverlayOpen();
 }
 
 export function focusPauseOption(index) {

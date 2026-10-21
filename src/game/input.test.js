@@ -105,6 +105,49 @@ describe('game input', function() {
 		expect(quitToMenu).toHaveBeenCalledTimes(1);
 	});
 
+	it('keeps the game paused when settings and pause menu are toggled together', function() {
+		state.gameState = 'playing';
+
+		// O then P then Escape: P must not stack a pause menu under the settings overlay
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyO', key: 'o', bubbles: true }));
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyP', key: 'p', bubbles: true }));
+		expect(state.settingsOverlayActive).toBe(true);
+		expect(state.escapeMenuActive).toBe(false);
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(state.settingsOverlayActive).toBe(false);
+		expect(state.escapeMenuActive).toBe(false);
+		expect(state.paused).toBe(false);
+
+		// P then O then Escape: settings opens on top of the pause menu and closes back to it
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyP', key: 'p', bubbles: true }));
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyO', key: 'o', bubbles: true }));
+		expect(state.escapeMenuActive).toBe(true);
+		expect(state.settingsOverlayActive).toBe(true);
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(state.settingsOverlayActive).toBe(false);
+		expect(state.escapeMenuActive).toBe(true);
+		expect(state.paused).toBe(true);
+
+		// Same with O toggling settings closed
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyO', key: 'o', bubbles: true }));
+		document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyO', key: 'o', bubbles: true }));
+		expect(state.escapeMenuActive).toBe(true);
+		expect(state.paused).toBe(true);
+	});
+
+	it('stays paused when the back confirm modal closes over the pause menu', function() {
+		state.gameState = 'playing';
+		state.escapeMenuActive = true;
+		state.paused = true;
+		state.backConfirmActive = true;
+		state.backConfirmSelected = 0;
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		expect(state.backConfirmActive).toBe(false);
+		expect(state.escapeMenuActive).toBe(true);
+		expect(state.paused).toBe(true);
+	});
+
 	it('blocks other keys while back confirm modal is active', function() {
 		state.gameState = 'playing';
 		state.backConfirmActive = true;
