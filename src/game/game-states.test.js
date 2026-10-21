@@ -150,4 +150,18 @@ describe('game state transitions', function() {
 		expect(state.highScore).toBe(3210);
 		expect(localStorage.getItem('pacman-hi')).toBe('3210');
 	});
+
+	it('does not let an AI run overwrite the player high score', function() {
+		localStorage.setItem('pacman-hi', '1000');
+		state.aiMode = true;
+		state.lives = 1;
+		state.score = 3210;
+		state.highScore = 1000;
+
+		loseLife();
+
+		expect(state.gameState).toBe('gameover');
+		expect(state.highScore).toBe(1000);
+		expect(localStorage.getItem('pacman-hi')).toBe('1000');
+	});
 });
