@@ -7,6 +7,7 @@ import { initGhosts } from './ghost.js';
 import { shuffleBFSDirs } from './ai.js';
 import { stopLoopingMusic, resumeAudio, playDeath, playExtraPac } from './audio.js';
 import { startGameSession } from '../lib/scores.js';
+import { save } from './storage.js';
 
 // ── Score ─────────────────────────────────────────────────────────────────────
 
@@ -93,7 +94,7 @@ export function nextLevel() {
 export function saveHighScore() {
 	if (state.aiMode || state.score <= state.highScore) return;
 	state.highScore = state.score;
-	localStorage.setItem('pacman-hi', state.highScore);
+	save('pacman-hi', state.highScore);
 }
 
 export function loseLife() {
