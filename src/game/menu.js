@@ -3,7 +3,7 @@ import { SPEED_MIN, SPEED_MAX, MAPS, AI_PERSONALITY_KEYS } from './constants.js'
 import { setMapSprite } from './sprite.js';
 import { saveVolume, saveSpeed } from './hud.js';
 import { initAudio, playBeginning, stopAllAudio, updateLoopVolume } from './audio.js';
-import { newGame } from './game-states.js';
+import { newGame, saveHighScore } from './game-states.js';
 import { resumeUnlessOverlayOpen } from './overlay.js';
 
 export function startManualGame() {
@@ -86,6 +86,7 @@ export function focusPauseOption(index) {
 }
 
 export function quitToMenu() {
+	saveHighScore(); // before newGame() resets the score
 	stopAllAudio();
 	state.escapeMenuActive = false;
 	state.settingsOverlayActive = false;

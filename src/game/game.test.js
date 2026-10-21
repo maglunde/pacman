@@ -45,6 +45,7 @@ vi.mock('./game-states.js', function() {
 		startReady: vi.fn(),
 		newGame: vi.fn(),
 		nextLevel: vi.fn(),
+		saveHighScore: vi.fn(),
 	};
 });
 

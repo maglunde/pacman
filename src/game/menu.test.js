@@ -13,6 +13,7 @@ vi.mock('./audio.js', function() {
 vi.mock('./game-states.js', function() {
 	return {
 		newGame: vi.fn(),
+		saveHighScore: vi.fn(),
 	};
 });
 
@@ -41,7 +42,7 @@ import {
 } from './menu.js';
 import { state } from './state.js';
 import { resetState } from '../test/reset-state.js';
-import { newGame } from './game-states.js';
+import { newGame, saveHighScore } from './game-states.js';
 import { initAudio, playBeginning, resumeAudio, stopAllAudio, updateLoopVolume } from './audio.js';
 import { saveSpeed, saveVolume } from './hud.js';
 import { setMapSprite } from './sprite.js';
@@ -133,6 +134,8 @@ describe('menu actions', function() {
 
 		quitToMenu();
 
+		expect(saveHighScore).toHaveBeenCalledTimes(1);
+		expect(saveHighScore.mock.invocationCallOrder[0]).toBeLessThan(newGame.mock.invocationCallOrder[0]);
 		expect(stopAllAudio).toHaveBeenCalledTimes(1);
 		expect(newGame).toHaveBeenCalledTimes(1);
 		expect(state.gameState).toBe('menu');

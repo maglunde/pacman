@@ -11,7 +11,7 @@ import { state } from './state.js';
 import { initWallData, buildGrid } from './grid.js';
 import { initDots, initBigDots, drawDots } from './dots.js';
 import { bfsReturnPath } from './ghost.js';
-import { addScore, addPopup, startReady, newGame, nextLevel } from './game-states.js';
+import { addScore, addPopup, startReady, newGame, nextLevel, saveHighScore } from './game-states.js';
 import { checkCollisions } from './collision.js';
 import { renderPaths } from './pathvis.js';
 import './pacman-entity.js';
@@ -228,6 +228,8 @@ export function mountGame(containerEl) {
 	state.canvas.height = state.height;
 	containerEl.appendChild(state.canvas);
 	initInput(newGame);
+	// Closing or reloading the tab mid-game should not lose a new high score.
+	window.addEventListener('pagehide', saveHighScore);
 
 	state.engineStarted = true;
 
