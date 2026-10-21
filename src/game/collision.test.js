@@ -110,6 +110,29 @@ describe('collision rules', function() {
 		expect(addScore).not.toHaveBeenCalled();
 	});
 
+	it('does not clear the level when pacman dies on the last dot', function() {
+		state.gameState = 'playing';
+		state.ghosts = [{
+			exited: true,
+			returning: false,
+			immune: false,
+			x: 105,
+			y: 100,
+			col: 1,
+			row: 0,
+		}];
+		state.dots = [
+			[0, 0],
+			[0, 0],
+		];
+
+		checkCollisions();
+
+		expect(loseLife).toHaveBeenCalledTimes(1);
+		expect(state.gameState).not.toBe('win');
+		expect(playIntermission).not.toHaveBeenCalled();
+	});
+
 	it('enters win state when no dots remain', function() {
 		state.ghosts = [];
 		state.dots = [
