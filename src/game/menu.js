@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { SPEED_MIN, SPEED_MAX, MAPS, AI_PERSONALITY_KEYS } from './constants.js';
 import { setMapSprite } from './sprite.js';
 import { saveVolume, saveSpeed } from './hud.js';
-import { playBeginning, stopAllAudio, updateLoopVolume, resumeAudio } from './audio.js';
+import { initAudio, playBeginning, stopAllAudio, updateLoopVolume, resumeAudio } from './audio.js';
 import { newGame } from './game-states.js';
 
 export function startManualGame() {
@@ -119,6 +119,9 @@ export function getVolumeShortcutLabel() {
 }
 
 function startMenuGame() {
+	// Menu buttons are clicked/tapped, not keyed, so the AudioContext may not exist yet
+	// (first visit, or after quitToMenu closed it). Create it inside this user gesture.
+	initAudio();
 	newGame();
 	state.pendingBeginning = true;
 	playBeginning();
