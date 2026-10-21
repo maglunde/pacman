@@ -179,6 +179,8 @@ describe('game loop tick', function() {
 	});
 
 	it('counts down scared mode, clears immunity and advances scatter timing', function() {
+		// Phase lengths get ±30 frames of random jitter; 0.5 makes the jitter zero
+		vi.spyOn(Math, 'random').mockReturnValue(0.5);
 		state.scaredTimer = 1;
 		state.ghostCombo = 3;
 		state.ghosts[0].immune = true;
