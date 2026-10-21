@@ -3,19 +3,20 @@ import { dir, AI_PERSONALITY_KEYS, MAPS } from './constants.js';
 import { adjustSetting, quitToMenu } from './menu.js';
 import { setMapSprite } from './sprite.js';
 import {
-	initAudio, playBeginning, updateLoopVolume, pauseAudio, resumeAudio,
+	initAudio, playBeginning, updateLoopVolume, pauseAudio,
 } from './audio.js';
 import { saveVolume, togglePath } from './hud.js';
+import { resumeUnlessOverlayOpen } from './overlay.js';
 
 function keydown(e, newGame) {
 	initAudio();
 
 	if (state.backConfirmActive) {
 		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') state.backConfirmSelected = state.backConfirmSelected === 0 ? 1 : 0;
-		if (e.key === 'Escape') { state.backConfirmActive = false; state.paused = false; resumeAudio(); }
+		if (e.key === 'Escape') { state.backConfirmActive = false; resumeUnlessOverlayOpen(); }
 		if (e.key === 'Enter') {
-			if (state.backConfirmSelected === 1) { quitToMenu(); } else { state.paused = false; resumeAudio(); }
 			state.backConfirmActive = false;
+			if (state.backConfirmSelected === 1) quitToMenu(); else resumeUnlessOverlayOpen();
 		}
 		return;
 	}
@@ -23,11 +24,11 @@ function keydown(e, newGame) {
 	// Global shortcuts
 	if (e.code === 'KeyM') { state.muted = !state.muted; saveVolume(); updateLoopVolume(); return; }
 	if (e.code === 'KeyQ') { state.showInfoPanel = !state.showInfoPanel; return; }
+	// Settings may open on top of the pause menu; closing it returns to the pause menu.
 	if (e.code === 'KeyO' && state.gameState !== 'menu') {
 		state.settingsOverlayActive = !state.settingsOverlayActive;
-		state.paused = state.settingsOverlayActive;
 		state.settingsRow = 0;
-		if (state.paused) pauseAudio(); else resumeAudio();
+		if (state.settingsOverlayActive) { state.paused = true; pauseAudio(); } else resumeUnlessOverlayOpen();
 		return;
 	}
 	if (e.code === 'Minus')  { adjustSetting(1, -1); return; }
@@ -39,11 +40,11 @@ function keydown(e, newGame) {
 	if (e.code === 'KeyC') { togglePath('inky');   return; }
 	if (e.code === 'KeyV') { togglePath('clyde');  return; }
 	if (e.code === 'KeyB') { togglePath('pacman'); return; }
-	if (e.code === 'KeyP' && (state.gameState === 'playing' || state.gameState === 'ready' || state.paused)) {
+	// P is ignored while settings are open, so the pause menu is never stacked on top of them.
+	if (e.code === 'KeyP' && !state.settingsOverlayActive && (state.gameState === 'playing' || state.gameState === 'ready' || state.paused)) {
 		if (state.escapeMenuActive) {
 			state.escapeMenuActive = false;
-			state.paused           = false;
-			resumeAudio();
+			resumeUnlessOverlayOpen();
 		} else {
 			state.escapeMenuActive   = true;
 			state.escapeMenuSelected = 0;
@@ -59,14 +60,12 @@ function keydown(e, newGame) {
 	if (e.key === 'Escape') {
 		if (state.settingsOverlayActive) {
 			state.settingsOverlayActive = false;
-			state.paused = false;
-			resumeAudio();
+			resumeUnlessOverlayOpen();
 			return;
 		}
 		if (state.escapeMenuActive) {
 			state.escapeMenuActive = false;
-			state.paused           = false;
-			resumeAudio();
+			resumeUnlessOverlayOpen();
 			return;
 		}
 		if (state.gameState === 'menu' && (state.menuSubState === 'personality' || state.menuSubState === 'settings' || state.menuSubState === 'leaderboard')) {
@@ -84,22 +83,7 @@ function keydown(e, newGame) {
 		quitToMenu();
 		return;
 	}
-	if (state.escapeMenuActive) {
-		switch (e.key) {
-			case 'ArrowUp':   state.escapeMenuSelected = 0; return;
-			case 'ArrowDown': state.escapeMenuSelected = 1; return;
-			case 'Enter':
-				if (state.escapeMenuSelected === 0) {
-					state.escapeMenuActive = false;
-					state.paused           = false;
-					resumeAudio();
-				} else {
-					quitToMenu();
-				}
-				return;
-		}
-		return; // block all other keys while escape menu is open
-	}
+	// Settings is checked first: when it sits on top of the pause menu, it gets the keys.
 	if (state.settingsOverlayActive) {
 		switch (e.key) {
 			case 'ArrowUp':    state.settingsRow = (state.settingsRow + 1) % 2; return;
@@ -107,8 +91,22 @@ function keydown(e, newGame) {
 			case 'ArrowLeft':  adjustSetting(state.settingsRow, -1); return;
 			case 'ArrowRight': adjustSetting(state.settingsRow, +1); return;
 		}
-		if (e.code === 'KeyO') { state.settingsOverlayActive = false; state.paused = false; resumeAudio(); return; }
 		return; // block all other keys while settings overlay is open
+	}
+	if (state.escapeMenuActive) {
+		switch (e.key) {
+			case 'ArrowUp':   state.escapeMenuSelected = 0; return;
+			case 'ArrowDown': state.escapeMenuSelected = 1; return;
+			case 'Enter':
+				if (state.escapeMenuSelected === 0) {
+					state.escapeMenuActive = false;
+					resumeUnlessOverlayOpen();
+				} else {
+					quitToMenu();
+				}
+				return;
+		}
+		return; // block all other keys while escape menu is open
 	}
 	if (state.gameState === 'gameover') return; // GameOverOverlay håndterer all input
 	if (state.gameState === 'menu') {
