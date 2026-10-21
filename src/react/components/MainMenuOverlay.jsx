@@ -20,6 +20,12 @@ export function MainMenuOverlay({ snapshot }) {
 		);
 	}
 
+	return <MainMenuPanel snapshot={snapshot} />;
+}
+
+// Separate component so useFitScale mounts (and measures) only once the engine is ready,
+// instead of being called conditionally after the early return above.
+function MainMenuPanel({ snapshot }) {
 	let fit = useFitScale({ portraitMaxScale: 3 });
 
 	return (
