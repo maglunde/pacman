@@ -87,10 +87,11 @@ state.pacman = {
 		let ctx = state.ctx;
 
 		if (state.gameState === 'dead' || state.gameState === 'gameover') {
-			let elapsed = state.gameState === 'dead'
-				? DEAD_STATE_FRAMES - state.stateTimer
-				: RESULT_STATE_FRAMES - state.stateTimer;
-			let progress = Math.min(elapsed, DEAD_STATE_FRAMES) / DEAD_STATE_FRAMES;
+			// Game over holds for RESULT_STATE_FRAMES, not DEAD_STATE_FRAMES; scale to the right total
+			// so the animation reaches its last frame in both states.
+			let total    = state.gameState === 'dead' ? DEAD_STATE_FRAMES : RESULT_STATE_FRAMES;
+			let elapsed  = total - state.stateTimer;
+			let progress = Math.min(Math.max(elapsed, 0), total) / total;
 			let frameIdx = Math.min(Math.floor(progress * s_pacman_dies.length), s_pacman_dies.length - 1);
 			let rotations = { [dir.right]: 0, [dir.down]: Math.PI / 2, [dir.left]: Math.PI, [dir.up]: -Math.PI / 2 };
 			let angle = rotations[this.dir] || 0;

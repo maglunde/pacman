@@ -127,9 +127,9 @@ describe('pacman draw - death animation', function() {
 		expect(s_pacman_dies[0].draw).toHaveBeenCalledTimes(1);
 	});
 
-	it('draws last death sprite when gameover elapsed reaches DEAD_STATE_FRAMES', function() {
+	it('draws last death sprite at end of gameover state', function() {
 		state.gameState = 'gameover';
-		state.stateTimer = RESULT_STATE_FRAMES - DEAD_STATE_FRAMES; // elapsed=DEAD_STATE_FRAMES, progress=1
+		state.stateTimer = 0; // elapsed=RESULT_STATE_FRAMES, progress=1
 		state.pacman.draw();
 		expect(s_pacman_dies[10].draw).toHaveBeenCalledTimes(1);
 	});
