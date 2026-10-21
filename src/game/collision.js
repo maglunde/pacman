@@ -53,6 +53,8 @@ export function checkCollisions() {
 	for (let r = 0; r < state.GRID_ROWS; r++)
 		for (let c = 0; c < state.GRID_COLS; c++)
 			if (state.dots[r][c] === 1) remaining++;
+	for (let i = 0; i < state.bigDots.length; i++)
+		if (!state.bigDots[i].eaten) remaining++;
 	if (remaining === 0) {
 		state.gameState  = 'win';
 		state.stateTimer = RESULT_STATE_FRAMES;

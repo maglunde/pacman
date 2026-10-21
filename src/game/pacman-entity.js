@@ -62,6 +62,8 @@ state.pacman = {
 					let bd = state.bigDots[i];
 					if (!bd.eaten && bd.col === this.col && bd.row === this.row) {
 						bd.eaten = true;
+						state.dotsEaten++;
+						if (!state.cherry) state.fruitDotsSinceSpawn++;
 						addScore(50);
 						state.scaredTimer = SCARED_DURATION;
 						state.ghostCombo  = 0;

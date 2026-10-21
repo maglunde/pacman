@@ -41,4 +41,12 @@ describe('dot placement', function() {
 		expect(state.dots[2][2]).toBe(0);
 		expect(state.dots[0][0]).toBe(0);
 	});
+
+	it('leaves no small dot under a reachable big dot', function() {
+		state.activeMap.bigDots = [{ col: 2, row: 1 }];
+		initDots();
+
+		expect(state.dots[1][2]).toBe(0);
+		expect(state.dots[1][1]).toBe(1);
+	});
 });
